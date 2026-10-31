@@ -1,6 +1,6 @@
 # File dùng chung và OpenAI
 
-Đối chiếu cấu trúc và trường contract ở repo `hoangthuc701/MinintApp`, commit `9dc84f7998c0778c18f0445c7fe4a077bdf13221`. Implementation viết mới trong repo này, không nhập lịch sử hoặc secret. Không tạo commit hay push.
+Implementation viết mới trong repo này, không nhập lịch sử hoặc secret từ dự án khác. Không tạo commit hay push.
 
 ## Điểm nhập cho nhóm
 

@@ -41,6 +41,6 @@ CI chạy trên Node 22, cài sạch bằng `npm ci`, kiểm tra môi trường 
 
 ## Nguồn tham chiếu và phạm vi
 
-Đã đọc `package.json`, `AGENTS.md`, `.env.example` và runtime config của [repo tham chiếu](https://github.com/hoangthuc701/MinintApp/tree/9dc84f7998c0778c18f0445c7fe4a077bdf13221) tại commit `9dc84f7998c0778c18f0445c7fe4a077bdf13221` qua GitHub API chỉ đọc. Khung được viết mới trong repo này; không nhập lịch sử Git, implementation, secrets hay dữ liệu bản gốc.
+Khung được viết mới trong repo này; không nhập lịch sử Git, secrets hay dữ liệu từ dự án khác.
 
 Giữ Next.js/React/TypeScript, Vitest, Playwright và quy ước tên biến môi trường. Phiên bản được xác minh qua npm; Vitest 5 yêu cầu Node từ 22.12; Node 20 không được hỗ trợ. Node 22 là môi trường chuẩn cho nhóm và CI. Không tạo commit hoặc push trong tác vụ thiết lập này.

@@ -1,6 +1,6 @@
 # MinintApp
 
-Repo này xây lại MinintApp; repo `hoangthuc701/MinintApp` chỉ dùng để đọc và đối chiếu. Không thay đổi hoặc commit vào repo tham chiếu. Không tự tạo commit/push nếu người dùng chưa yêu cầu.
+Repo này triển khai MinintApp. Không tự tạo commit/push nếu người dùng chưa yêu cầu.
 
 ## Công nghệ và kiểm tra
 
