@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/lib/i18n/locale-provider";
 // /my-apps: the signed-in host's apps. "Open host page" works without the host token on this device
 // (the session cookie proves ownership); extend and end go through the normal lifecycle route.
 import { useCallback, useEffect, useState } from "react";
@@ -8,10 +9,10 @@ import { fetchAccountApps } from "@/engine/auth/account-client";
 import { postHost } from "@/engine/api/api-client";
 import { errorText } from "@/engine/api/app-error-codes";
 import type { AccountAppsResponse } from "@/engine/api/api-contract-types";
-import { ACCOUNT_STRINGS, savedUiLocale } from "@/engine/i18n/account-strings-vi-en";
+import { ACCOUNT_STRINGS } from "@/engine/i18n/account-strings-vi-en";
 
 export function MyApps() {
-  const [locale, setLocale] = useState<"vi" | "en">("vi");
+  const { locale } = useLocale();
   const [data, setData] = useState<AccountAppsResponse | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -21,14 +22,13 @@ export function MyApps() {
     const res = await fetchAccountApps();
     if (res.ok) setData(res);
     else if (res.code === "sign_in_required") window.location.replace("/login");
-    else setMessage(errorText(res.code, savedUiLocale(), res.params));
-  }, []);
+    else setMessage(errorText(res.code, locale, res.params));
+  }, [locale]);
 
   useEffect(() => {
-    setLocale(savedUiLocale());
     const claimed = Number(new URLSearchParams(window.location.search).get("claimed"));
     if (claimed > 0) {
-      setMessage(ACCOUNT_STRINGS[savedUiLocale()].claimedSome(claimed));
+      setMessage(ACCOUNT_STRINGS[locale].claimedSome(claimed));
       history.replaceState(null, "", window.location.pathname);
     }
     void load();

@@ -1,0 +1,10 @@
+import { spawnSync } from "node:child_process";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+const root = new URL("../", import.meta.url);
+await rm(new URL(".runtime-build", root), { recursive: true, force: true });
+const result = spawnSync(process.execPath, [fileURLToPath(new URL("node_modules/typescript/bin/tsc", root)), "-p", "runtime/poll/tsconfig.json"], { cwd: fileURLToPath(root), stdio: "inherit" });
+if (result.status !== 0) process.exit(result.status ?? 1);
+await mkdir(new URL(".runtime-build/runtime/poll/public/", root), { recursive: true });
+await cp(new URL("runtime/poll/public/", root), new URL(".runtime-build/runtime/poll/public/", root), { recursive: true });
+await writeFile(new URL(".runtime-build/package.json", root), JSON.stringify({ private: true, type: "module" }));

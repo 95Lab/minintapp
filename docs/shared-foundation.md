@@ -47,3 +47,7 @@ Supabase lưu snapshot bằng RPC compare-and-swap, chỉ service role đọc/gh
 ## Deployment metadata
 
 Contract build/deploy độc lập với trạng thái nghiệp vụ của app ở `src/lib/deployments/`; repository ở `src/lib/db/deployments-repository-types.ts`, chọn memory/Supabase qua `deploymentsRepository()`. Type suy ra từ Zod, có version lock, idempotency và lịch sử lỗi. Migration `202610310003_deployments.sql` chỉ cấp service role. Đây mới là metadata; chưa provision sandbox/DNS hoặc tự nối vào generation. Xem [contract deployment và job](deployments.md).
+
+## Template runtime bình chọn
+
+`poll-v1` có contract projection tại `src/lib/blocks/poll-runtime-schema.ts`, request/response tại `src/lib/api/poll-runtime-contract.ts`, converter từ AppSpec chuẩn hóa + deployment tại `src/lib/deployments/poll-runtime-manifest.ts`. Không dùng AppRecord làm cấu hình public. Runtime và SQLite repository độc lập ở `runtime/poll/`; không gọi database của dashboard. Converter từ chối capability chưa hỗ trợ thay vì bỏ qua. Xem [poll runtime](poll-runtime.md) để build, chạy, giới hạn và kế hoạch nối Cloudflare.

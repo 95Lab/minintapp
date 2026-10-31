@@ -8,9 +8,9 @@ export async function requestJson<T>(path: string, init?: RequestInit, timeoutMs
   if (!response.ok) throw new ApiClientError(response.status, typeof body.message === "string" ? body.message : "Không thể xử lý yêu cầu.");
   return body as T;
 }
-export const createFromTemplate = async (templateId: string) => {
+export const createFromTemplate = async (templateId: string, locale: "vi" | "en" = "vi") => {
   await requestJson("/api/session", { method: "POST" });
-  return awaitProvisioned(await requestJson<TemplateCreateResponse>("/api/apps/from-template", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify({ templateId, locale: "vi", lifetime: "1h" }) }));
+  return awaitProvisioned(await requestJson<TemplateCreateResponse>("/api/apps/from-template", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify({ templateId, locale, lifetime: "1h" }) }));
 };
 export const createPoll = () => createFromTemplate("poll-drinks");
 export function readState(id: string, host: boolean, participantToken: string | null, signal?: AbortSignal) {

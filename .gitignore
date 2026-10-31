@@ -13,3 +13,7 @@ test-results/
 
 note/
 
+
+# Standalone runtime build and local data
+.runtime-build/
+.runtime-local/
