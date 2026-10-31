@@ -1,4 +1,5 @@
 export const ERROR_STATUS = {
+  owner_app_limit: 409, app_capacity_full: 503, creation_hourly_limit: 429,
   deployment_failed: 502, deployment_pending: 503, runtime_unavailable: 503,
   question_closed: 409, wheel_empty: 409, wheel_no_entrants: 409,
   storage_unavailable: 503, invalid_request: 400, app_closed: 409, forbidden: 403, not_found: 404, app_gone: 410, rate_limited: 429,

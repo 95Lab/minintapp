@@ -58,13 +58,13 @@ it("keeps the outbox after queue failure, then retries once without duplicate jo
 });
 it("enforces tenant and global quotas transactionally", async () => {
   await Promise.all([create(), create()]);
-  await expect(create()).rejects.toThrow("rate_limited");
+  await expect(create()).rejects.toThrow("owner_app_limit");
   await create("other");
-  await expect(create("third")).rejects.toThrow("rate_limited");
+  await expect(create("third")).rejects.toThrow("app_capacity_full");
 });
 it("releases tenant and global quota when a deployment fails", async () => {
   const [failed] = await Promise.all([create(), create(), create("other")]);
-  await expect(create()).rejects.toThrow("rate_limited");
+  await expect(create()).rejects.toThrow("app_capacity_full");
   await pool.query("UPDATE deployments SET state='FAILED' WHERE id=$1", [failed.id]);
   await expect(create()).resolves.toBeTruthy();
 });

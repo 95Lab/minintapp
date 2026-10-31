@@ -12,6 +12,9 @@ const MESSAGES = {
   network: { vi: "Mất kết nối. Thử lại nhé.", en: "Connection lost. Please try again." },
   unknown: { vi: "Có lỗi xảy ra.", en: "Something went wrong." },
   // rate limits
+  owner_app_limit: { vi: "Bạn đã có 2 ứng dụng đang hoạt động. Mở Ứng dụng của tôi để kết thúc app cũ; hệ thống cần dọn dẹp trước khi có thể tạo thêm.", en: "You already have 2 active apps. Open My apps to end an existing app; cleanup must finish before you can create another." },
+  app_capacity_full: { vi: "Hệ thống đã hết chỗ chạy ứng dụng. Vui lòng thử lại khi có ứng dụng được kết thúc và dọn dẹp.", en: "The system has no free app capacity. Try again after an app ends and cleanup finishes." },
+  creation_hourly_limit: { vi: "Hệ thống đã đạt giới hạn tạo ứng dụng trong một giờ. Vui lòng thử lại sau.", en: "The system has reached its hourly app creation limit. Please try again later." },
   rate_limited: { vi: "Chậm lại một chút nhé.", en: "Slow down a little." },
   create_rate_limited: { vi: "Bạn tạo app hơi nhanh, thử lại sau {minutes} phút.", en: "You're creating apps a bit fast; try again in {minutes} min." },
   remix_rate_limited: { vi: "Bạn remix hơi nhanh, thử lại sau ít phút.", en: "You're remixing a bit fast; try again in a few minutes." },

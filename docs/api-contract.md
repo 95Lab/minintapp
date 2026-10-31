@@ -93,3 +93,7 @@ Mutation kiểm tra cùng origin. Host dùng `x-host-token` hoặc cookie HttpOn
 ## Lập kế hoạch trước khi tạo app
 
 `POST /api/engine/plan` nhận `{ locale, messages, currentBrief }`, trả `{ status, message, suggestions, brief }` theo schema `src/lib/api/planning-contract.ts`. Endpoint chỉ trao đổi và lập brief; không tạo app. Xem [chat và giới hạn](generation.md#chat-để-chốt-yêu-cầu-trên-trang-chủ).
+
+## Giới hạn tạo app ở control plane
+
+Các giới hạn không dùng chung `rate_limited`: `creation_hourly_limit` (429) là ngân sách tạo app toàn hệ thống trong giờ; `app_capacity_full` (503) là hết chỗ chạy app; `owner_app_limit` (409) là chủ sở hữu đã có 2 app hoạt động. Mặc định toàn hệ thống có 3 app hoạt động và 30 lần tạo/giờ (`MAX_ACTIVE_APPS`, `MAX_CREATIONS_PER_HOUR`). App kết thúc/hết hạn chỉ nhả chỗ sau khi vòng dọn dẹp cập nhật trạng thái deployment. Các giới hạn vẫn được kiểm tra trong transaction và giữ nguyên mức bảo vệ tài nguyên.
