@@ -1,4 +1,5 @@
 import "server-only";
+import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { appsRepository } from "@/lib/db/apps-repository";
 import { isUsable } from "@/lib/db/apps-repository-types";
 import { stripPrivateFields } from "@/lib/app-spec/strip-private-fields";
@@ -35,7 +36,9 @@ export async function readAppState(request: Request, id: string): Promise<AppSta
     const afterStep = block?.type === "compose" && block.flow === "steps" && (view?.source ? done.includes(view.source) : block.inputs.every((i) => done.includes(i.id)));
     return (view?.visibleTo === "after_step" && afterStep) || isHost || view?.visibleTo === "everyone" || (view?.visibleTo === "after_submit" && myRows.some((r) => r.blockId === result.blockId)) || (view?.visibleTo === "after_close" && app.status === "closed");
   });
+  const env = readRuntimeConfig();
   return {
+    sync: env.APP_STORAGE === "supabase" && app.realtimeChannel ? { mode: "supabase", url: env.NEXT_PUBLIC_SUPABASE_URL, publicKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY, channel: `app:${app.realtimeChannel}` } : { mode: "memory" },
     id, status: app.status, expiresAt: new Date(app.expiresAt).toISOString(), stateVersion: app.stateVersion,
     spec: stripPrivateFields(app.spec, app.runtime), runtime: app.runtime, isHost,
     participantCount: new Set(rows.map((r) => r.participantHash)).size, results,

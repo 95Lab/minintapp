@@ -11,7 +11,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: "npm run start:standalone",
-    env: { PORT: "3100", HOSTNAME: "127.0.0.1" }, url: "http://127.0.0.1:3100/api/health",
+    env: { PORT: "3100", HOSTNAME: "127.0.0.1", APP_STORAGE: "memory", SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "", NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_ANON_KEY: "" }, url: "http://127.0.0.1:3100/api/health",
     reuseExistingServer: false, timeout: 60_000,
   },
 });

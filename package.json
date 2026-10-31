@@ -18,9 +18,12 @@
     "smoke": "node scripts/smoke.mjs",
     "check": "npm run typecheck && npm test && npm run build",
     "start:standalone": "node scripts/start-standalone.mjs",
-    "smoke:deploy": "node scripts/deploy-smoke.mjs"
+    "smoke:deploy": "node scripts/deploy-smoke.mjs",
+    "supabase:check": "node --env-file=.env.local scripts/check-supabase.mjs",
+    "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "next": "16.4.3",
     "openai": "^7.46.0",
     "qrcode": "^1.5.4",
@@ -30,6 +33,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
     "@playwright/test": "1.64.1",
     "@types/node": "^22.0.0",
     "@types/qrcode": "^1.5.6",

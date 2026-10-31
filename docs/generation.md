@@ -43,4 +43,4 @@ Unit test dùng mock provider, cùng một integration test chạy SDK parser th
 
 E2E generate mock HTTP endpoint nhưng tạo app/cookie qua API thật và thử participant vote; kiểm tra giữ prompt và mở lại submit khi API lỗi. Không gọi OpenAI thật trong CI. Trong lần triển khai này chưa có key ở môi trường local nên chưa xác nhận model, quota, latency hay độ đúng ý định với dịch vụ thật.
 
-App tạo thành công vẫn lưu trong memory, mất khi restart; chưa có Supabase hoặc remix theo dữ liệu.
+App tạo thành công lưu qua repository đã chọn: memory cho offline hoặc Supabase để lưu bền/Realtime. Chưa có remix theo dữ liệu.

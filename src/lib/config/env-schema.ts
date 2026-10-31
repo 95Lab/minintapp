@@ -1,6 +1,10 @@
 import { z } from "zod";
 const optionalText = z.string().trim().default("");
 const duration = (fallback: number) => z.preprocess((value) => value === "" || value === undefined ? fallback : value, z.coerce.number().int().min(1).max(300_000));
+function publicSupabaseKey(key: string) {
+  if (key.startsWith("sb_publishable_")) return true;
+  try { return JSON.parse(atob(key.split(".")[1].replaceAll("-", "+").replaceAll("_", "/"))).role === "anon"; } catch { return false; }
+}
 const httpUrl = optionalText.refine((value) => {
   if (!value) return true;
   try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; }
@@ -10,6 +14,7 @@ export const EnvSchema = z.object({
     if (!value) return true;
     try { return new URL(value).origin === value; } catch { return false; }
   }, "Must be a bare origin without path or trailing slash"),
+  APP_STORAGE: z.enum(["memory", "supabase"]).default("memory"),
   SUPABASE_URL: httpUrl, SUPABASE_SERVICE_ROLE_KEY: optionalText,
   NEXT_PUBLIC_SUPABASE_URL: httpUrl, NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalText,
   OPENAI_API_KEY: optionalText, OPENAI_MODEL: z.preprocess((value) => value || "gpt-5-mini", z.string().trim().min(1)),
@@ -23,6 +28,14 @@ export const EnvSchema = z.object({
   // Recognize an old setting only to reject providers that are no longer supported.
   LLM_PROVIDER: z.enum(["", "openai"]).optional(),
 }).superRefine((env, ctx) => {
+  if (env.APP_STORAGE === "supabase") {
+    for (const key of ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const) {
+      if (!env[key]) ctx.addIssue({ code: "custom", path: [key], message: "Required for Supabase storage and realtime" });
+    }
+    if (env.SUPABASE_URL.replace(/\/$/, "") !== env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "")) ctx.addIssue({ code: "custom", path: ["NEXT_PUBLIC_SUPABASE_URL"], message: "Must refer to the same Supabase project" });
+    if (env.NEXT_PUBLIC_SUPABASE_ANON_KEY && (!publicSupabaseKey(env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || env.NEXT_PUBLIC_SUPABASE_ANON_KEY === env.SUPABASE_SERVICE_ROLE_KEY)) ctx.addIssue({ code: "custom", path: ["NEXT_PUBLIC_SUPABASE_ANON_KEY"], message: "Must be a public key, never the server key" });
+  }
+
   for (const [url, key] of [["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"], ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]] as const) {
     if (!!env[url] !== !!env[key]) ctx.addIssue({ code: "custom", path: [url], message: `${url} and ${key} must be configured together` });
   }

@@ -2,6 +2,7 @@ import type { AppSpec } from "@/lib/app-spec/app-spec-schema";
 import type { AppStatus, ResponsePayload } from "@/lib/api/api-contract-types";
 import type { AppRuntime } from "@/lib/blocks/block-definition-types";
 export interface AppRecord {
+  realtimeChannel?: string;
   id: string; spec: AppSpec; prompt: string; parentId: string | null; movedTo: string | null;
   hostTokenHash: string; status: AppStatus; runtime: AppRuntime; stateVersion: number;
   createdAt: number; expiresAt: number; endedAt: number | null; ownerId: string | null;
@@ -12,7 +13,8 @@ export interface ResponseRecord {
   payload: ResponsePayload; createdAt: number;
 }
 export type SubmitOutcome = "ok" | "gone" | "closed" | "limit";
-// Storage contract. Memory is implemented; Supabase will implement the same interface.
+export interface AppSnapshot { app: AppRecord; responses: ResponseRecord[] }
+// Both adapters share domain validation and mutation semantics.
 export interface AppsRepository {
   createApp(input: { spec: AppSpec; prompt: string; lifetimeMs: number; parentId?: string | null; ownerId?: string | null }): Promise<{ app: AppRecord; hostToken: string }>;
   blockAction(id: string, token: string, input: import("@/lib/api/api-contract-types").BlockActionRequest): Promise<void>;

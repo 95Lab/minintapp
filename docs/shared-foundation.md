@@ -14,7 +14,7 @@ Implementation viết mới trong repo này, không nhập lịch sử hoặc se
 | `src/lib/api/request-schemas.ts` | Validation request ở trust boundary |
 | `src/lib/api/route-helpers.ts` | Chuyển lỗi sang HTTP mà không trả lỗi thô của provider |
 | `src/lib/config/` | Một schema môi trường cho CLI và server; guard `server-only` |
-| `src/lib/db/apps-repository-types.ts` | Contract lưu app/response; memory adapter đã triển khai |
+| `src/lib/db/apps-repository-types.ts` | Contract lưu app/response; memory và Supabase adapter dùng chung domain mutations |
 | `src/lib/security/token-hashing.ts` | Token ngẫu nhiên, hash, so sánh và hash participant theo app |
 | `src/lib/i18n/api-strings-vi-en.ts` | Thông báo lỗi Việt/Anh |
 | `src/lib/generation/` | Hàm generate spec, system prompt và client OpenAI duy nhất |
@@ -46,3 +46,5 @@ SDK chính thức dùng `responses.parse()` với `zodTextFormat`, `store: false
 Tham khảo [Structured Outputs — OpenAI Docs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
 
 Các bài kiểm tra dùng provider mock, có chạy SDK parser thật với HTTP response giả lập và route tạo app; chưa gọi OpenAI thật hoặc xác nhận quota/model trên tài khoản. System prompt có hướng dẫn an toàn nhưng chưa thay thế moderation hay kiểm tra phishing. Đã có giới hạn generation theo giờ/concurrency của một process và kiểm tra plain text/URL/HTML, nhưng chưa có moderation, đánh giá đúng ý định hoặc rate limit theo IP/tài khoản. Xem `generation.md` để cấu hình và biết giới hạn.
+
+Supabase lưu snapshot bằng RPC compare-and-swap, chỉ service role đọc/ghi bảng; Realtime chỉ broadcast version rồi client tải state theo quyền. Xem [Supabase](supabase.md).
