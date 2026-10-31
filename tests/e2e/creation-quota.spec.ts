@@ -56,3 +56,18 @@ test("quota changes during planning preserve the brief and offer a management li
   await expect(chat.getByRole("complementary")).toContainText("Bình chọn trà hoặc cà phê");
   expect(creates).toBe(0);
 });
+
+for (const width of [320, 1280]) {
+  test(`template errors stay in view when selecting the last card at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.route("**/api/engine/apps/from-template", route => route.fulfill({ status: 503, json: { ok: false, code: "app_capacity_full" } }));
+    await page.goto("/templates");
+    await page.locator(".template-grid > button").last().click();
+    const alert = page.getByRole("alert").filter({ hasText: "Chưa mở được ứng dụng" });
+    await expect(alert).toContainText(errorText("app_capacity_full", "vi"));
+    await expect(alert).toBeInViewport();
+    await expect(page.locator(".template-grid > button").last()).toBeEnabled();
+    await alert.getByRole("button", { name: "Đóng thông báo" }).click();
+    await expect(alert).toHaveCount(0);
+  });
+}

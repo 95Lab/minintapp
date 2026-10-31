@@ -6,9 +6,11 @@ For Control Plane and per-app sandboxes, see [Runtime Architecture](architecture
 
 ## Deployment flow
 
-Push to `main` → typecheck/unit/build/E2E → build and smoke-test image on GitHub → publish digest to GHCR → SSH as `minintapp-deploy` → pull image → internal and public HTTPS health checks → promote or roll back.
+Push to `main` (or dispatch manually on `main`) → the `deploy` job builds the image on GitHub → publish digest to GHCR → SSH as `minintapp-deploy` → pull image → internal and public HTTPS health checks → promote or roll back.
 
 No self-hosted runner is required. Builds do not run on the VM. The default `APP_STORAGE=memory` loses apps and votes on deploy/restart/rollback. For persistence, set `APP_STORAGE=supabase` and the Supabase keys in `deploy/.env.app`, then apply the migration described in [Supabase setup](supabase.md). These are runtime settings; no image rebuild is required. Without an AI key, use template creation; do not present it as real AI generation.
+
+The workflow runs only the `deploy` job when `DEPLOY_ENABLED=true`; CI unit, E2E, platform, and smoke tests are disabled. Deployment health checks and rollback remain enabled.
 
 ## Server isolation
 

@@ -39,6 +39,7 @@ for (const templateId of ["quick-quiz", "tap-speed-game", "signup-slots"]) {
     await page.locator(".template-grid > button").nth(index).click();
     await expect.poll(() => polls).toBeGreaterThanOrEqual(1);
     await expect(page).toHaveURL(/\/templates$/);
+    await expect(page.getByRole("status").filter({ hasText: "Đang tạo ứng dụng" })).toBeInViewport();
     await expect(page).toHaveURL(new RegExp(`/rooms/${app.id}/host$`));
     expect(polls).toBeGreaterThanOrEqual(2);
     await expect(page.getByRole("button", { name: /Kết thúc|End/ }).first()).toBeVisible();
