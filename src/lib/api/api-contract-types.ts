@@ -28,6 +28,6 @@ export interface AppStateResponse {
   spec: import("@/lib/app-spec/strip-private-fields").PublicAppSpec;
   runtime: import("@/lib/blocks/block-definition-types").AppRuntime;
   isHost: boolean; participantCount: number;
-  results: import("@/lib/responses/compute-results").PollResult[];
+  results: import("@/lib/responses/compute-results").BlockResults[];
   myAnswers: Record<string, import("@/lib/blocks/block-registry").ResponsePayload>;
 }

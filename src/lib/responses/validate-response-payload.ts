@@ -10,3 +10,18 @@ export function validatePollResponse(spec: AppSpec, blockId: string, itemId: str
   const value = payload.values[input.id];
   if (typeof value !== "string" || !input.options?.some((o) => o.id === value)) throw new AppError("invalid_request");
 }
+
+export function validateAppResponse(app: import("@/lib/db/apps-repository-types").AppRecord, response: Omit<import("@/lib/db/apps-repository-types").ResponseRecord, "createdAt">) {
+  const block = app.spec.blocks.find((b) => b.id === response.blockId);
+  if (!block) throw new AppError("invalid_request");
+  if (app.spec.requireName && !response.displayName?.trim()) throw new AppError("invalid_request");
+  const payload = response.payload;
+  if (block.type === "quiz" && payload.kind === "quiz") {
+    const question = block.questions.find((q) => q.id === response.itemId);
+    if (!question || !question.options.some((o) => o.id === payload.optionId)) throw new AppError("invalid_request");
+    if (app.runtime.openQuestionId !== question.id || app.runtime.revealedQuestionIds.includes(question.id)) throw new AppError("question_closed");
+    return;
+  }
+  if (block.type === "wheel" && payload.kind === "wheel" && block.source === "participants" && response.itemId === "") return;
+  validatePollResponse(app.spec, response.blockId, response.itemId, payload);
+}

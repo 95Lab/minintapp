@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getParticipantToken } from "@/lib/participant/participant-token";
 import { useAppState } from "@/lib/realtime/use-app-state";
-import { ApiClientError, sendVote, changeLifecycle } from "@/lib/api/api-client";
+import { ApiClientError, sendVote, changeLifecycle, sendBlockAction } from "@/lib/api/api-client";
 import { BrandTopBar } from "./brand-top-bar";
 import { AppRendererParticipant } from "./app-renderer-participant";
 import { AppRendererHost } from "./app-renderer-host";
-import { PollResults } from "./blocks/poll-results";
+import { AppResults } from "./blocks/app-results";
 import { SharePanelQr } from "./share/share-panel-qr";
 import { ExpiryCountdown } from "./lifecycle/expiry-countdown";
 import { ExpiredNotice } from "./lifecycle/expired-notice";
 export function PollRoom({ id, host = false }: { id: string; host?: boolean }) {
+  const [displayName, setDisplayName] = useState("");
+  const [nameDraft, setNameDraft] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [storageError, setStorageError] = useState("");
   const [origin, setOrigin] = useState("");
@@ -21,7 +23,7 @@ export function PollRoom({ id, host = false }: { id: string; host?: boolean }) {
   useEffect(() => {
     setOrigin(window.location.origin);
     if (!host) {
-      try { setToken(getParticipantToken(id)); }
+      try { setToken(getParticipantToken(id)); setDisplayName(localStorage.getItem(`minint_name_${id}`) ?? ""); }
       catch { setStorageError("Cần cho phép lưu trữ của trình duyệt để giữ danh tính và đổi vote."); }
     }
   }, [id, host]);
@@ -33,11 +35,21 @@ export function PollRoom({ id, host = false }: { id: string; host?: boolean }) {
     catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể thay đổi trạng thái ứng dụng."); }
     finally { setBusy(false); }
   }
+  const pollOnly = state?.spec.blocks.every((block) => block.type === "compose");
   if (failureStatus === 404 || failureStatus === 410) return <main className="component-preview"><ExpiredNotice reason={failureStatus === 404 ? "not_found" : "unavailable"} /></main>;
-  if (failureStatus === 403) return <main className="component-preview"><h1>Không có quyền host</h1><p>Hãy mở bằng trình duyệt đã tạo ứng dụng. Liên kết host không tự cấp quyền điều khiển.</p><Link href={`/a/${id}`}>Tham gia bình chọn</Link></main>;
-  return <main className="component-preview"><BrandTopBar /><p className="mini-notice">Chế độ memory: dữ liệu tạm thời, mất khi server khởi động lại.</p>{storageError && <p role="alert">{storageError}</p>}{error && <p role="alert">{error}</p>}{actionError && <p role="alert">{actionError}</p>}{!state && !storageError && <p role="status">Đang tải ứng dụng…</p>}{state && <div className="mini-app"><ExpiryCountdown expiresAt={state.expiresAt} />{host ? <><AppRendererHost spec={state.spec} runtime={state.runtime} canControl={false} results={<PollResults state={state} />} /><div className="mini-actions"><button disabled={busy || !!error} onClick={() => transition(state.status === "active" ? "close" : "reopen")}>{state.status === "active" ? "Đóng bình chọn" : "Mở lại bình chọn"}</button><button disabled={busy || !!error} onClick={() => transition("end")}>Kết thúc và xoá dữ liệu</button></div><p role="status">{state.status === "active" ? "Đang nhận bình chọn" : "Đã đóng bình chọn"}</p>{origin && <SharePanelQr url={`${origin}/a/${id}`} />}<Link href={`/a/${id}`}>Mở trang participant</Link></> : <><AppRendererParticipant spec={state.spec} runtime={state.runtime} open={state.status === "active" && !error} myAnswers={state.myAnswers} onSubmit={token ? async (blockId, itemId, payload) => {
+  if (failureStatus === 403) return <main className="component-preview"><h1>Không có quyền host</h1><p>Hãy mở bằng trình duyệt đã tạo ứng dụng. Liên kết host không tự cấp quyền điều khiển.</p><Link href={`/a/${id}`}>Tham gia ứng dụng</Link></main>;
+  return <main className="component-preview"><BrandTopBar /><p className="mini-notice">Chế độ memory: dữ liệu tạm thời, mất khi server khởi động lại.</p>{storageError && <p role="alert">{storageError}</p>}{error && <p role="alert">{error}</p>}{actionError && <p role="alert">{actionError}</p>}{!state && !storageError && <p role="status">Đang tải ứng dụng…</p>}{state && <div className="mini-app"><ExpiryCountdown expiresAt={state.expiresAt} />{host ? <><AppRendererHost spec={state.spec} runtime={state.runtime} blockResults={state.results} canControl={state.isHost && state.status === "active" && !error && !busy} busy={busy} onAction={async (blockId, action, args) => {
+    setBusy(true); setActionError("");
+    try { await sendBlockAction(id, blockId, action, args); await refresh(); }
+    catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể điều khiển ứng dụng."); throw error; }
+    finally { setBusy(false); }
+  }} results={<AppResults state={state} />} /><div className="mini-actions"><button disabled={busy || !!error} onClick={() => transition(state.status === "active" ? "close" : "reopen")}>{state.status === "active" ? (pollOnly ? "Đóng bình chọn" : "Đóng ứng dụng") : (pollOnly ? "Mở lại bình chọn" : "Mở lại ứng dụng")}</button><button disabled={busy || !!error} onClick={() => transition("end")}>Kết thúc và xoá dữ liệu</button></div><p role="status">{state.status === "active" ? "Đang nhận câu trả lời" : "Đã đóng nhận câu trả lời"}</p>{origin && <SharePanelQr url={`${origin}/a/${id}`} />}<Link href={`/a/${id}`}>Mở trang participant</Link></> : <>{state.spec.requireName && !displayName && <form className="mini-card" onSubmit={(event) => {
+    event.preventDefault(); const name = nameDraft.trim(); if (!name) return;
+    try { localStorage.setItem(`minint_name_${id}`, name); setDisplayName(name); }
+    catch { setStorageError("Không thể lưu tên trong trình duyệt."); }
+  }}><label className="mini-field">Tên hiển thị<input required maxLength={40} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} /></label><button>Tham gia ứng dụng</button></form>}<AppRendererParticipant spec={state.spec} runtime={state.runtime} displayName={displayName} blockResults={state.results} open={state.status === "active" && !error} myAnswers={state.myAnswers} onSubmit={token ? async (blockId, itemId, payload) => {
     setActionError("");
-    try { await sendVote(id, { blockId, itemId, participantToken: token, displayName: null, payload }); await refresh(); return true; }
-    catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể gửi bình chọn."); void refresh(); return false; }
-  } : undefined} /><PollResults state={state} /><p>Bạn có thể đổi lựa chọn rồi gửi lại. Mỗi trình duyệt được tính một lượt bình chọn cho ứng dụng này.</p></>}</div>}</main>;
+    try { await sendVote(id, { blockId, itemId, participantToken: token, displayName: displayName || null, payload }); await refresh(); return true; }
+    catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể gửi câu trả lời."); void refresh(); return false; }
+  } : undefined} /><AppResults state={state} />{state.spec.blocks.every((b) => b.type === "compose") && <p>Bạn có thể đổi lựa chọn rồi gửi lại. Mỗi trình duyệt được tính một lượt bình chọn cho ứng dụng này.</p>}</>}</div>}</main>;
 }

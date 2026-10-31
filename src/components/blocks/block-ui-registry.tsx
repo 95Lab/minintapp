@@ -8,7 +8,7 @@ export function ParticipantBlock(props: ParticipantBlockProps) {
   const block = props.block;
   switch (block.type) {
     case "compose": return <ComposeBlock {...props} block={block} />;
-    case "quiz": return <QuizBlock {...props} block={block} />;
+    case "quiz": return <QuizBlock key={props.runtime.openQuestionId ?? "waiting"} {...props} block={block} />;
     case "wheel": return <WheelBlock {...props} block={block} />;
   }
 }

@@ -4,7 +4,7 @@ import { isUsable } from "@/lib/db/apps-repository-types";
 import { stripPrivateFields } from "@/lib/app-spec/strip-private-fields";
 import { AppError } from "./app-error-codes";
 import type { AppStateResponse } from "./api-contract-types";
-import { computePollResults } from "@/lib/responses/compute-results";
+import { computeResults } from "@/lib/responses/compute-results";
 import { participantHashFor } from "@/lib/security/token-hashing";
 import { requireHost } from "@/lib/host/host-session";
 export async function requireApp(id: string) {
@@ -27,7 +27,8 @@ export async function readAppState(request: Request, id: string): Promise<AppSta
   const hash = token ? participantHashFor(id, token) : null;
   const rows = snapshot.responses;
   const myRows = hash ? rows.filter((r) => r.participantHash === hash) : [];
-  const results = computePollResults(app.spec, rows).filter((result) => {
+  const results = computeResults(app.spec, rows, app.runtime, isHost).filter((result) => {
+    if (!("kind" in result)) return true;
     const block = app.spec.blocks.find((b) => b.id === result.blockId);
     const view = block?.type === "compose" ? block.views.find((v) => v.id === result.viewId) : null;
     return isHost || view?.visibleTo === "everyone" || (view?.visibleTo === "after_submit" && myRows.some((r) => r.blockId === result.blockId)) || (view?.visibleTo === "after_close" && app.status === "closed");

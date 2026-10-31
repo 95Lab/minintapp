@@ -13,9 +13,9 @@ npm run dev
 
 Mở http://localhost:3000. `env:local` tạo `.env.local` từ mẫu và không ghi đè file đã tồn tại. File thật được Git bỏ qua. Không đưa khóa service-role vào biến `NEXT_PUBLIC_*`.
 
-Trang chủ đã tạo được bình chọn mẫu, mở trang host `/a/[id]/host` và chia sẻ trang participant `/a/[id]`. Memory repository lưu app và vote trong một tiến trình Node; dữ liệu mất khi restart. Client polling mỗi 1,5 giây. Host có thể đóng, mở lại hoặc kết thúc và xóa câu trả lời.
+Trang chủ đã tạo được mẫu bình chọn, quiz và wheel, mở trang host `/a/[id]/host` và chia sẻ trang participant `/a/[id]`. Memory repository lưu app và vote trong một tiến trình Node; dữ liệu mất khi restart. Client polling mỗi 1,5 giây. Host có thể đóng, mở lại hoặc kết thúc và xóa câu trả lời; quiz có open/reveal, wheel có spin/reset.
 
-Luồng này không cần API key, Supabase hoặc Docker. Chỉ dùng mẫu `poll-drinks`; chưa nối OpenAI vào việc tạo app. Adapter `generateAppSpec()` vẫn có thể dùng phía server khi cấu hình `OPENAI_API_KEY` và `OPENAI_MODEL`, nhưng chưa có route `/api/generate`. Không có Supabase adapter hoặc migration.
+Luồng này không cần API key, Supabase hoặc Docker. Có mẫu `poll-drinks`, `quiz-general`, `wheel-participants`, `wheel-options`; chưa nối OpenAI vào việc tạo app. Adapter `generateAppSpec()` vẫn có thể dùng phía server khi cấu hình `OPENAI_API_KEY` và `OPENAI_MODEL`, nhưng chưa có route `/api/generate`. Không có Supabase adapter hoặc migration.
 
 Thử trên điện thoại: chạy `npm run dev`, mở trang chủ bằng địa chỉ IP LAN của máy chạy server, ví dụ `http://192.168.1.10:3000`, rồi tạo app và chia sẻ QR. Các thiết bị cần cùng mạng và truy cập được cổng 3000. Link localhost chỉ dùng trên máy đang chạy server. Quyền host gắn với cookie của trình duyệt đã tạo app; link host không tự cấp quyền.
 

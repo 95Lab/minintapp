@@ -4,7 +4,9 @@ import { AppSpecSchema } from "@/lib/app-spec/app-spec-schema";
 import { initialRuntime } from "@/lib/blocks/block-definition-types";
 import { hashToken, newToken, verifyToken } from "@/lib/security/token-hashing";
 import { AppError } from "@/lib/api/app-error-codes";
-import { validatePollResponse } from "@/lib/responses/validate-response-payload";
+import { validateAppResponse } from "@/lib/responses/validate-response-payload";
+import { applyHostAction } from "@/lib/blocks/host-actions";
+import type { BlockActionRequest } from "@/lib/api/api-contract-types";
 import { isUsable, type AppRecord, type AppsRepository, type ResponseRecord, type SubmitOutcome } from "./apps-repository-types";
 
 type Entry = { app: AppRecord; rows: Map<string, ResponseRecord> };
@@ -37,13 +39,22 @@ export class MemoryAppsRepository implements AppsRepository {
     const entry = this.entries.get(id);
     if (!entry || !isUsable(entry.app, this.now())) return "gone";
     if (entry.app.status !== "active") return "closed";
-    validatePollResponse(entry.app.spec, response.blockId, response.itemId, response.payload);
+    validateAppResponse(entry.app, response);
     const key = JSON.stringify([response.blockId, response.itemId, response.participantHash]);
     if (!entry.rows.has(key) && entry.rows.size >= this.limits.responses) return "limit";
     // No await between checks and mutation: one atomic operation within this process.
-    entry.rows.set(key, structuredClone({ ...response, createdAt: this.now() }));
+    entry.rows.set(key, structuredClone({ ...response, displayName: response.displayName?.trim() || null, createdAt: this.now() }));
     entry.app.stateVersion++;
     return "ok";
+  }
+  async blockAction(id: string, token: string, input: BlockActionRequest) {
+    const entry = this.entries.get(id);
+    if (!entry) throw new AppError("not_found");
+    if (!verifyToken(token, entry.app.hostTokenHash)) throw new AppError("forbidden");
+    if (!isUsable(entry.app, this.now())) throw new AppError("app_gone");
+    if (entry.app.status !== "active") throw new AppError("app_closed");
+    applyHostAction(entry.app, [...entry.rows.values()], input, this.now());
+    entry.app.stateVersion++;
   }
   async transition(id: string, token: string, action: "close" | "reopen" | "end") {
     const entry = this.entries.get(id);
@@ -51,7 +62,7 @@ export class MemoryAppsRepository implements AppsRepository {
     if (!verifyToken(token, entry.app.hostTokenHash)) throw new AppError("forbidden");
     if (!isUsable(entry.app, this.now())) throw new AppError("app_gone");
     entry.app.status = action === "close" ? "closed" : action === "reopen" ? "active" : "ended";
-    if (action === "end") { entry.rows.clear(); entry.app.endedAt = this.now(); }
+    if (action === "end") { entry.rows.clear(); entry.app.runtime = initialRuntime(); entry.app.endedAt = this.now(); }
     entry.app.stateVersion++;
   }
 }

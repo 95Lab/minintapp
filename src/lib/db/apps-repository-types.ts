@@ -15,6 +15,7 @@ export type SubmitOutcome = "ok" | "gone" | "closed" | "limit";
 // Storage contract. Memory is implemented; Supabase will implement the same interface.
 export interface AppsRepository {
   createApp(input: { spec: AppSpec; prompt: string; lifetimeMs: number; parentId?: string | null; ownerId?: string | null }): Promise<{ app: AppRecord; hostToken: string }>;
+  blockAction(id: string, token: string, input: import("@/lib/api/api-contract-types").BlockActionRequest): Promise<void>;
   transition(id: string, token: string, action: "close" | "reopen" | "end"): Promise<void>;
   snapshot(id: string): Promise<{ app: AppRecord; responses: ResponseRecord[] } | null>;
   findApp(id: string): Promise<AppRecord | null>;
