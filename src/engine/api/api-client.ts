@@ -51,7 +51,8 @@ function headers(tokens: { host?: string | null; participant?: string | null }) 
 }
 
 async function asResult(res: Response): Promise<StateResult> {
-  if (res.status === 404 || res.status === 410) return { kind: "gone", gone: (await res.json()) as GoneResponse };
+  // Once an app ends its route is removed, so the gateway answers a plain-text 404 instead of the runtime's JSON.
+  if (res.status === 404 || res.status === 410) return { kind: "gone", gone: (await res.json().catch(() => ({ gone: true, reason: "not_found", title: null, prompt: null, endedAt: null }))) as GoneResponse };
   const body = await res.json().catch(() => null);
   if (!res.ok) return { kind: "error", ...failure(body) };
   return { kind: "ok", state: body as AppStateResponse };
