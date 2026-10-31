@@ -44,7 +44,7 @@ async function callStructured({ instructions, input, jsonSchema, schemaName, sig
     if (signal.aborted) throw new LlmCallError("aborted", err);
     // Surface schema rejections / auth / quota errors in server logs (never the key itself).
     const status = err instanceof OpenAI.APIError ? err.status : undefined;
-    console.error(`[openai] request failed${status ? ` (HTTP ${status})` : ""}`);
+    console.error("[openai] request failed", {status});
     throw new LlmCallError("network", err);
   }
 

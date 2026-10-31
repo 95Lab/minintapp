@@ -26,7 +26,7 @@ async function handlePOST(req: Request) {
   const claimed: string[] = [];
   for (const { id, hostToken } of body.apps) {
     const app = await repo.findApp(id);
-    if (!isUsable(app) || !tokenMatchesHash(hostToken, app.hostTokenHash)) continue;
+    if (!isUsable(app) || !tokenMatchesHash(hostToken || hostTokenFrom(req,id), app.hostTokenHash)) continue;
     // Already mine (a repeated claim) counts as claimed; someone else's does not.
     if (app.ownerId === session.userId || (!app.ownerId && (await repo.setOwner(id, session.userId)))) claimed.push(id);
   }

@@ -11,10 +11,13 @@ export * from "./apps-repository-types";
 // Keep the app-scoped identity stable for rooms created before the port.
 export { participantHashFor } from "@/lib/security/token-hashing";
 const record=(app:LegacyApp):AppRecord=>({...app,payee:null,reportCount:0,...app} as unknown as AppRecord);
-const edit=<T>(id:string,fn:(app:AppRecord,snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean})=>base.mutateSnapshot(id,(s,now)=>fn(s.app as unknown as AppRecord,s,now));
+const edit=<T>(id:string,fn:(app:AppRecord,snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean;deadline?:number})=>base.mutateSnapshot(id,(s,now)=>fn(s.app as unknown as AppRecord,s,now));
 const changed=<T>(value:T)=>({value,changed:true}),unchanged=<T>(value:T)=>({value,changed:false});
 const repo:AppsRepository={
- async createApp(input){const r=await base.createApp(input as unknown as Parameters<typeof base.createApp>[0]);return{app:record(r.app),hostToken:r.hostToken};},
+ async createApp(input){if(input.lifetimeMs>90*86400000)throw new AppError("invalid_request");
+ const r=await base.createApp({...input,lifetimeMs:Math.min(input.lifetimeMs,7*86400000)} as unknown as Parameters<typeof base.createApp>[0]);
+ if(input.lifetimeMs>7*86400000){await base.mutateSnapshot(r.app.id,s=>{s.app.expiresAt=s.app.createdAt+input.lifetimeMs;return{value:true,changed:true};});r.app.expiresAt=r.app.createdAt+input.lifetimeMs;}
+ return{app:record(r.app),hostToken:r.hostToken};},
  async findApp(id){const app=await base.findApp(id);return app?record(app):null;},
  async listResponses(id){return await base.listResponses(id) as unknown as ResponseRecord[];},
  async setOwner(id,userId){return await edit(id,(app)=>{if(app.ownerId)return unchanged(false);app.ownerId=userId;return changed(true);})??false;},
@@ -23,6 +26,11 @@ const repo:AppsRepository={
   return await edit(id,(app,s,now)=>{
    if(!isUsable(app))return unchanged("gone" as const);
    if(app.status!=="active"&&!(app.status==="closed"&&r.itemId==="_paid"))return unchanged("closed" as const);
+   const block=app.spec.blocks.find(b=>b.id===r.blockId);
+   const state=block?.type==="compose"?app.runtime.blocks?.[block.id] as {step?:{current:string|null;openedAt:number|null}}|undefined:undefined;
+   const input=block?.type==="compose"&&block.flow==="steps"?block.inputs.find(i=>i.id===state?.step?.current):null;
+   const deadline=input?.timeLimitSec&&state?.step?.openedAt!=null?state.step.openedAt+input.timeLimitSec*1000+2000:undefined;
+   if(deadline!==undefined&&now>deadline)throw new AppError("question_closed");
    const error=validateResponsePayload(app,{...r,participantToken:"internal-validation"});if(error)throw new AppError(error==="question_closed"?error:"invalid_request");
    const rows=s.responses as unknown as ResponseRecord[];const index=rows.findIndex(x=>x.blockId===r.blockId&&x.itemId===r.itemId&&x.participantHash===r.participantHash);
    if(opts.remove){if(index>=0)rows.splice(index,1);return changed("ok" as const);}
@@ -32,7 +40,7 @@ const repo:AppsRepository={
     if(count>=opts.maxRowsPerParticipant)return unchanged("limit" as const);
    }
    const row={...r,payload:r.payload.kind==="custom"?{...r.payload,at:now}:r.payload,createdAt:index<0?now:rows[index].createdAt};
-   if(index<0)rows.push(row);else rows[index]=row;return changed("ok" as const);
+   if(index<0)rows.push(row);else rows[index]=row;return {...changed("ok" as const),deadline};
   })??"gone";
  },
  async patchRuntime(id,patch){await edit(id,(app)=>{if(!isUsable(app))return unchanged(undefined);app.runtime=applyRuntimePatch(app.runtime,patch);return changed(undefined);});},
@@ -58,4 +66,4 @@ const repo:AppsRepository={
  async getPhoto(id,photoId){const s=await base.snapshot(id);if(!s||!isUsable(record(s.app)))return null;const photo=s.extension?.photos?.[photoId];if(!photo)return null;if(photo.base64)return{mime:photo.mime,bytes:new Uint8Array(Buffer.from(photo.base64,"base64"))};const r=await supabaseServer().storage.from("minint-photos").download(photo.path!);return r.error?null:{mime:photo.mime,bytes:new Uint8Array(await r.data.arrayBuffer())};},
 };
 export const appsRepository=()=>repo;
-export function resetMemoryStore() { /* Legacy test isolation is owned by the base repository. */ }
+export {resetMemoryRepositoryForTests as resetMemoryStore} from "@/lib/db/apps-repository";

@@ -48,6 +48,7 @@ export interface LlmField {
 export type HostActionResult = { ok: true; runtime: AppRuntime } | { ok: false; error: ErrorCode };
 
 export interface HostActionContext<P> {
+  now?: number;
   args: Record<string, unknown>;
   /** Cryptographically strong uniform [0,1) on the server. */
   random: () => number;

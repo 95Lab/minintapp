@@ -30,6 +30,7 @@ export interface WheelSpin {
 }
 export interface WheelState {
   spins: WheelSpin[];
+  removedEntryIds?:string[];
 }
 export interface WheelResults {
   type: "wheel";
@@ -50,7 +51,7 @@ function allEntries(block: WheelBlock, answers: Array<{ participantHash: string;
 function candidates(block: WheelBlock, state: WheelState, answers: Array<{ participantHash: string; displayName: string | null }>) {
   const entries = allEntries(block, answers);
   if (!block.removeWinner) return entries;
-  const won = new Set(state.spins.map((s) => s.entryId));
+  const won = new Set(state.removedEntryIds ?? state.spins.map((s) => s.entryId));
   return entries.filter((e) => !won.has(e.id));
 }
 
@@ -104,13 +105,13 @@ export const wheelBlock: BlockDefinition<WheelBlock, WheelPayload, WheelResults>
   },
 
   hostActions: {
-    spin(block, runtime, { random, answers }) {
+    spin(block, runtime, { random, answers, now }) {
       const state = blockState<WheelState>(runtime, block.id, { spins: [] });
       const pool = candidates(block, state, answers);
       if (pool.length === 0) return { ok: false, error: block.source === "participants" ? "wheel_no_entrants" : "wheel_empty" };
       const winner = pool[Math.floor(random() * pool.length)];
-      const spin: WheelSpin = { spinId: `${Date.now().toString(36)}${Math.floor(random() * 1e6).toString(36)}`, entryId: winner.id, label: winner.label, at: Date.now() };
-      return { ok: true, runtime: withBlockState(runtime, block.id, { spins: [...state.spins, spin].slice(-MAX_SPINS_KEPT) }) };
+      const spin: WheelSpin = { spinId: `${(now ?? Date.now()).toString(36)}${Math.floor(random() * 1e6).toString(36)}`, entryId: winner.id, label: winner.label, at: now ?? Date.now() };
+      return { ok: true, runtime: withBlockState(runtime, block.id, { spins: [...state.spins, spin].slice(-MAX_SPINS_KEPT), removedEntryIds:block.removeWinner?[...state.removedEntryIds??[],winner.id]:[] }) };
     },
     reset(block, runtime) {
       return { ok: true, runtime: withBlockState(runtime, block.id, { spins: [] }) };

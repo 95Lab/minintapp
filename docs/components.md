@@ -1,5 +1,8 @@
 # Kiến trúc component
 
+> Runtime đầy đủ đã bổ sung ở `src/engine/`, `src/engine-ui/` và `/api/engine/`. Xem [full-runtime.md](full-runtime.md) và [parity-checklist.md](parity-checklist.md). Các phần mô tả core dưới đây áp dụng cho API/giao diện tương thích ban đầu.
+
+
 Ngoài thư viện UI, `PollRoom`, `PollResults` và `CreatePollButton` đã nối luồng bình chọn mẫu vào API memory. Host và participant dùng polling; quiz open/reveal, leaderboard và wheel spin/reset đã nối API, tên participant được giữ theo app trong trình duyệt; xem `api-contract.md`.
 
 `src/components/` có đủ các đường dẫn của cấu trúc component đã đối chiếu, cộng `ui/component-notice.tsx` làm thông báo dùng chung. Đây là implementation mới với contract tối thiểu của dự án; có đủ file không có nghĩa đã hoàn thành mọi chức năng.
@@ -29,11 +32,11 @@ Renderer host nhận callback `onAction(blockId, action, args)`, `canControl` v�
 
 Form compose hỗ trợ các input đang có trong schema, điều kiện `showIf`, trạng thái đang gửi, lỗi và câu trả lời đã lưu. Các form nhận callback bất đồng bộ, khóa submit khi chưa nối callback và không tự gọi endpoint chưa tồn tại. Prompt giữ giới hạn 500 ký tự, remix 300 ký tự. Component tài khoản không hoạt động mặc định; chỉ bật navigation khi các route xác thực đã có.
 
-`ComposeViewRenderer` nhận kết quả đã được server lọc quyền; `null` là chưa công bố. Không chỉ che dữ liệu nhạy cảm bằng CSS. Các view board/chat/entries/orders/teams hiện là component hiển thị rows được truyền vào, chưa có nghiệp vụ tương ứng.
+`ComposeViewRenderer` nhận kết quả đã được server lọc quyền; `null` là chưa công bố. Không chỉ che dữ liệu nhạy cảm bằng CSS. Các view mở rộng có nghiệp vụ hoàn chỉnh trong `src/engine-ui` và `src/engine/blocks/compose`.
 
 ## Phần mở rộng
 
-`compose-map-canvas`, `compose-map-view`, `compose-photo-field`, `compose-photo-upload`, `compose-place-field`, `compose-settle-view`, `custom-block`, `live-block` và `payee-form` hiện hiển thị thông báo chưa khả dụng. Chưa có upload, map service, payment, iframe sandbox hoặc live fetching. Những component này chưa được đăng ký vào renderer vì schema chưa hỗ trợ.
+Các bản tương thích ban đầu ở `src/components` có placeholder. Renderer đầy đủ ở `src/engine-ui` đã đăng ký map, photo, place, settle, custom sandbox, live data và payee form; phòng mới dùng renderer này.
 
 Không dùng `dangerouslySetInnerHTML`, thực thi code tùy biến hay tải ảnh/bản đồ từ nguồn ngoài trong các component này. Mở rộng schema, API, quyền và test trước khi bật các điểm mở rộng.
 

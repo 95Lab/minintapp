@@ -25,7 +25,8 @@
     "smoke:runtime": "tsx platform/runtime-smoke.ts",
     "build:worker": "node scripts/build-worker.mjs",
     "supabase:check": "node --env-file=.env.local scripts/check-supabase.mjs",
-    "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts"
+    "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts",
+    "supabase:cleanup": "node --env-file=.env.local scripts/cleanup-supabase.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",

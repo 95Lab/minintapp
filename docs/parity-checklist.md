@@ -1,22 +1,23 @@
-# Checklist tương đương chức năng
+# Checklist chức năng
 
-Theo dõi hành vi đã có và phần còn thiếu, không quy đổi số file thành phần trăm hoàn thành. Mặc định chạy memory một Node process; có thể bật Supabase + Realtime theo `supabase.md`. Kiểm thử tích hợp project thật cần cấu hình riêng. Các mục dưới là trạng thái implementation mới; chưa phải chứng nhận tương đương toàn bộ sản phẩm.
+Các chức năng runtime đã được port vào `src/engine/` và `src/engine-ui/`. Trang chủ giữ giao diện hiện tại. Không nhập lịch sử Git hoặc cấu hình bí mật từ dự án khác.
 
-| Nhóm | Trạng thái hiện tại | Bằng chứng / giới hạn |
-|---|---|---|
-| Poll một lựa chọn | Đã có luồng tạo → share → gửi/đổi vote → host xem kết quả | Unit repository/API, E2E poll-loop với hai participant độc lập |
-| Quiz | Đã có open/reveal, chặn câu chưa mở, upsert đáp án, tính điểm và leaderboard | Unit core-runtime, E2E core-runtime; chưa tự đóng theo timeLimitSec |
-| Wheel participant | Đã có tên, join, chọn server, đồng bộ winner, loại trừ và reset | Unit crypto candidate pool/no-repeat, E2E hai trình duyệt |
-| Wheel options | Đã có danh sách cố định và loại lựa chọn đã trúng | Unit kiểm tra hết lựa chọn, từ chối join |
-| Quyền host | Kiểm tra cookie/token tại API lifecycle và block-action, cách ly app | Unit API và E2E; chưa có account/session đăng nhập |
-| Lifecycle | Đóng, mở lại, hết hạn, kết thúc xoá answers và runtime | Unit memory; chưa gia hạn, export, cleanup nền |
-| Schema/UI chung | Có compose/quiz/wheel cơ bản, component và preview | Chưa có preset expansion và schema compose đầy đủ |
-| OpenAI | Đã nối trang chủ → generate → validate/repair → lưu app → host | SDK/route/UI mock tests; chưa gọi OpenAI thật; chỉ sinh block runnable |
-| Đồng bộ | Supabase Broadcast invalidation, refresh sau reconnect; memory dùng polling | Unit state-sync, E2E SDK/WebSocket giả lập; mất kết nối dùng polling dự phòng |
-| Lưu trữ | Supabase snapshot JSONB + RPC atomic; memory cho offline | Migration chạy trên PostgreSQL nhúng; Supabase mode lưu qua restart và chia sẻ nhiều process |
-| Compose engine | Form nhiều trường, thống kê, nhiều dòng, steps, expression/query | Unit compose-engine và E2E compose-engine; roster và các view chuyên biệt chưa có |
-| Mở rộng | Có vị trí component, chưa có backend | Upload, map, chat, payments, live/custom chưa khả dụng |
-| Remix | Form UI và contract ban đầu | Chưa pipeline theo dữ liệu, route hoặc chuyển participant |
-| Bảo mật mở rộng | Token hash, giới hạn payload và giới hạn memory | Chưa rate limit theo IP, moderation, phishing scan, CSP/sandbox đầy đủ |
+| Nhóm | Phạm vi đã có |
+|---|---|
+| Thư viện mẫu | `/templates`, mẫu Việt/Anh, preset choice/collect/open_text mở rộng thành compose |
+| Compose | Form nhiều trường, điều kiện, nhiều dòng, steps, expression/query, thống kê, bảng, cloud, nhóm và danh sách chờ |
+| Tương tác | Roster/check-in, chia đội, xếp hạng Borda, buzzer, bảng hỏi đáp/like, chat và xóa dòng của mình |
+| Quiz/wheel | Mở/reveal, điểm, leaderboard; quay server, loại trừ người trúng và reset |
+| Ảnh/bản đồ | Upload giới hạn dung lượng, bucket riêng tư, URL ký, duyệt ảnh; vị trí làm tròn và bản đồ OSM |
+| Chia tiền | Tổng hợp khoản chi, settle, cấu hình người nhận, VietQR, xác nhận đã trả/đã nhận |
+| Live/custom | Thời tiết/tỷ giá; HTML tương tác trong iframe sandbox, CSP chặn kết nối và quyền truy cập trang cha |
+| Quản lý phòng | Đóng/mở, thông báo, gia hạn, CSV chống formula injection, kết thúc xóa dữ liệu trả lời |
+| Remix | Dùng spec và kết quả hiện tại làm ngữ cảnh, tạo phòng con và chuyển participant |
+| Tài khoản | Supabase magic link, session cookie, nhận quyền phòng, danh sách phòng và quyền host trên thiết bị khác |
+| Bảo vệ | Kiểm tra cùng origin, host cookie HttpOnly, moderation OpenAI, phishing scan, báo cáo theo mạng, CSP và rate limit dùng chung |
+| Lưu trữ | Snapshot JSONB, CAS atomic, Broadcast chỉ gửi phiên bản; rate limit và security log service-only |
+| Retention | Migration cleanup snapshot hết hạn, rate limit và log; pg_cron tự cài job nếu extension đã bật |
 
-Các khác biệt chủ động trong core runtime: question id phải duy nhất toàn app; dấu loại trừ người trúng giữ riêng, không mất khi cắt lịch sử wheel còn 50 lượt. Tên và điểm được hiển thị dưới dạng text React, không render HTML từ dữ liệu người dùng.
+Kiểm thử offline gồm domain/unit, route và Playwright. Kiểm thử project thật riêng bằng `npm run supabase:test`: ghi đồng thời, Realtime, quyền RPC, nhận quyền phòng, bucket riêng tư và xóa ảnh khi kết thúc. Không coi mock OpenAI hay mock đăng nhập là xác nhận dịch vụ thật.
+
+Các lựa chọn triển khai: chỉ OpenAI, không fallback provider/mock; giữ adapter Supabase snapshot hiện có; giữ API và link `/a/` tương thích. Luồng đầy đủ dùng `/rooms/` và `/api/engine/`. Xem `full-runtime.md` về vận hành và các kiểm tra cần dịch vụ ngoài.

@@ -43,7 +43,7 @@ export function PromptComposer({
         finished = true;
         setStage("done");
         setHostToken(ev.id, ev.hostToken);
-        router.push(`/rooms/${ev.id}/host`);
+        void fetch("/api/engine/host-token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:ev.id,token:ev.hostToken})}).then(r=>{if(r.ok)router.push(`/rooms/${ev.id}/host`);});
       } else if ("message" in ev) {
         finished = true;
         setStage("idle");

@@ -19,13 +19,14 @@ export class ControlPlaneAppsRepository implements AppsRepository {
     }
     throw new AppError("deployment_pending");
   }
-  async mutateSnapshot<T>(id: string, mutate: (snapshot: AppSnapshot, now: number) => { value: T; changed: boolean }): Promise<T | null> {
+  async mutateSnapshot<T>(id: string, mutate: (snapshot: AppSnapshot, now: number) => { value: T; changed: boolean; deadline?: number }): Promise<T | null> {
     for (let attempt = 0; attempt < 5; attempt++) {
       const snapshot = await this.snapshot(id); if (!snapshot) return null;
       const expected = snapshot.app.stateVersion;
       const result = mutate(snapshot, Date.now());
       if (!result.changed) return result.value;
-      if (await this.rpc<boolean>(id, "compareAndSwap", [expected, snapshot])) {
+      if (result.deadline !== undefined && Date.now() > result.deadline) throw new AppError("question_closed");
+      if (await this.rpc<boolean>(id, "compareAndSwap", [expected, snapshot, result.deadline ?? null])) {
         await pool.query("UPDATE deployments SET expires_at=$2,owner_id=COALESCE($3,owner_id) WHERE id=$1", [id, new Date(snapshot.app.status === "ended" ? Date.now() : snapshot.app.expiresAt), snapshot.app.ownerId]);
         return result.value;
       }
@@ -55,7 +56,12 @@ export class ControlPlaneAppsRepository implements AppsRepository {
     }
     return body.result as T;
   }
-  snapshot(id: string): ReturnType<AppsRepository["snapshot"]> { return this.rpc(id, "snapshot"); }
+  async snapshot(id: string): ReturnType<AppsRepository["snapshot"]> {
+    if (!/^[a-f0-9]{24}$/.test(id)) return null;
+    const record = await deployment(id);
+    if (!record || record.state === "DELETED" || record.state === "EXPIRED" || record.expires_at.getTime() <= Date.now()) return null;
+    return this.rpc(id, "snapshot");
+  }
   async findApp(id: string): Promise<AppRecord | null> { return (await this.snapshot(id))?.app ?? null; }
   listResponses(id: string): ReturnType<AppsRepository["listResponses"]> { return this.rpc(id, "listResponses"); }
   submitResponse(...args: Parameters<AppsRepository["submitResponse"]>): ReturnType<AppsRepository["submitResponse"]> { return this.rpc(args[0], "submitResponse", [args[1]]); }

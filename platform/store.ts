@@ -19,6 +19,10 @@ export async function deployment(id: string): Promise<Deployment | null> {
   return result.rows[0] ?? null;
 }
 export async function updateState(id: string, state: Deployment["state"]) {
+  if (state === "DELETED") {
+    await pool.query("UPDATE deployments SET state='DELETED',seed=NULL,input=$2,generation=NULL,host_token_hash=repeat('0',64),updated_at=now() WHERE id=$1", [id, { prompt: "", lifetime: "1h" }]);
+    return;
+  }
   await pool.query("UPDATE deployments SET state=$2,updated_at=now() WHERE id=$1", [id, state]);
 }
 // Capacity is reserved atomically across schedulers; all schedulers use the same transaction lock.

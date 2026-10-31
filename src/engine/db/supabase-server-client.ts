@@ -17,7 +17,9 @@ const RETRY_DELAYS_MS = [50, 200];
 async function fetchWithRetry(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     try {
-      return await fetch(input, init);
+      const headers=new Headers(init?.headers);
+      if(headers.get("authorization")?.startsWith("Bearer sb_"))headers.delete("authorization");
+      return await fetch(input,{...init,headers,signal:init?.signal?AbortSignal.any([init.signal,AbortSignal.timeout(8000)]):AbortSignal.timeout(8000)});
     } catch (err) {
       if (init?.signal?.aborted || attempt >= RETRY_DELAYS_MS.length) throw err;
       await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt] + Math.random() * 50));

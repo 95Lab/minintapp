@@ -1,3 +1,4 @@
+import {checkRateLimit,clientIpHash} from "@/engine/security/security-interfaces";
 import { parseBody, SubmitResponseRequestSchema } from "@/lib/api/request-schemas";
 import { noStoreJson, requireApp } from "@/lib/api/poll-service";
 import { errorResponse } from "@/lib/api/route-helpers";
@@ -9,6 +10,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request, context: RouteContext<"/api/apps/[id]/responses">) {
   try {
     requireSameOrigin(request);
+    if(!(await checkRateLimit("respond_ip",clientIpHash(request))).ok)throw new AppError("rate_limited");
     const { id } = await context.params;
     await requireApp(id);
     const input = await parseBody(request, SubmitResponseRequestSchema);

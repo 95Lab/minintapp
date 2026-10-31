@@ -18,13 +18,15 @@ export class MemoryAppsRepository implements AppsRepository {
     this.commit({ app: result.app, responses: [] });
     return structuredClone(result);
   }
-  async mutateSnapshot<T>(id: string, mutate: (snapshot: AppSnapshot, now: number) => { value: T; changed: boolean }): Promise<T | null> {
+  async mutateSnapshot<T>(id: string, mutate: (snapshot: AppSnapshot, now: number) => { value: T; changed: boolean; deadline?: number }): Promise<T | null> {
     const entry = this.entries.get(id); if (!entry) return null;
     const copy = structuredClone(entry), result = mutate(copy, this.now());
+    if (result.changed && result.deadline !== undefined && this.now() > result.deadline) throw new AppError("question_closed");
     if (result.changed) { copy.app.stateVersion = entry.app.stateVersion + 1; this.commit(copy); }
     return result.value;
   }
-  async compareAndSwap(id: string, expected: number, next: AppSnapshot) {
+  async compareAndSwap(id: string, expected: number, next: AppSnapshot, deadline?: number | null) {
+    if (deadline !== undefined && deadline !== null && this.now() > deadline) throw new AppError("question_closed");
     const current = this.entries.get(id);
     if (!current || current.app.stateVersion !== expected) return false;
     if (next.app.id !== id || next.app.hostTokenHash !== current.app.hostTokenHash || next.app.createdAt !== current.app.createdAt ||

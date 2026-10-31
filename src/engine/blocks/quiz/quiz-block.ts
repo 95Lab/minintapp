@@ -12,6 +12,9 @@ export const QuizQuestionSchema = z.object({
   correct: Id,
   points: z.number().int().min(0).max(1000),
   timeLimitSec: z.number().int().min(0).max(300),
+}).superRefine((q,ctx)=>{
+ if(new Set(q.options.map(o=>o.id)).size!==q.options.length)ctx.addIssue({code:"custom",path:["options"],message:"Option ids must be unique"});
+ if(!q.options.some(o=>o.id===q.correct))ctx.addIssue({code:"custom",path:["correct"],message:"Correct answer must reference an option"});
 });
 export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 

@@ -8,7 +8,8 @@ const MAX_DETAIL_STRING_LENGTH = 500;
 
 function truncateStrings(value: unknown): unknown {
   if (typeof value === "string") {
-    return value.length > MAX_DETAIL_STRING_LENGTH ? `${value.slice(0, MAX_DETAIL_STRING_LENGTH)}…` : value;
+    const safe = value.replace(/(?:sk-|sb_secret_)[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, "[redacted]");
+    return safe.length > MAX_DETAIL_STRING_LENGTH ? `${safe.slice(0, MAX_DETAIL_STRING_LENGTH)}…` : safe;
   }
   if (Array.isArray(value)) return value.map(truncateStrings);
   if (value && typeof value === "object") {
@@ -33,7 +34,7 @@ export async function logSecurityEvent(kind: string, info: SecurityEventInfo): P
 
   try {
     const { error } = await supabaseServer()
-      .from("security_events")
+      .from("minint_security_events")
       .insert({ kind, app_id: info.appId ?? null, ip_hash: info.ipHash ?? null, detail: safeDetail ?? null });
     if (error) console.warn("[security] failed to persist security event", kind, error.message);
   } catch (err) {

@@ -20,8 +20,9 @@ printf 'MININTAPP_IMAGE=%s\n' "$image" > "$candidate"
 compose() {
   local file=$1; shift
   local args=(--env-file .env --env-file "$file" -f compose.yml)
+  if [[ -f /root/.config/ai-secrets/api.env ]]; then args+=(--env-file /root/.config/ai-secrets/api.env); fi
   if [[ -f .platform-enabled ]]; then
-    args+=(--env-file /root/.config/ai-secrets/api.env -f platform.compose.yml)
+    args+=(-f platform.compose.yml)
   fi
   docker compose "${args[@]}" -p minintapp "$@"
 }

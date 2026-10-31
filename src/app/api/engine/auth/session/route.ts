@@ -37,7 +37,7 @@ async function handlePOST(req: Request) {
   return res;
 }
 
-async function handleDELETE() {
+async function handleDELETE(_req:Request) {
   const res = NextResponse.json({ ok: true });
   res.cookies.delete(SESSION_COOKIE);
   return res;
@@ -47,4 +47,4 @@ export const GET=(...args:Parameters<typeof handleGET>)=>secureRoute(args[0],()=
 
 export const POST=(...args:Parameters<typeof handlePOST>)=>secureRoute(args[0],()=>handlePOST(...args));
 
-export const DELETE=(request:Request)=>secureRoute(request,()=>handleDELETE());
+export const DELETE=(request:Request)=>secureRoute(request,()=>handleDELETE(request));

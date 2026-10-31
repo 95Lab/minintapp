@@ -132,9 +132,9 @@ export async function runLlmGeneration(provider: LlmProvider, input: string, opt
   if (deadline.remainingMs() < REPAIR_MIN_REMAINING_MS) return done(friendlyOutput(opts.locale, "invalid"), 1, first);
 
   // Why the model's answer was sent back: the first thing to read when an app type keeps failing.
-  console.warn("[generate] repairing invalid structured output");
+  console.warn("[generate] repair required");
   const second = await attemptOnce(provider, instructions, buildRepairInput(prompt, first.reason), opts.signal, opts.locale);
   // The model's own answer (trimmed): shows what it misunderstood when even the repair fails.
-  if (second.kind === "invalid") console.warn("[generate] repair failed validation");
+  if (second.kind === "invalid") console.warn("[generate] repair validation failed");
   return done(second.kind === "final" ? second.output : friendlyOutput(opts.locale, "invalid"), 2, second);
 }

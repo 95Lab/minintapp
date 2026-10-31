@@ -4,6 +4,7 @@ services:
     env_file: !override [.env.control]
     environment:
       PLATFORM_ROLE: control
+      OPENAI_API_KEY: ""
       RUNTIME_IMAGE: ${MININTAPP_IMAGE:?Set immutable runtime image}
       DATABASE_URL: postgresql://minintapp:${MININTAPP_POSTGRES_PASSWORD:?Required}@postgres:5432/minintapp
       REDIS_URL: redis://:${MININTAPP_REDIS_PASSWORD:?Required}@redis:6379

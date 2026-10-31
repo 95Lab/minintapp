@@ -28,7 +28,7 @@ function repository(): AppsRepository {
 }
 // Lazy configuration keeps builds credential-free. A database error never falls back to memory.
 export const appsRepository: AppsRepository = {
-  compareAndSwap: (id, expected, next) => { const adapter = repository(); if (!adapter.compareAndSwap) throw new Error("CAS not supported"); return adapter.compareAndSwap(id, expected, next); },
+  compareAndSwap: (id, expected, next, deadline) => { const adapter = repository(); if (!adapter.compareAndSwap) throw new Error("CAS not supported"); return adapter.compareAndSwap(id, expected, next, deadline); },
   mutateSnapshot: (id,mutate)=>repository().mutateSnapshot(id,mutate),
   listAppsByOwner: (...args)=>repository().listAppsByOwner(...args),
   createApp: (...args) => repository().createApp(...args),
@@ -39,3 +39,5 @@ export const appsRepository: AppsRepository = {
   blockAction: (...args) => repository().blockAction(...args),
   transition: (...args) => repository().transition(...args),
 };
+
+export function resetMemoryRepositoryForTests(){if(process.env.NODE_ENV!=="test")throw new Error("Test only");processState.minintMemoryRepository=new MemoryAppsRepository();}

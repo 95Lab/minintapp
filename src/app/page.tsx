@@ -17,7 +17,7 @@ const extras = [
 ];
 const faqs = [
   ["MinintApp dùng để làm gì?", "Tạo các ứng dụng nhỏ cho nhu cầu trước mắt: bình chọn, quiz, bốc thăm, khảo sát và ghi chép chi tiêu."],
-  ["Bắt đầu từ mẫu hay mô tả bằng AI?", "Chọn mẫu để mở ngay một ứng dụng có sẵn. Dùng ô mô tả khi bạn muốn AI tạo bình chọn, quiz hoặc vòng quay theo nhu cầu."],
+  ["Bắt đầu từ mẫu hay mô tả bằng AI?", "Chọn mẫu để mở ngay một ứng dụng có sẵn. Dùng ô mô tả khi bạn muốn AI tạo form, khảo sát, quiz, chia nhóm, chi tiêu hoặc mini game theo nhu cầu."],
   ["Người khác tham gia bằng cách nào?", "Sau khi tạo, bạn nhận link và mã QR ở trang quản lý. Gửi link hoặc để mọi người quét QR trên điện thoại."],
   ["Ứng dụng tồn tại bao lâu?", "Với ứng dụng tạo bằng AI, bạn chọn thời gian sử dụng là 1 giờ, 24 giờ hoặc 7 ngày trước khi tạo."],
   ["Tôi có thể điều khiển buổi chơi không?", "Có. Trang quản lý cho phép chủ phòng đóng, mở lại hoặc kết thúc ứng dụng. Quiz và bốc thăm có các thao tác riêng."],
@@ -28,7 +28,7 @@ export default function Home() {
   const persistent = process.env.PLATFORM_ROLE === "control" || readRuntimeConfig().APP_STORAGE === "supabase";
   return <div className="home-shell">
     <a className="skip-link" href="#main-content">Đến nội dung chính</a>
-    <header className="home-header"><a className="home-logo title-1" href="/" aria-label="MinintApp, trang chủ"><span className="logo-mark" aria-hidden="true">m<span>·</span></span>minintapp<span className="logo-period">.</span></a><nav aria-label="Điều hướng chính"><a className="title-4" href="#templates">Khám phá mẫu</a><a className="title-4" href="#how-it-works">Cách hoạt động</a></nav><a className="nav-create button-sm" href="#create">Tạo ứng dụng <span aria-hidden="true">↗</span></a></header>
+    <header className="home-header"><a className="home-logo title-1" href="/" aria-label="MinintApp, trang chủ"><span className="logo-mark" aria-hidden="true">m<span>·</span></span>minintapp<span className="logo-period">.</span></a><nav aria-label="Điều hướng chính"><a className="title-4" href="/templates">Khám phá tất cả mẫu</a><a className="title-4" href="/my-apps">Ứng dụng của tôi</a><a className="title-4" href="#how-it-works">Cách hoạt động</a></nav><a className="nav-create button-sm" href="#create">Tạo ứng dụng <span aria-hidden="true">↗</span></a></header>
     <main id="main-content" className="home-main">
       <section className="home-hero" aria-labelledby="hero-title">
         <div className="hero-copy"><p className="eyebrow caption-3"><span className="status-dot" />Ứng dụng nhỏ. Đúng lúc cần.</p><h1 id="hero-title" className="heading-1">Ý tưởng nhỏ.<br />Kết nối <span className="hero-emphasis">cả nhóm.</span></h1><p className="hero-description body-3">Một cuộc bình chọn, một trò quiz, một lần bốc thăm.<br className="desktop-break" /> Tạo ứng dụng cho khoảnh khắc của bạn, rồi chia sẻ bằng một đường link.</p><div className="hero-note caption-2"><span aria-hidden="true">↳</span> Temporary problem. Temporary software.</div></div>
