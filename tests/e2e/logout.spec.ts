@@ -21,12 +21,12 @@ test("failed logout keeps the session and offers retry",async({page})=>{
  await expect(page.getByRole("button",{name:"Đăng xuất",exact:true})).toBeEnabled();
  await expect(page.getByRole("link",{name:"Đăng nhập",exact:true})).toHaveCount(0);
 });
-test("logout endpoint actually removes browser auth cookies",async({context})=>{
+test("logout endpoint actually removes browser auth cookies",async({context,baseURL})=>{
  await context.addCookies([
-  {name:"minint_session",value:"fixture-session",url:"http://127.0.0.1:3100",httpOnly:true},
-  {name:"minint_pkce",value:"fixture-pending-state",url:"http://127.0.0.1:3100",httpOnly:true},
+  {name:"minint_session",value:"fixture-session",url:baseURL!,httpOnly:true},
+  {name:"minint_pkce",value:"fixture-pending-state",url:baseURL!,httpOnly:true},
  ]);
- const response=await context.request.delete("/api/engine/auth/session",{headers:{Origin:"http://127.0.0.1:3100"}});
+ const response=await context.request.delete("/api/engine/auth/session",{headers:{Origin:baseURL!}});
  expect(response.status()).toBe(200);
  expect((await context.cookies()).some(cookie=>["minint_session","minint_pkce"].includes(cookie.name))).toBe(false);
 });
