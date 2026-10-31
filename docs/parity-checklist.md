@@ -11,7 +11,7 @@ Theo dõi hành vi đã có và phần còn thiếu, không quy đổi số file
 | Quyền host | Kiểm tra cookie/token tại API lifecycle và block-action, cách ly app | Unit API và E2E; chưa có account/session đăng nhập |
 | Lifecycle | Đóng, mở lại, hết hạn, kết thúc xoá answers và runtime | Unit memory; chưa gia hạn, export, cleanup nền |
 | Schema/UI chung | Có compose/quiz/wheel cơ bản, component và preview | Chưa có preset expansion và schema compose đầy đủ |
-| OpenAI | Có adapter Structured Outputs, validation và timeout | Mock tests; chưa route generate hoặc AI thật |
+| OpenAI | Đã nối trang chủ → generate → validate/repair → lưu app → host | SDK/route/UI mock tests; chưa gọi OpenAI thật; chỉ sinh block runnable |
 | Đồng bộ | Polling 1,5 giây, khôi phục câu trả lời qua token local | Chưa broadcast/Supabase Realtime |
 | Lưu trữ | Memory đơn tiến trình và snapshot atomic | Restart mất dữ liệu, chưa migration/Supabase |
 | Compose nâng cao | Chưa có engine | Query/expression, nhiều dòng, steps, roster, aggregation đầy đủ còn thiếu |

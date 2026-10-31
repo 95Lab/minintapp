@@ -30,6 +30,17 @@ describe("OpenAI generation boundary", () => {
     expect(parse.mock.calls[0][1].signal).toBe(parse.mock.calls[1][1].signal);
     expect(parse.mock.calls[1][0].input).toContain("Validation feedback");
   });
+  it("does not repair after the caller cancels", async () => {
+    const controller = new AbortController();
+    parse.mockImplementation(() => { controller.abort(); return Promise.resolve({ status: "completed", output: [], output_parsed: quizSpec() }); });
+    await expect(generateAppSpec({ prompt: "quiz" }, { signal: controller.signal })).rejects.toMatchObject({ code: "ai_timeout" });
+    expect(parse).toHaveBeenCalledTimes(1);
+  });
+  it("repairs malformed JSON once without exposing parser details", async () => {
+    parse.mockRejectedValueOnce(new SyntaxError("provider raw output")).mockResolvedValueOnce({ status: "completed", output: [], output_parsed: quizSpec() });
+    expect((await generateAppSpec({ prompt: "quiz" })).generation.attempts).toBe(2);
+    expect(parse.mock.calls[1][0].input).not.toContain("provider raw output");
+  });
   it("rejects a request before calling OpenAI", async () => {
     await expect(generateAppSpec({ prompt: "" })).rejects.toMatchObject({ code: "invalid_request" });
     expect(parse).not.toHaveBeenCalled();

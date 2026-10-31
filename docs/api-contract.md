@@ -2,6 +2,14 @@
 
 API hỗ trợ bốn mẫu: `poll-drinks`, `quiz-general`, `wheel-participants`, `wheel-options`. Tạo từ mẫu không gọi OpenAI. Compose nâng cao chưa có backend tương ứng.
 
+## Generate bằng OpenAI
+
+`POST /api/generate` nhận `{prompt,lifetime?}`, prompt trim 1–500 ký tự, lifetime mặc định `1h`. Thành công trả HTTP 201 JSON `{ok:true,id,hostToken,generation:{provider,model,durationMs,attempts,repaired}}` và cookie host HttpOnly giống from-template. Không trả raw AppSpec hay đáp án quiz trong response tạo app. Đây là JSON một lần, không phải NDJSON; progress của UI là trạng thái chờ request, không stream token/stage provider.
+
+Trước khi lưu, output phải khớp schema runnable: quiz, wheel hoặc compose một required choice input, multi=false, views bars. Output sai được thử repair một lần trong cùng deadline. Không có fallback mock/provider khác. Thiếu key → 503 ai_not_configured; refusal → 422 ai_refused; hết deadline → 504 ai_timeout; sai output sau repair → 502 ai_invalid_output; vượt quota/concurrency hoặc provider rate limit → 429. Không lưu app khi generation thất bại.
+
+Giới hạn mặc định 30 yêu cầu generation/giờ, 2 request đồng thời cho một process. Một request có tối đa hai call OpenAI. Giới hạn không được hoàn lại khi provider báo lỗi; slot đồng thời luôn được giải phóng. Đây không phải quota theo tài khoản/IP hoặc giới hạn chi phí bền qua restart. Client generation cho phép tối đa 310 giây để bao phủ cấu hình deadline server tối đa 300 giây, các API runtime khác vẫn timeout 10 giây.
+
 ## Endpoint
 
 | Method và đường dẫn | Đầu vào | Kết quả |
@@ -19,7 +27,7 @@ Join wheel participant: `{blockId:"wheel",itemId:"",participantToken,displayName
 
 Các trường mặc định của request tạo mẫu: locale `vi`, lifetime `1h`. Body JSON tối đa 16 KiB; sai schema, trường thừa, option không có trong app hoặc itemId khác rỗng bị từ chối. Endpoint lifecycle chưa hỗ trợ extend/announce dù schema chung có mô tả các action này.
 
-Trạng thái được trả với `Cache-Control: no-store`. Không trả AppRecord, hostTokenHash, participantHash, displayName của người khác hoặc danh sách câu trả lời thô. Quiz trả đáp án null trước reveal cho cả spec host và participant. Host được xem option counts; participant chỉ nhận counts sau reveal. Điểm chỉ tính từ các câu đã reveal, leaderboard tối đa 10 người. Wheel trả danh sách hiện còn và lịch sử cùng một kết quả do server chọn.
+Trạng thái được trả với `Cache-Control: no-store`. Không trả AppRecord, hostTokenHash, full participantHash hoặc danh sách câu trả lời thô. Tên hiển thị trong leaderboard và wheel là dữ liệu công khai của hoạt động đó. Quiz trả đáp án null trước reveal cho cả spec host và participant. Host được xem option counts; participant chỉ nhận counts sau reveal. Điểm chỉ tính từ các câu đã reveal, leaderboard tối đa 10 người. Wheel trả danh sách hiện còn và lịch sử cùng một kết quả do server chọn.
 
 State host yêu cầu cờ `x-host-view: 1` để phân biệt rõ audience. Cookie host đặt HttpOnly, SameSite=Lax, path giới hạn `/api/apps/:id`, thời hạn tương ứng app; Secure khi request dùng HTTPS. UI không lưu hostToken trong localStorage, query string hoặc link chia sẻ. Giá trị hostToken trả lúc tạo chỉ dành cho chủ app và công cụ tích hợp, không chia sẻ nó.
 
