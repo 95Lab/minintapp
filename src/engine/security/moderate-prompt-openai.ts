@@ -13,6 +13,6 @@ export async function moderatePrompt(text: string): Promise<{ ok: boolean; reaso
     return await provider.moderate(text);
   } catch (err) {
     await logSecurityEvent("moderation_error", { detail: { provider: provider.id, message: err instanceof Error ? err.message : String(err) } });
-    return { ok: true }; // fail-open
+    return { ok: false, reason: "moderation_unavailable" };
   }
 }

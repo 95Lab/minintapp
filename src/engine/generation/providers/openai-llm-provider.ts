@@ -24,6 +24,7 @@ async function callStructured({ instructions, input, jsonSchema, schemaName, sig
     const response = await getOpenAiClient().responses.create(
       {
         model: runtimeConfig.openaiModel,
+        store: false,
         instructions,
         input,
         max_output_tokens: MAX_OUTPUT_TOKENS,
@@ -43,7 +44,7 @@ async function callStructured({ instructions, input, jsonSchema, schemaName, sig
     if (signal.aborted) throw new LlmCallError("aborted", err);
     // Surface schema rejections / auth / quota errors in server logs (never the key itself).
     const status = err instanceof OpenAI.APIError ? err.status : undefined;
-    console.error(`[openai] request failed${status ? ` (HTTP ${status})` : ""}: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`);
+    console.error("[openai] request failed", {status});
     throw new LlmCallError("network", err);
   }
 

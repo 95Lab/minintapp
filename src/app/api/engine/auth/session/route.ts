@@ -37,7 +37,7 @@ async function handlePOST(req: Request) {
   return res;
 }
 
-async function handleDELETE() {
+async function handleDELETE(_req:Request) {
   const res = NextResponse.json({ ok: true });
   res.cookies.delete(SESSION_COOKIE);
   return res;

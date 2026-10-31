@@ -58,4 +58,4 @@ const repo:AppsRepository={
  async getPhoto(id,photoId){const s=await base.snapshot(id);if(!s||!isUsable(record(s.app)))return null;const photo=s.extension?.photos?.[photoId];if(!photo)return null;if(photo.base64)return{mime:photo.mime,bytes:new Uint8Array(Buffer.from(photo.base64,"base64"))};const r=await supabaseServer().storage.from("minint-photos").download(photo.path!);return r.error?null:{mime:photo.mime,bytes:new Uint8Array(await r.data.arrayBuffer())};},
 };
 export const appsRepository=()=>repo;
-export function resetMemoryStore() { /* Legacy test isolation is owned by the base repository. */ }
+export {resetMemoryRepositoryForTests as resetMemoryStore} from "@/lib/db/apps-repository";

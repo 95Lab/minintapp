@@ -40,10 +40,6 @@ export function applySubmission(snapshot: AppSnapshot, response: Omit<ResponseRe
   }
   const block = app.spec.blocks.find((b) => b.id === response.blockId);
   if (block?.type === "compose" && block.entries === "many" && index < 0 && responses.filter((r) => r.blockId === block.id && r.participantHash === response.participantHash).length >= MAX_ENTRIES) return "limit";
-  if (block?.type === "compose" && response.payload.kind === "compose") for (const input of block.inputs) {
-    const selected = response.payload.values[input.id];
-    if (input.kind === "slot" && selected && responses.filter((r, i) => i !== index && r.blockId === block.id && r.payload.kind === "compose" && r.payload.values[input.id] === selected).length >= (input.capacity ?? 0)) throw new AppError("invalid_request");
-  }
   if (index < 0 && responses.length >= limit) return "limit";
   const row = structuredClone({ ...response, displayName: response.displayName?.trim() || null, createdAt: index < 0 ? now : responses[index].createdAt });
   if (index < 0) responses.push(row); else responses[index] = row;

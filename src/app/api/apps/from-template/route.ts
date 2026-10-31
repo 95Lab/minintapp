@@ -1,3 +1,4 @@
+import {checkRateLimit,clientIpHash} from "@/engine/security/security-interfaces";
 import { createdAppResponse } from "@/lib/api/created-app-response";
 import { parseBody, TemplateCreateRequestSchema } from "@/lib/api/request-schemas";
 import { errorResponse } from "@/lib/api/route-helpers";
@@ -10,6 +11,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
+    if(!(await checkRateLimit("create",clientIpHash(request))).ok)throw new AppError("rate_limited");
     const input = await parseBody(request, TemplateCreateRequestSchema);
     if (!input) throw new AppError("invalid_request");
     const spec = templateSpec(input.templateId, input.locale);

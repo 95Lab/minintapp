@@ -1,3 +1,4 @@
+import {createdResponse} from "@/engine/api/created-response";
 import {secureRoute} from "@/engine/api/secure-route";
 // POST /api/engine/generate — prompt → AppSpec → new app. Streams NDJSON progress events so the
 // UI can show "thinking → validating → done". Moderation runs in parallel with generation and
@@ -18,6 +19,7 @@ export const maxDuration = 30;
 async function handlePOST(req: Request) {
   const body = await parseBody(req, GenerateRequestSchema);
   if (!body) return jsonError(400, "prompt_invalid");
+  if(!process.env.OPENAI_API_KEY)return Response.json({ok:false,code:"ai_not_configured",message:"OpenAI chưa được cấu hình."},{status:503});
   const { prompt, lifetime } = body;
   const ipHash = clientIpHash(req);
 
@@ -26,6 +28,14 @@ async function handlePOST(req: Request) {
     if (!limit.ok) return jsonError(429, "create_rate_limited", { minutes: Math.ceil((limit.retryAfterSec ?? 60) / 60) });
   }
 
+  if(req.headers.get("accept")==="application/json") {
+    const signal=AbortSignal.any([req.signal,AbortSignal.timeout(GENERATION_DEADLINE_MS)]);
+    const [moderation,output]=await Promise.all([moderatePrompt(prompt),generateAppSpec(prompt,{signal})]);
+    if(!moderation.ok||isObviousPhishingPrompt(prompt)||output.outcome==="refused"||output.spec&&!scanAppSpec(output.spec,output.riskFlags).ok)return Response.json({ok:false,code:"ai_refused",message:"Không thể tạo ứng dụng từ yêu cầu này."},{status:422});
+    if(!output.spec||output.outcome!=="ok")return Response.json({ok:false,code:"ai_invalid_output",message:output.suggestion??"Chưa tạo được ứng dụng hợp lệ."},{status:502});
+    const {app,hostToken}=await appsRepository().createApp({spec:output.spec,prompt,lifetimeMs:LIFETIME_MS[lifetime],ownerId:readSession(req)?.userId});
+    return createdResponse(req,{ok:true,id:app.id,hostToken,generation:output.generation});
+  }
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

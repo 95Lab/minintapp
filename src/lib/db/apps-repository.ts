@@ -27,3 +27,5 @@ export const appsRepository: AppsRepository = {
   blockAction: (...args) => repository().blockAction(...args),
   transition: (...args) => repository().transition(...args),
 };
+
+export function resetMemoryRepositoryForTests(){if(process.env.NODE_ENV!=="test")throw new Error("Test only");processState.minintMemoryRepository=new MemoryAppsRepository();}

@@ -33,7 +33,7 @@ export async function logSecurityEvent(kind: string, info: SecurityEventInfo): P
 
   try {
     const { error } = await supabaseServer()
-      .from("security_events")
+      .from("minint_security_events")
       .insert({ kind, app_id: info.appId ?? null, ip_hash: info.ipHash ?? null, detail: safeDetail ?? null });
     if (error) console.warn("[security] failed to persist security event", kind, error.message);
   } catch (err) {

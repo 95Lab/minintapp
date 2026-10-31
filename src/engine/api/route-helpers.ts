@@ -107,9 +107,8 @@ export function stateEtag(app: AppRecord, req: Request): string {
 
 /** Fresh app + responses → state document for this caller (after a write). */
 export async function loadAppState(appId: string, req: Request): Promise<AppStateResponse | null> {
-  const repo = appsRepository();
-  const app = await repo.findApp(appId);
-  if (!app) return null;
-  const { rows } = await responsesForVersion(app.id, app.stateVersion, () => repo.listResponses(appId));
-  return buildAppState(app, rows, req, await prefetchBlocks(app.spec));
+  const {appsRepository:base}=await import("@/lib/db/apps-repository");
+  const snapshot=await base.snapshot(appId);if(!snapshot)return null;
+  const app=snapshot.app as unknown as AppRecord;
+  return buildAppState(app,snapshot.responses as unknown as ResponseRecord[],req,await prefetchBlocks(app.spec));
 }
