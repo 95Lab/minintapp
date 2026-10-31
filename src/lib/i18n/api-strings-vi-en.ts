@@ -1,0 +1,7 @@
+import type { ErrorCode } from "@/lib/api/app-error-codes";
+import type { Locale } from "@/lib/app-spec/app-spec-schema";
+const messages: Record<Locale, Record<ErrorCode, string>> = {
+  vi: { invalid_request: "Dữ liệu không hợp lệ.", forbidden: "Bạn không có quyền thực hiện thao tác này.", not_found: "Không tìm thấy ứng dụng.", app_gone: "Ứng dụng không còn hoạt động.", rate_limited: "Bạn thao tác quá nhanh. Vui lòng thử lại sau.", ai_not_configured: "OpenAI chưa được cấu hình.", ai_timeout: "OpenAI phản hồi quá thời gian cho phép.", ai_refused: "Không thể tạo ứng dụng từ yêu cầu này.", ai_invalid_output: "Nội dung AI chưa hợp lệ. Vui lòng thử lại.", ai_unavailable: "OpenAI tạm thời không khả dụng.", internal_error: "Có lỗi hệ thống. Vui lòng thử lại." },
+  en: { invalid_request: "Invalid request.", forbidden: "You do not have permission.", not_found: "App not found.", app_gone: "This app is no longer available.", rate_limited: "Too many requests. Please try again later.", ai_not_configured: "OpenAI is not configured.", ai_timeout: "OpenAI timed out.", ai_refused: "This request could not be fulfilled.", ai_invalid_output: "AI output was invalid. Please try again.", ai_unavailable: "OpenAI is temporarily unavailable.", internal_error: "An internal error occurred. Please try again." },
+};
+export const errorMessage = (code: ErrorCode, locale: Locale = "vi") => messages[locale][code];

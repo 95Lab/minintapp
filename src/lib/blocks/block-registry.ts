@@ -1,0 +1,10 @@
+import { z } from "zod";
+import { ComposeBlockSchema } from "./compose/compose-block";
+import { ComposePayloadSchema } from "./compose/compose-atoms-schema";
+import { QuizBlockSchema, QuizPayloadSchema } from "./quiz/quiz-block";
+import { WheelBlockSchema, WheelPayloadSchema } from "./wheel/wheel-block";
+export const BlockSchema = z.discriminatedUnion("type", [ComposeBlockSchema, QuizBlockSchema, WheelBlockSchema]);
+export const ResponsePayloadSchema = z.discriminatedUnion("kind", [ComposePayloadSchema, QuizPayloadSchema, WheelPayloadSchema]);
+export type Block = z.infer<typeof BlockSchema>;
+export type BlockType = Block["type"];
+export type ResponsePayload = z.infer<typeof ResponsePayloadSchema>;
