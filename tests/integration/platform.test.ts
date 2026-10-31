@@ -59,7 +59,9 @@ it("keeps the outbox after queue failure, then retries once without duplicate jo
   await worker.close();
 });
 it("enforces tenant and global quotas transactionally", async () => {
-  await Promise.all([create(), create()]);
+  vi.stubEnv("MAX_ACTIVE_APPS", "51");
+  vi.stubEnv("MAX_CREATIONS_PER_HOUR", "100");
+  for (let i = 0; i < 50; i++) await create();
   await expect(create()).rejects.toThrow("owner_app_limit");
   await create("other");
   await expect(create("third")).rejects.toThrow("app_capacity_full");

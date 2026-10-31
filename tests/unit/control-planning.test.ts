@@ -40,7 +40,7 @@ it("checks input and public rate limits before contacting the worker",async()=>{
 });
 
 it("blocks planning at the owner limit before paying for a worker request", async () => {
- countOwnedDeployments.mockResolvedValue(2);
+ countOwnedDeployments.mockResolvedValue(50);
  const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
  const response = await POST(request());
  expect(response.status).toBe(409);

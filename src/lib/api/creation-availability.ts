@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const OWNER_APP_LIMIT = 2;
+export const OWNER_APP_LIMIT = 50;
 export const CreationAvailabilitySchema = z.object({
   used: z.number().int().nonnegative(),
   limit: z.number().int().positive().nullable(),
