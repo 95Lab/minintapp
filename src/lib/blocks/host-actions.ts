@@ -17,6 +17,19 @@ export function applyHostAction(app: AppRecord, rows: ResponseRecord[], input: B
     } else if (!app.runtime.revealedQuestionIds.includes(questionId)) app.runtime.revealedQuestionIds.push(questionId);
     return;
   }
+  if (block.type === "compose" && block.flow === "steps") {
+    const previous = app.runtime.blocks[block.id] ?? {};
+    const step = previous.step ?? { current: null, openedAt: null, done: [] };
+    if (input.action === "restart") { app.runtime.blocks[block.id] = { ...previous, step: { current: null, openedAt: null, done: [] } }; return; }
+    const done = [...new Set([...step.done, ...(step.current ? [step.current] : [])])];
+    if (input.action === "close" && step.current) { app.runtime.blocks[block.id] = { ...previous, step: { current: null, openedAt: null, done } }; return; }
+    if (input.action === "next") {
+      const next = block.inputs.find((i) => !done.includes(i.id));
+      if (!next) throw new AppError("invalid_request");
+      app.runtime.blocks[block.id] = { ...previous, step: { current: next.id, openedAt: now, done } }; return;
+    }
+    throw new AppError("invalid_request");
+  }
   if (block.type === "wheel") {
     if (input.action === "reset") { app.runtime.blocks[block.id] = { spins: [], removedEntryIds: [] }; return; }
     if (input.action === "spin") {

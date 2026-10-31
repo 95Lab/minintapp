@@ -1,3 +1,4 @@
+import { computeComposeResults, type ComposeResult } from "@/lib/blocks/compose/compute-compose-results";
 import type { AppSpec } from "@/lib/app-spec/app-spec-schema";
 import type { ResponseRecord } from "@/lib/db/apps-repository-types";
 export interface PollResult {
@@ -5,17 +6,7 @@ export interface PollResult {
   items: Array<{ id: string; label: string; count: number }>;
 }
 export function computePollResults(spec: AppSpec, rows: ResponseRecord[]): PollResult[] {
-  return spec.blocks.flatMap((block) => block.type !== "compose" ? [] : block.views.flatMap((view) => {
-    const input = block.inputs.find((i) => i.id === view.source);
-    if (view.kind !== "bars" || input?.kind !== "choice") return [];
-    const counts = new Map((input.options ?? []).map((o) => [o.id, 0]));
-    for (const row of rows) {
-      if (row.blockId !== block.id || row.payload.kind !== "compose") continue;
-      const selected = row.payload.values[input.id];
-      if (typeof selected === "string" && counts.has(selected)) counts.set(selected, counts.get(selected)! + 1);
-    }
-    return [{ blockId: block.id, viewId: view.id, kind: "bars" as const, items: (input.options ?? []).map((o) => ({ id: o.id, label: o.label, count: counts.get(o.id)! })) }];
-  }));
+  return spec.blocks.flatMap((block) => block.type === "compose" ? computeComposeResults(block, rows).filter((r) => r.kind === "bars").map((r) => ({ blockId: r.blockId, viewId: r.viewId, kind: "bars" as const, items: r.items })) : []);
 }
 
 import type { AppRuntime } from "@/lib/blocks/block-definition-types";
@@ -32,7 +23,7 @@ export interface WheelResults {
   entries: Array<{ id: string; label: string }>;
   spins: WheelSpin[];
 }
-export type BlockResults = PollResult | QuizResults | WheelResults;
+export type BlockResults = ComposeResult | QuizResults | WheelResults;
 export function computeQuizResults(block: QuizBlock, rows: ResponseRecord[], runtime: AppRuntime, isHost: boolean, locale: AppSpec["locale"]): QuizResults {
   const answeredByQuestion: Record<string, number> = Object.create(null);
   const countsByQuestion: Record<string, Record<string, number>> = Object.create(null);
@@ -61,7 +52,7 @@ export function wheelCandidates(block: WheelBlock, rows: ResponseRecord[], runti
   return block.removeWinner ? entries.filter((e) => !removed.has(e.id)) : entries;
 }
 export function computeResults(spec: AppSpec, rows: ResponseRecord[], runtime: AppRuntime, isHost: boolean): BlockResults[] {
-  const results: BlockResults[] = computePollResults(spec, rows);
+  const results: BlockResults[] = spec.blocks.flatMap((b) => b.type === "compose" ? computeComposeResults(b, rows) : []);
   for (const block of spec.blocks) {
     if (block.type === "quiz") results.push(computeQuizResults(block, rows, runtime, isHost, spec.locale));
     if (block.type === "wheel") results.push({ type: "wheel", blockId: block.id, entries: wheelCandidates(block, rows, runtime), spins: runtime.blocks[block.id]?.spins ?? [] });

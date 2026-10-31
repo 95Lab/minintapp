@@ -6,7 +6,7 @@ export default function Home() {
     <GenerateAppForm />
     <section className="mini-card" aria-label="Bắt đầu bình chọn"><h2>Tạo ứng dụng và chia sẻ ngay</h2>
       <p>Bắt đầu với bình chọn, quiz hoặc bốc thăm. Mở link trên các thiết bị để tham gia và xem kết quả cập nhật.</p>
-      <div className="mini-actions"><CreatePollButton /><CreatePollButton templateId="quiz-general" label="Tạo quiz mẫu" /><CreatePollButton templateId="wheel-participants" label="Tạo bốc thăm người tham gia" /><CreatePollButton templateId="wheel-options" label="Tạo vòng quay lựa chọn" /></div>
+      <div className="mini-actions"><CreatePollButton templateId="compose-survey" label="Tạo khảo sát nhiều trường" /><CreatePollButton templateId="compose-expenses" label="Tạo sổ chi tiêu" /><CreatePollButton templateId="compose-steps" label="Tạo khảo sát từng bước" /><CreatePollButton /><CreatePollButton templateId="quiz-general" label="Tạo quiz mẫu" /><CreatePollButton templateId="wheel-participants" label="Tạo bốc thăm người tham gia" /><CreatePollButton templateId="wheel-options" label="Tạo vòng quay lựa chọn" /></div>
       <p>Chế độ memory: dữ liệu mất khi server khởi động lại. Các mẫu không gọi AI. Chưa dùng Supabase.</p>
       <p><a href="/preview">Xem thư viện component</a></p>
       <a href="/api/health">Kiểm tra trạng thái hệ thống</a>

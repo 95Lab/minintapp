@@ -1,9 +1,12 @@
+import { composeTemplate } from "./compose-templates";
 import { AppSpecSchema } from "@/lib/app-spec/app-spec-schema";
 import { composeSpec, quizSpec } from "@/lib/app-spec/app-spec-examples";
 import type { Locale } from "@/lib/app-spec/app-spec-schema";
 import { AppError } from "@/lib/api/app-error-codes";
 export const POLL_TEMPLATE_ID = "poll-drinks";
 export function templateSpec(templateId: string, locale: Locale) {
+  const compose = composeTemplate(templateId, locale);
+  if (compose) return compose;
   if (templateId === "quiz-general") {
     const spec = quizSpec(); spec.locale = locale; spec.requireName = true;
     const block = spec.blocks[0];

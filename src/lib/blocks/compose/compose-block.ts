@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { Id, Text, uniqueIds } from "../block-schema-primitives";
 import { ComposeInputSchema, ComposeViewSchema } from "./compose-atoms-schema";
+import { queryIssues } from "./compose-query-engine";
 export const ComposeBlockSchema = z.strictObject({
   type: z.literal("compose"), id: Id, title: Text, note: Text.nullable(),
   inputs: z.array(ComposeInputSchema).min(1).max(8), views: z.array(ComposeViewSchema).min(1).max(4),
-  entries: z.literal("one"), flow: z.literal("open"),
+  entries: z.enum(["one", "many"]), flow: z.enum(["open", "steps"]),
 }).superRefine((b, ctx) => {
   const issue = (message: string) => ctx.addIssue({ code: "custom", message });
+  if (b.entries === "many" && b.flow === "steps") issue("Multiple entries cannot use steps");
   if (!uniqueIds(b.inputs) || !uniqueIds(b.views)) issue("Duplicate input or view ids");
   for (const input of b.inputs) {
     if (input.min !== null && input.max !== null && input.min > input.max) issue("Invalid input range");
@@ -20,6 +22,13 @@ export const ComposeBlockSchema = z.strictObject({
     }
   }
   for (const view of b.views) {
+    if (view.kind === "summary") {
+      if (view.source !== null) issue("Summary source must be null");
+      if (!view.query) issue("Summary requires query");
+      else for (const message of queryIssues(view.query, b.inputs)) issue(message);
+      continue;
+    }
+    if (view.query) issue("Only summary accepts query");
     const source = b.inputs.find((input) => input.id === view.source);
     if (view.source !== null && !source) issue("Unknown view source");
     if (view.kind === "table") continue;

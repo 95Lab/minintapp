@@ -31,7 +31,9 @@ export async function readAppState(request: Request, id: string): Promise<AppSta
     if (!("kind" in result)) return true;
     const block = app.spec.blocks.find((b) => b.id === result.blockId);
     const view = block?.type === "compose" ? block.views.find((v) => v.id === result.viewId) : null;
-    return isHost || view?.visibleTo === "everyone" || (view?.visibleTo === "after_submit" && myRows.some((r) => r.blockId === result.blockId)) || (view?.visibleTo === "after_close" && app.status === "closed");
+    const done = app.runtime.blocks[result.blockId]?.step?.done ?? [];
+    const afterStep = block?.type === "compose" && block.flow === "steps" && (view?.source ? done.includes(view.source) : block.inputs.every((i) => done.includes(i.id)));
+    return (view?.visibleTo === "after_step" && afterStep) || isHost || view?.visibleTo === "everyone" || (view?.visibleTo === "after_submit" && myRows.some((r) => r.blockId === result.blockId)) || (view?.visibleTo === "after_close" && app.status === "closed");
   });
   return {
     id, status: app.status, expiresAt: new Date(app.expiresAt).toISOString(), stateVersion: app.stateVersion,

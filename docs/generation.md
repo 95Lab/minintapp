@@ -25,7 +25,7 @@ Nếu không có key, API trả 503 với mã ai_not_configured và UI hiển th
 - Quiz: schema lõi đã có, id câu hỏi duy nhất toàn app, đáp án tham chiếu option có thật. Host điều khiển open/reveal; timeLimitSec chỉ là thời lượng gợi ý.
 - Wheel: fixed options hoặc participants; participants yêu cầu tên. Server chọn winner và giữ trạng thái loại trừ.
 
-Tối đa sáu block. Chưa sinh form text/number, rating, slot, steps, nhiều dòng, biểu thức, payments, chat, upload, map, live/custom. Schema chung còn mô tả một số input/view này để phát triển tiếp, nhưng generation wire schema hẹp hơn và route sẽ từ chối output ngoài phạm vi.
+Tối đa sáu block. Chưa sinh form text/number, rating, slot, steps, nhiều dòng, biểu thức, payments, chat, upload, map, live/custom. Compose runtime đã hỗ trợ các form, thống kê, steps, nhiều dòng và query qua template/spec; generation wire schema vẫn hẹp hơn và route từ chối output ngoài phạm vi này.
 
 Id đặc biệt __proto__/constructor/prototype bị từ chối để không dùng làm key runtime. Plain text có HTML hoặc URL bị từ chối; đây chỉ là kiểm tra nội dung cơ bản, chưa thay thế moderation/chống phishing hoặc đánh giá đúng ý định.
 

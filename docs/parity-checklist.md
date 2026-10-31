@@ -14,7 +14,7 @@ Theo dõi hành vi đã có và phần còn thiếu, không quy đổi số file
 | OpenAI | Đã nối trang chủ → generate → validate/repair → lưu app → host | SDK/route/UI mock tests; chưa gọi OpenAI thật; chỉ sinh block runnable |
 | Đồng bộ | Polling 1,5 giây, khôi phục câu trả lời qua token local | Chưa broadcast/Supabase Realtime |
 | Lưu trữ | Memory đơn tiến trình và snapshot atomic | Restart mất dữ liệu, chưa migration/Supabase |
-| Compose nâng cao | Chưa có engine | Query/expression, nhiều dòng, steps, roster, aggregation đầy đủ còn thiếu |
+| Compose engine | Form nhiều trường, thống kê, nhiều dòng, steps, expression/query | Unit compose-engine và E2E compose-engine; roster và các view chuyên biệt chưa có |
 | Mở rộng | Có vị trí component, chưa có backend | Upload, map, chat, payments, live/custom chưa khả dụng |
 | Remix | Form UI và contract ban đầu | Chưa pipeline theo dữ liệu, route hoặc chuyển participant |
 | Bảo mật mở rộng | Token hash, giới hạn payload và giới hạn memory | Chưa rate limit theo IP, moderation, phishing scan, CSP/sandbox đầy đủ |

@@ -54,3 +54,11 @@ Quiz host mở từng câu; câu hỏi khác hoặc câu đã reveal từ chối
 Wheel chọn bằng `crypto.randomInt` ở server trong cùng đoạn mutation đồng bộ với dữ liệu participant. Client không gửi winner. `removeWinner=true` loại người đã trúng cho đến khi reset; join lại không xoá dấu đã trúng. Lịch sử hiển thị tối đa 50 lượt nhưng danh sách loại trừ được giữ riêng để không cho trúng lại khi cắt lịch sử. Reset xoá lịch sử và dấu loại trừ, giữ người đã tham gia. Kết thúc app xoá cả answers và runtime/spins.
 
 Quiz question id bắt buộc duy nhất trong toàn app vì runtime mở/reveal dùng id toàn cục. Đây là kiểm tra chặt hơn schema cũ để tránh reveal nhầm giữa hai quiz block dùng trùng question id.
+
+## Compose engine
+
+Xem `compose-engine.md` cho contract đầy đủ. Template bổ sung: `compose-survey`, `compose-expenses`, `compose-steps`.
+
+- Một bản ghi: `itemId=""`; nhiều bản ghi: `itemId` khớp `^e-[a-z0-9]{6,16}$`, tối đa 50 mỗi participant/block. Cùng id cập nhật bản ghi, `{kind:"compose",values:{},removed:true}` xóa riêng bản ghi của participant gửi.
+- Steps: `itemId` là id input đang mở, values chỉ chứa input đó. Host gọi block-action `next`, `close`, `restart`. `restart` giữ answers. Deadline server cho phép thêm 2 giây truyền mạng; host vẫn phải chuyển/đóng bước.
+- State trả bars/stat/cloud/table/leaderboard/summary đã tính ở server, không trả hash nhóm participant. View `after_step` chỉ xuất hiện sau khi nguồn đóng; view không có source đợi tất cả bước đóng. View `host` không xuất hiện trong state participant.

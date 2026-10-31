@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { ComposeInput, ComposePayload } from "@/lib/blocks/compose/compose-atoms-schema";
+import { shownInputs } from "@/lib/blocks/compose/compose-values";
 import { ComposeInputField } from "./compose-input-field";
 export function ComposeRecordForm({ inputs, initialValues = {}, disabled = false, onSubmit }: {
   inputs: ComposeInput[]; initialValues?: ComposePayload["values"]; disabled?: boolean;
@@ -9,7 +10,7 @@ export function ComposeRecordForm({ inputs, initialValues = {}, disabled = false
   const [values, setValues] = useState(initialValues);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const visible = inputs.filter((i) => !i.showIf || (Array.isArray(values[i.showIf.input]) ? (values[i.showIf.input] as string[]).includes(i.showIf.equals) : values[i.showIf.input] === i.showIf.equals));
+  const visible = shownInputs(inputs, values);
   return <form onSubmit={async (e) => { e.preventDefault(); if (busy || disabled || !onSubmit) return;
     const entries = visible.filter((i) => values[i.id] !== undefined).map((i) => [i.id, values[i.id]]);
     if (visible.some((i) => i.required && (values[i.id] === undefined || values[i.id] === "" || (Array.isArray(values[i.id]) && !(values[i.id] as string[]).length)))) { setMessage("Vui lòng điền các trường bắt buộc."); return; }

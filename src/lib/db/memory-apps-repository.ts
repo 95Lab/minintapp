@@ -39,11 +39,19 @@ export class MemoryAppsRepository implements AppsRepository {
     const entry = this.entries.get(id);
     if (!entry || !isUsable(entry.app, this.now())) return "gone";
     if (entry.app.status !== "active") return "closed";
-    validateAppResponse(entry.app, response);
+    validateAppResponse(entry.app, response, this.now());
     const key = JSON.stringify([response.blockId, response.itemId, response.participantHash]);
+    if (response.payload.kind === "compose" && response.payload.removed) { entry.rows.delete(key); entry.app.stateVersion++; return "ok"; }
+    const block = entry.app.spec.blocks.find((b) => b.id === response.blockId);
+    if (block?.type === "compose" && block.entries === "many" && !entry.rows.has(key) && [...entry.rows.values()].filter((r) => r.blockId === block.id && r.participantHash === response.participantHash).length >= 50) return "limit";
+    // Slot capacity counts records, excluding the record being updated.
+    if (block?.type === "compose" && response.payload.kind === "compose") for (const input of block.inputs) {
+      const selected = response.payload.values[input.id];
+      if (input.kind === "slot" && selected && [...entry.rows].filter(([k, r]) => k !== key && r.blockId === block.id && r.payload.kind === "compose" && r.payload.values[input.id] === selected).length >= (input.capacity ?? 0)) throw new AppError("invalid_request");
+    }
     if (!entry.rows.has(key) && entry.rows.size >= this.limits.responses) return "limit";
     // No await between checks and mutation: one atomic operation within this process.
-    entry.rows.set(key, structuredClone({ ...response, displayName: response.displayName?.trim() || null, createdAt: this.now() }));
+    entry.rows.set(key, structuredClone({ ...response, displayName: response.displayName?.trim() || null, createdAt: entry.rows.get(key)?.createdAt ?? this.now() }));
     entry.app.stateVersion++;
     return "ok";
   }
