@@ -2,6 +2,8 @@
 
 [Tiếng Việt](architecture-design.md) | [English](architecture-design.en.md)
 
+Định hướng sản phẩm, marketplace và luồng mua bán được mô tả trong [Business Flow](business-flow.md).
+
 ## 1. Mục tiêu
 
 MinintApp là nền tảng SaaS cho phép người dùng mô tả nhu cầu bằng ngôn ngữ tự nhiên để tạo mini-app có thể sử dụng và chia sẻ ngay. Nền tảng tự quản lý build, dữ liệu, sandbox, subdomain và vòng đời app.

@@ -2,6 +2,8 @@
 
 [Tiếng Việt](architecture-design.md) | [English](architecture-design.en.md)
 
+Product direction, marketplace behavior, and transaction flows are described in [Business Flow](business-flow.en.md).
+
 ## 1. Goals
 
 MinintApp is a SaaS platform that turns natural-language requests into mini-apps ready to use and share. The platform manages builds, data, sandboxes, subdomains, and app lifecycles.
