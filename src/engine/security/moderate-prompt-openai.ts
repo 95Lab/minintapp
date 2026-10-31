@@ -1,8 +1,4 @@
-// Moderates the raw prompt before generation using the ACTIVE provider's moderation, if it has
-// one (OpenAI: omni-moderation; Gemini: none — its safety filters act during generation instead).
-// No provider (mock mode) → allow. Fails OPEN (allow + log) on any error: a moderation outage
-// should never be the reason a demo is stuck refusing every prompt; the phishing scan and model
-// riskFlags still run after generation.
+// OpenAI moderation fails closed on service errors.
 import { openAiProvider } from "@/engine/generation/providers/openai-llm-provider";
 import { logSecurityEvent } from "./log-security-event";
 
@@ -11,7 +7,7 @@ export async function moderatePrompt(text: string): Promise<{ ok: boolean; reaso
   if (!provider?.moderate) return { ok: true };
   try {
     return await provider.moderate(text);
-  } catch (err) {
+  } catch {
     await logSecurityEvent("moderation_error", { detail: { provider: provider.id, message: "moderation_request_failed" } });
     return { ok: false, reason: "moderation_unavailable" };
   }

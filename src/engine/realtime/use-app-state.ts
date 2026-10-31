@@ -17,5 +17,5 @@ export function useAppState(id:string,tokens:{host?:string|null;participant?:str
  useEffect(()=>{if(!enabled||!state||gone)return;const delay=Math.max(50,Math.min(2147483647,Date.parse(state.expiresAt)-Date.now()+50));const timer=setTimeout(()=>void refresh(),delay);return()=>clearTimeout(timer);},[enabled,state?.expiresAt,!!gone,refresh]);
  useEffect(()=>{if(!enabled||!state?.spec.blocks.some(b=>b.type==="live")||gone)return;const timer=setInterval(()=>void refresh(),300000);return()=>clearInterval(timer);},[enabled,state?.spec,!!gone,refresh]);
  useEffect(()=>{if(opts.followMove&&state?.movedTo)router.replace(`/rooms/${state.movedTo}`);},[opts.followMove,state?.movedTo,router]);
- return{state,gone,offline,live:mode==="supabase"&&!offline,refresh,apply};
+ return{state,gone,offline,live:mode==="supabase"&&!offline,refresh:async()=>{await refresh();},apply};
 }

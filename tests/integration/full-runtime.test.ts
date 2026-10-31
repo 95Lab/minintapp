@@ -38,6 +38,6 @@ it("persists full specs, owner claims and private photos, then removes room phot
   expect(bucket.error).toBeNull();expect(bucket.data?.public).toBe(false);
  }finally{await repo.endApp(app.id);}
  expect(await repo.getPhoto(app.id,photoId)).toBeNull();
- const removed=await supabaseServer().storage.from("minint-photos").download(`${app.id}/${photoId}`);
- expect(removed.error).not.toBeNull();
+ const remaining=await supabaseServer().storage.from("minint-photos").list(app.id);
+ expect(remaining.error).toBeNull();expect(remaining.data?.some(file=>file.name===photoId)).toBe(false);
 });

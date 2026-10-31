@@ -20,7 +20,8 @@
     "start:standalone": "node scripts/start-standalone.mjs",
     "smoke:deploy": "node scripts/deploy-smoke.mjs",
     "supabase:check": "node --env-file=.env.local scripts/check-supabase.mjs",
-    "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts"
+    "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts",
+    "supabase:cleanup": "node --env-file=.env.local scripts/cleanup-supabase.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

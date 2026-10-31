@@ -1,6 +1,6 @@
 # File dùng chung và OpenAI
 
-Implementation viết mới trong repo này, không nhập lịch sử hoặc secret từ dự án khác. Không tạo commit hay push.
+Implementation trong repo này, không nhập lịch sử hoặc secret từ dự án khác. Không tạo commit hay push.
 
 ## Điểm nhập cho nhóm
 
@@ -21,15 +21,10 @@ Implementation viết mới trong repo này, không nhập lịch sử hoặc se
 
 Request types được suy ra từ schema Zod. Không khai báo lại type ở frontend. Không import runtime config, token helpers hoặc SDK OpenAI vào client component; Next.js chặn qua `server-only`.
 
-## Phạm vi hiện tại so với bản tham chiếu
+## Runtime đầy đủ
 
-Giữ tên trường AppSpec: `specVersion`, `locale`, `title`, `description`, `theme`, `requireName`, `layout`, `blocks`. Các id phải duy nhất trong collection. Quiz và wheel giữ trường lõi của bản tham chiếu; wheel participant bắt buộc `requireName=true`.
+Contract mở rộng ở `src/engine/app-spec/`, `src/engine/blocks/` và `src/engine/api/`; renderer ở `src/engine-ui/`. Luồng mới dùng `/api/engine/` và `/rooms/`; các contract `src/lib` giữ tương thích cho API cũ và sở hữu adapter snapshot dùng chung. Xem `full-runtime.md` và `parity-checklist.md` để biết các input, view, account, ảnh, live/custom và remix đã hỗ trợ.
 
-Compose hiện hỗ trợ input `text/number/choice/rating/slot/date/datetime`, view `bars/stat/table/leaderboard/cloud/summary`, `entries=one|many`, `flow=open|steps`. Trường `note` và các trường nullable được giữ. Kiểm tra option, range, nguồn view, loại dữ liệu và điều kiện `showIf` cơ bản. Payload có `kind`, `values` và `removed:true` khi xóa bản ghi nhiều dòng.
-
-Đây là contract ban đầu, chưa tương đương toàn bộ repo gốc. Chưa có preset expansion, roster, ảnh, map, settle, chat, live/custom block; các cấu hình này bị từ chối thay vì bị bỏ qua. Đã có validation và tổng hợp cho poll một lựa chọn, tính điểm quiz sau reveal và wheel chọn ở server. Compose có validation server, thống kê, nhiều bản ghi, steps và query/expression; xem `compose-engine.md`. `AppRuntime`, repository và lifecycle contract mới có phần tối thiểu; chưa có account, payee, redirect hoặc upload contract. Khi bổ sung một nhóm chức năng phải cập nhật schema, type và test cùng lúc.
-
-`GenerateEvent` dùng cho trạng thái UI. `/api/generate` hiện trả JSON `GenerateResponse` một lần sau khi sinh/validate và lưu thành công; không phải stream NDJSON. Cách này cho phép đặt cookie host HttpOnly khi id đã biết. Hàm `generateAppSpec()` chỉ sinh spec; route chịu trách nhiệm giới hạn yêu cầu, lưu và cấp quyền host.
 ## OpenAI
 
 ```ts

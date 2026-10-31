@@ -1,5 +1,8 @@
 # Phát triển và kiểm tra
 
+> Runtime đầy đủ đã bổ sung ở `src/engine/`, `src/engine-ui/` và `/api/engine/`. Xem [full-runtime.md](full-runtime.md) và [parity-checklist.md](parity-checklist.md). Các phần mô tả core dưới đây áp dụng cho API/giao diện tương thích ban đầu.
+
+
 ## Cài đặt
 
 Dùng Node 22 (`nvm install && nvm use`) và npm. `package-lock.json` là lockfile duy nhất.

@@ -1,6 +1,9 @@
 # API runtime lõi — memory milestone
 
-API hỗ trợ bốn mẫu: `poll-drinks`, `quiz-general`, `wheel-participants`, `wheel-options`. Tạo từ mẫu không gọi OpenAI. Compose nâng cao chưa có backend tương ứng.
+> Runtime đầy đủ đã bổ sung ở `src/engine/`, `src/engine-ui/` và `/api/engine/`. Xem [full-runtime.md](full-runtime.md) và [parity-checklist.md](parity-checklist.md). Các phần mô tả core dưới đây áp dụng cho API/giao diện tương thích ban đầu.
+
+
+API hỗ trợ bốn mẫu: `poll-drinks`, `quiz-general`, `wheel-participants`, `wheel-options`. Tạo từ mẫu không gọi OpenAI. Các mẫu mở rộng dùng `/api/engine/apps/from-template`.
 
 ## Generate bằng OpenAI
 
@@ -64,3 +67,25 @@ Xem `compose-engine.md` cho contract đầy đủ. Template bổ sung: `compose-
 - State trả bars/stat/cloud/table/leaderboard/summary đã tính ở server, không trả hash nhóm participant. View `after_step` chỉ xuất hiện sau khi nguồn đóng; view không có source đợi tất cả bước đóng. View `host` không xuất hiện trong state participant.
 
 State bổ sung `sync`: `{mode:"memory"}` hoặc `{mode:"supabase",url,publicKey,channel}`. Chỉ chứa public key, không có service role key. Broadcast `state_changed` chỉ yêu cầu tải lại state, không chứa answers. Lỗi lưu trữ trả `503 storage_unavailable`; conflict quá mức trả `429 rate_limited`.
+
+## API runtime đầy đủ
+
+| Endpoint | Chức năng |
+|---|---|
+| `POST /api/engine/generate` | JSON khi Accept application/json; còn lại NDJSON tiến độ |
+| `POST /api/engine/apps/from-template` | Tạo từ template Việt/Anh |
+| `GET /api/engine/apps/:id/state` | Snapshot lọc theo host/participant; ETag và cấu hình đồng bộ |
+| `POST /api/engine/apps/:id/responses` | Gửi/sửa/xóa dòng của participant |
+| `POST /api/engine/apps/:id/block-action` | Điều khiển quiz, wheel, steps và các view tương tác |
+| `POST /api/engine/apps/:id/lifecycle` | Đóng/mở/kết thúc, thông báo, gia hạn, payee |
+| `POST /api/engine/apps/:id/remix` | Tạo phòng con và chuyển người tham gia |
+| `GET /api/engine/apps/:id/export` | CSV dành cho host |
+| `POST /api/engine/apps/:id/photos` | Upload ảnh cho input photo |
+| `GET /api/engine/apps/:id/photos/:photoId?s=…` | Đọc ảnh bằng chữ ký |
+| `POST /api/engine/apps/:id/report` | Báo cáo một lần/người, đếm mạng riêng biệt |
+| `POST /api/engine/auth/magic-link` | Gửi email đăng nhập |
+| `POST /api/engine/auth/session` | Xác minh Supabase access token và đặt session cookie |
+| `GET /api/engine/account` | Đọc tài khoản và phòng sở hữu |
+| `POST /api/engine/account/claim` | Nhận quyền phòng bằng token/cookie host hợp lệ |
+
+Mutation kiểm tra cùng origin. Host dùng `x-host-token` hoặc cookie HttpOnly kèm `x-host-session: 1`; participant dùng `x-participant-token`. Request schema và enum action chi tiết ở `src/engine/api/request-schemas.ts`. Không truyền host token trong link chia sẻ.

@@ -2,7 +2,7 @@
 
 ## Bật trên project
 
-1. Mở SQL Editor của project Supabase và chạy toàn bộ `supabase/migrations/202610310001_supabase_storage.sql` một lần. Migration tạo bảng mới và ba RPC, không nhập dữ liệu từ dự án khác. Nếu quản lý bằng Supabase CLI, link đúng project và dùng `supabase db push` thay cho SQL Editor; không áp dụng bằng cả hai cách.
+1. Mở SQL Editor của project Supabase và chạy toàn bộ `supabase/migrations/202610310001_supabase_storage.sql` và `supabase/migrations/202610310002_full_runtime.sql` theo thứ tự. Migration tạo bảng mới và ba RPC, không nhập dữ liệu từ dự án khác. Nếu quản lý bằng Supabase CLI, link đúng project và dùng `supabase db push` thay cho SQL Editor; không áp dụng bằng cả hai cách.
 2. Điền `.env.local` (không commit file này):
 
 ```dotenv
@@ -26,7 +26,7 @@ VPS Docker: điền cùng biến vào file `deploy/.env.app` trên máy chạy a
 
 Mỗi phòng là một aggregate JSONB trong bảng có RLS. App, runtime, answers và stateVersion được đọc từ cùng snapshot. Domain validation dùng chung với memory adapter. Ghi qua RPC `minint_commit` khóa hàng và so phiên bản; nếu có writer khác đi trước, server đọc snapshot mới, kiểm tra lại quyền, slot capacity, giới hạn bản ghi, bước đang mở và trạng thái nhận câu trả lời trước khi thử lại. Host action wheel cũng chỉ có một kết quả đã commit.
 
-Thời gian validate mutation lấy từ PostgreSQL; RPC kiểm tra lại hết hạn và deadline bước ngay khi commit. Kết thúc app xóa answers và runtime trong cùng giao dịch. Giới hạn 1000 response/phòng, 50 bản ghi/người/block và lifetime tối đa 7 ngày vẫn giữ. Storage không dùng giới hạn 200 phòng của memory; cần theo dõi dung lượng và thiết lập retention phù hợp.
+Thời gian validate mutation lấy từ PostgreSQL; RPC kiểm tra lại hết hạn và deadline bước ngay khi commit. Kết thúc app xóa answers và runtime trong cùng giao dịch. Giới hạn 1000 response/phòng, 50 bản ghi/người/block ; runtime đầy đủ cho phép gia hạn tối đa 30 ngày, hoặc 90 ngày với tài khoản sở hữu. Storage không dùng giới hạn 200 phòng của memory; cần theo dõi dung lượng và thiết lập retention phù hợp.
 
 Cập nhật một phòng được tuần tự hóa; snapshot có thể lớn khi gần 1000 answers. Đây là cách lưu phù hợp phòng nhỏ/vừa, chưa phải thiết kế phân mảnh cho phòng tải lớn. Conflict thử lại có jitter, tối đa 16 lượt trong ngân sách request 8 giây; quá tải trả 429. Mất kết nối database trả 503, không chuyển ngầm về memory. Khi timeout không rõ commit đã thành công hay chưa, client cần đọc state trước khi thử lại host action; không tự retry một wheel spin.
 
@@ -36,7 +36,7 @@ Server trả topic ngẫu nhiên 256 bit cho người đã mở được state c
 
 Kết nối Realtime khỏe không có polling định kỳ. Tải lại state khi subscribe/reconnect, trở lại tab hoặc online, sau mutation của chính mình và khi hết hạn. Thông báo dồn được gộp; có refresh bổ sung nếu thông báo đến lúc đang tải state. Mất WebSocket hoặc đọc state lỗi dùng polling dự phòng mỗi 10 giây, tự dừng khi kết nối ổn định. SDK quản lý heartbeat và reconnect; hook gỡ channel, listener và timer khi đổi phòng hoặc unmount.
 
-`APP_STORAGE=memory` dành cho offline/demo: dữ liệu mất khi restart, polling 1,5 giây và chỉ dùng một tiến trình. Supabase mode dùng chung dữ liệu giữa nhiều Node instance. Generation quota vẫn riêng từng process; chưa có distributed rate limit, Supabase Auth account, retention cron hoặc tự di chuyển dữ liệu memory.
+`APP_STORAGE=memory` dành cho offline/demo: dữ liệu mất khi restart, polling 1,5 giây và chỉ dùng một tiến trình. Supabase mode dùng chung dữ liệu giữa nhiều Node instance. Runtime đầy đủ dùng distributed rate limit, Supabase Auth và retention RPC/cron qua migration thứ hai. Memory không tự di chuyển dữ liệu sang Supabase. Xem `full-runtime.md` về callback đăng nhập và dọn ảnh Storage.
 
 ## Kiểm thử
 

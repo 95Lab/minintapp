@@ -1,8 +1,4 @@
-// Contract every LLM provider adapter implements. The generation pipeline (prompting, schema
-// validation, repair, deadline, fallbacks) is provider-neutral and only talks to this interface,
-// Internal contract for the OpenAI structured-output adapter.
-// See docs/llm-providers.md for the step-by-step guide.
-
+// Internal structured-output and moderation contract for the OpenAI adapter.
 export type JsonSchema = Record<string, unknown>;
 
 /** Normalized failure kinds; adapters must map every SDK error onto one of these. */
