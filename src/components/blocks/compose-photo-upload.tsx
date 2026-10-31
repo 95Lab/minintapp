@@ -1,2 +1,5 @@
+"use client";
+import { useRuntimeTranslation } from "@/lib/i18n/runtime-locale";
 import { ComponentNotice } from "../ui/component-notice";
-export function ComposePhotoUpload() { return <ComponentNotice title="Tải ảnh lên" />; }
+export function ComposePhotoUpload() {
+  const tr = useRuntimeTranslation(); return <ComponentNotice title={tr("Tải ảnh lên")} />; }

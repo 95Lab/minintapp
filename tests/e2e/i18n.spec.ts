@@ -25,3 +25,37 @@ test("invalid locale cookies fall back to Vietnamese", async ({ context, page })
   await expect(page.locator("html")).toHaveAttribute("lang", "vi");
   await expect(page.getByRole("button", { name: "VI", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("English mini-app keeps its language for participants with Vietnamese preferences", async ({ page, browser, baseURL }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.getByRole("button", { name: "Create a sample poll", exact: true }).click();
+  await expect(page).toHaveURL(/\/a\/[a-f0-9]{24}\/host$/);
+  await expect(page.getByRole("heading", { name: "Share the app" })).toBeVisible();
+  const id = page.url().split("/").at(-2)!;
+  await page.getByRole("button", { name: "VI", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Close voting", exact: true })).toBeVisible();
+  const participantContext = await browser.newContext();
+  try {
+    const participant = await participantContext.newPage();
+    await participant.goto(`${baseURL}/a/${id}`);
+    await expect(participant.getByRole("button", { name: "Submit response", exact: true })).toBeVisible();
+    await participant.getByRole("radio").first().check();
+    await participant.getByRole("button", { name: "Submit response", exact: true }).click();
+    await expect(participant.getByText("Response submitted.", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("participant-count")).toHaveText("1 participant");
+    await page.getByRole("button", { name: "Close voting", exact: true }).click();
+    await expect(participant.getByRole("button", { name: "Submit response", exact: true })).toBeDisabled();
+    await expect(participant.getByText("This app is not accepting responses.", { exact: true })).toBeVisible();
+  } finally {
+    await participantContext.close();
+  }
+});
+
+test("English unavailable screen uses the interface preference", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.goto("/a/000000000000000000000000");
+  await expect(page.getByRole("heading", { name: "This app is no longer active" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible();
+});

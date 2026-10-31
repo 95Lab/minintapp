@@ -1,10 +1,13 @@
 "use client";
+import { apiErrorMessage } from "@/lib/i18n/api-error-message";
+import { translate } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/i18n/locale";
 import { useCallback, useEffect, useState } from "react";
 import type { AppStateResponse } from "@/lib/api/api-contract-types";
 import { ApiClientError, readState } from "@/lib/api/api-client";
 import { startStateSync } from "./state-sync";
 import { subscribeToApp } from "./supabase-subscription";
-export function useAppState(id: string, host: boolean, token: string | null) {
+export function useAppState(id: string, host: boolean, token: string | null, locale: Locale = "vi") {
   const [state, setState] = useState<AppStateResponse | null>(null);
   const [error, setError] = useState("");
   const [failureStatus, setFailureStatus] = useState<number | null>(null);
@@ -16,10 +19,10 @@ export function useAppState(id: string, host: boolean, token: string | null) {
       setError(""); setFailureStatus(null); return true;
     } catch (error) {
       if (signal?.aborted) return false;
-      setError(error instanceof ApiClientError ? error.message : "Mất kết nối. Đang thử lại…");
+      setError(apiErrorMessage(error, locale, translate(locale, "Mất kết nối. Đang thử lại…")));
       setFailureStatus(error instanceof ApiClientError ? error.status : 0); return false;
     }
-  }, [id, host, token]);
+  }, [id, host, token, locale]);
   useEffect(() => {
     if (!host && !token) return;
     const controller = new AbortController();

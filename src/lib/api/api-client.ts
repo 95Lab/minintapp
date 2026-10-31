@@ -1,11 +1,11 @@
 import type { AppStateResponse, TemplateCreateResponse, SubmitResponseRequest, GenerateRequest, GenerateResponse } from "./api-contract-types";
 export class ApiClientError extends Error {
-  constructor(public readonly status: number, message: string) { super(message); }
+  constructor(public readonly status: number, message: string, public readonly code?: string) { super(message); }
 }
 export async function requestJson<T>(path: string, init?: RequestInit, timeoutMs = 10_000): Promise<T> {
   const response = await fetch(path, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs), credentials: "same-origin", cache: "no-store" });
   const body = await response.json();
-  if (!response.ok) throw new ApiClientError(response.status, typeof body.message === "string" ? body.message : "Không thể xử lý yêu cầu.");
+  if (!response.ok) throw new ApiClientError(response.status, typeof body.message === "string" ? body.message : "Không thể xử lý yêu cầu.", typeof body.code === "string" ? body.code : undefined);
   return body as T;
 }
 export const createFromTemplate = async (templateId: string, locale: "vi" | "en" = "vi") => {
