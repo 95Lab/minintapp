@@ -164,3 +164,19 @@ test("template library links to planning and preserves selected lifetime with de
   await expect(chat.getByRole("alert")).toContainText("Thử lại sau");
   expect(generated).toEqual({ prompt: "Bình chọn trà và cà phê, dùng mặc định", lifetime: "7d" });
 });
+
+test("on a phone the ready brief, its confirm button and a creation failure are all on screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/engine/plan", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ status: "ready", message: "Đã sẵn sàng.", suggestions: ["Thêm tính năng lạ"], brief: "Bình chọn trà hoặc cà phê." }) }));
+  await page.route("**/api/engine/generate", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ ok: false, code: "app_capacity_full", message: "Hệ thống đã hết chỗ" }) }));
+  await page.goto("/");
+  await page.getByLabel("Bạn cần mini-app gì?").fill("Bình chọn đồ uống");
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  const chat = page.getByRole("dialog");
+  const confirm = chat.getByRole("button", { name: "Chốt yêu cầu và tạo app" });
+  await expect(confirm).toBeInViewport();
+  await expect(chat.getByRole("button", { name: "Thêm tính năng lạ" })).toHaveCount(0);
+  await expect(chat.getByRole("button", { name: "Dùng mặc định và chốt yêu cầu" })).toHaveCount(0);
+  await confirm.click();
+  await expect(chat.getByRole("alert")).toBeInViewport();
+});

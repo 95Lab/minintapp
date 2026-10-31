@@ -18,6 +18,7 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const dialog = useRef<HTMLDialogElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
+  const summary = useRef<HTMLElement>(null);
   const controller = useRef<AbortController | null>(null);
   const started = useRef(false);
   const inFlight = useRef(false);
@@ -85,6 +86,8 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
     // Opening resumes the same chat; only the initial idea starts a new conversation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+  // On a phone the brief and confirm button sit below the chat, far outside the dialog viewport.
+  useEffect(() => { if (plan?.status === "ready" && window.matchMedia("(max-width: 650px)").matches) summary.current?.scrollIntoView({ block: "start" }); }, [plan]);
   useEffect(() => { transcript.current?.scrollTo({ top: transcript.current.scrollHeight, behavior: "smooth" }); }, [messages, pending, thinking]);
 
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby="planning-title" aria-describedby="planning-description" onCancel={e => { e.preventDefault(); if (!generating) onClose(); }}>
@@ -102,17 +105,17 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
           {pending && <article className={styles.user}><span className={styles.speaker}>{text("Bạn", "You")}</span><p>{pending}</p></article>}
           {thinking && <p role="status" className={styles.thinking}>{text("Đang suy nghĩ về ý tưởng của bạn…", "Thinking about your idea…")}</p>}
         </div>
-        {plan && !busy && <div className={styles.suggestions}>{plan.suggestions.map(suggestion => <button key={suggestion} type="button" onClick={() => { setDraft(suggestion); void send(suggestion); }}>{suggestion}</button>)}</div>}
+        {plan && !busy && plan.status !== "ready" && <div className={styles.suggestions}>{plan.suggestions.map(suggestion => <button key={suggestion} type="button" onClick={() => { setDraft(suggestion); void send(suggestion); }}>{suggestion}</button>)}</div>}
         <form className={styles.reply} onSubmit={e => { e.preventDefault(); void send(draft); }}>
           <label htmlFor="planning-reply">{text("Trao đổi thêm hoặc chỉnh yêu cầu", "Reply or adjust your request")}</label>
           <textarea id="planning-reply" rows={2} maxLength={1200} value={draft} disabled={busy} onChange={e => setDraft(e.target.value)} placeholder={text("Ví dụ: Cho phép chọn nhiều đáp án, ẩn kết quả đến khi tôi chốt…", "For example: allow multiple choices, hide results until I close voting…")} />
           <button type="submit" disabled={busy || !draft.trim()}>{thinking ? text("Đang trao đổi…", "Thinking…") : text("Gửi tin nhắn", "Send message")}</button>
         </form>
-        <button type="button" className={styles.defaults} disabled={busy || plan?.status === "unsupported"} onClick={() => void send(
+        {plan?.status !== "ready" && <button type="button" className={styles.defaults} disabled={busy || plan?.status === "unsupported"} onClick={() => void send(
           [draft.trim(), text("Dùng mặc định hợp lý cho các tùy chọn còn lại và chốt bản yêu cầu. Không hỏi thêm tùy chọn phụ.", "Use sensible defaults for remaining options and finalize the brief. Do not ask about optional details.")].filter(Boolean).join("\n"), true
-        )}>{text("Dùng mặc định và chốt yêu cầu", "Use defaults and finalize brief")}</button>
+        )}>{text("Dùng mặc định và chốt yêu cầu", "Use defaults and finalize brief")}</button>}
       </section>
-      <aside className={styles.summary} aria-label={text("Bản yêu cầu", "App brief")}>
+      <aside ref={summary} className={styles.summary} aria-label={text("Bản yêu cầu", "App brief")}>
         <p className={styles.eyebrow}>{text("APP CỦA BẠN", "YOUR APP")}</p>
         <h3>{plan?.status === "ready" ? text("Sẵn sàng để bạn chốt", "Ready for your review") : text("Đang làm rõ ý tưởng", "Shaping the idea")}</h3>
         {brief ? <p className={styles.brief}>{brief}</p> : <p className={styles.hint}>{text("Bản yêu cầu sẽ được cập nhật tại đây sau khi trao đổi.", "Your app brief will appear here as we work out the details.")}</p>}

@@ -38,7 +38,7 @@ BRIEF
 A standalone description of at most 500 characters, written in the language the user wrote in. The generator sees ONLY the brief, so include every agreed requirement and the defaults that matter. Keep the app small: never add questions, fields or features the user did not ask for. Name no more than four survey items unless the user listed more. Always write a brief when status is ready, and a draft when you can. Otherwise use JSON null, never the text "null". Do not put any duration or expiry in the brief or message: lifetime is set by a separate selector, so if the user mentions it, point them to that selector.
 
 MESSAGE
-When ready: one or two short sentences saying the brief is ready and asking the user to review it and press "Chốt yêu cầu và tạo app" (Vietnamese) or "Confirm brief and create app" (English). A user saying "ok" creates nothing, and you never claim an app exists. Never mention any other button or control. When clarifying: state the question itself in the message, and give up to three short clickable suggestions. Never ask for API keys, credentials or sensitive personal data.`;
+When ready: one or two short sentences saying the brief is ready and asking the user to review it and press "Chốt yêu cầu và tạo app" (Vietnamese) or "Confirm brief and create app" (English). A user saying "ok" creates nothing, and you never claim an app exists. Never mention any other button or control. Suggestions must be an empty list when ready. When clarifying: state the question itself in the message, and give up to three short clickable suggestions. Never ask for API keys, credentials or sensitive personal data.`;
 
 const CLOSING_MESSAGE = {
   vi: "Mình đã có đủ thông tin. Bạn xem lại bản yêu cầu rồi bấm \"Chốt yêu cầu và tạo app\" nhé.",
