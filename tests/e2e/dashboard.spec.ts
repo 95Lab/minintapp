@@ -40,3 +40,20 @@ test("bulk extension uses host-session and reports partial failures",async({page
  const request=page.waitForRequest(r=>r.url().includes("/lifecycle"));await page.getByRole("button",{name:"Thêm 7 ngày",exact:true}).first().click();
  expect((await request).headers()["x-host-session"]).toBe("1");await expect(page.getByText(/Thành công: 2. Thất bại: 1./)).toBeVisible();expect(calls.every(c=>c.action==="extend")).toBe(true);
 });
+for(const width of [320,1280])test(`my apps shares home branding and keeps controls usable at ${width}px`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:900});await setup(page);
+ await expect(page.getByRole("banner").getByRole("link",{name:/minintapp/i})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"App của tôi",exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Tạo app mới",exact:true})).toBeInViewport();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ for(const control of await page.locator("main button,main select,main input[type=search],main a").all()){
+  const box=await control.boundingBox();expect(box?.height).toBeGreaterThanOrEqual(44);
+ }
+ await page.screenshot({path:testInfo.outputPath(`my-apps-${width}.png`),fullPage:true});
+});
+test("empty account offers a clear create action",async({page})=>{
+ await page.route("**/api/engine/auth/session",route=>route.fulfill({json:{user:{email:"host@example.test"},accountsEnabled:true}}));
+ await page.route("**/api/engine/account",route=>route.fulfill({json:{ok:true,email:"host@example.test",apps:[]}}));
+ await page.goto("/my-apps");await expect(page.getByText("Chưa có app nào trong tài khoản.",{exact:false})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Tạo app mới",exact:true})).toHaveCount(2);
+});
