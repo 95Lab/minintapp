@@ -9,9 +9,10 @@ for (const width of [320,390,1280]) {
   await expect(header.getByRole("link",{name:"MinintApp, trang chủ",exact:true})).toContainText("minintapp.");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:info.outputPath(`home-${width}-viewport.png`)});
+  await expect(header.locator('a[href="/dashboard"]')).toHaveCount(0);
   if(width<800){
    await header.getByRole("button",{name:"Mở menu",exact:true}).click();
-   await expect(header.getByRole("link",{name:"Ứng dụng của tôi",exact:true})).toBeVisible();
+   await expect(header.getByRole("link",{name:"Ứng dụng của tôi",exact:true})).toHaveCount(0);
    await header.getByRole("button",{name:"EN",exact:true}).click();
    await expect(header.getByRole("link",{name:"Sign in",exact:true})).toBeVisible();
    await header.getByRole("button",{name:"Close menu",exact:true}).press("Escape");
@@ -24,10 +25,12 @@ test("signed-in home exposes account actions instead of a login link",async({pag
  let signedIn=true;
  await page.route("**/api/engine/auth/session",route=>route.fulfill({json:{user:signedIn?{email:"host@example.test"}:null,accountsEnabled:true}}));
  await page.goto("/");
+ await expect(page.getByRole("banner").getByRole("link",{name:"Ứng dụng của tôi",exact:true})).toBeVisible();
  await page.getByRole("banner").locator("summary").click();
  await expect(page.getByRole("banner").getByRole("link",{name:"App của tôi",exact:true})).toBeVisible();
  await expect(page.getByRole("banner").getByRole("button",{name:"Đăng xuất",exact:true})).toBeVisible();
  await expect(page.getByRole("banner").getByRole("link",{name:"Đăng nhập",exact:true})).toHaveCount(0);
  signedIn=false;await page.evaluate(()=>window.dispatchEvent(new Event("focus")));
  await expect(page.getByRole("banner").getByRole("link",{name:"Đăng nhập",exact:true})).toBeVisible();
+ await expect(page.getByRole("banner").locator('a[href="/dashboard"]')).toHaveCount(0);
 });

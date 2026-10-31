@@ -9,3 +9,5 @@
 | `/api/my-apps` | Returns 401 without a signed-in session; retains ownership filtering by account and current browser session. |
 
 Apps created in another browser need to be linked to the account to appear in the same list. Host permissions on app pages and deployment mutation APIs are still checked independently.
+
+The shared menu shows “My apps” only after a signed-in session is confirmed; it stays hidden for guests and while the session loads, on desktop and mobile.

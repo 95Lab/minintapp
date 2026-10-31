@@ -9,3 +9,5 @@
 | `/api/my-apps` | Trả 401 nếu chưa đăng nhập; vẫn giữ bộ lọc quyền sở hữu theo tài khoản và phiên trình duyệt hiện tại. |
 
 App từng tạo ở trình duyệt khác cần được gắn tài khoản để xuất hiện trong cùng danh sách. Quyền host của các trang app và API thao tác triển khai vẫn được kiểm tra độc lập.
+
+Menu chung chỉ hiển thị “Ứng dụng của tôi” sau khi xác nhận phiên đăng nhập; ẩn khi chưa đăng nhập hoặc đang tải phiên, trên cả desktop và mobile.
