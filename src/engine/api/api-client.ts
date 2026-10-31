@@ -1,3 +1,4 @@
+import { awaitProvisioned } from "@/lib/api/api-client";
 // Browser-side API calls. Every call sends the host/participant token header when known. Failures
 // carry an error code (app-error-codes.ts) that the UI words in the app's language — never raw text.
 import { STATE_REFRESH_HEADER } from "./api-contract-types";
@@ -111,9 +112,10 @@ export async function remixApp(appId: string, hostToken: string | null, instruct
 
 export async function createFromTemplate(req: TemplateCreateRequest): Promise<TemplateCreateResponse> {
   try {
-    const res = await fetch("/api/engine/apps/from-template", { method: "POST", headers: headers({}), body: JSON.stringify(req) });
+    await fetch("/api/session", { method: "POST" });
+    const res = await fetch("/api/engine/apps/from-template", { method: "POST", headers: { ...headers({}), "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(req) });
     const data = await res.json().catch(() => null);
-    if (res.ok && data?.ok) return data as TemplateCreateResponse;
+    if (res.ok && data?.ok) return await awaitProvisioned(data as TemplateCreateResponse);
     return { ok: false, ...failure(data), message: "" } as TemplateCreateResponse;
   } catch {
     return { ok: false, ...NETWORK, message: "" } as TemplateCreateResponse;

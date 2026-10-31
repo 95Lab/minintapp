@@ -186,7 +186,7 @@ export function AppRendererHost({ appId }: { appId: string }) {
               state.spec.blocks.map(renderBlock)
             )}
           </section>
-          <SharePanelQr appId={appId} locale={locale} participantCount={state.participantCount} />
+          <SharePanelQr urlOverride={state.shareUrl} appId={appId} locale={locale} participantCount={state.participantCount} />
         </div>
 
         {canControl && <RemixPanel appId={appId} hostToken={hostToken} locale={locale} disabled={!!state.movedTo} firstBlock={state.spec.blocks[0]} />}

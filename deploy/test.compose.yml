@@ -1,0 +1,25 @@
+# Local integration fixtures only. Never use these credentials on a public interface.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: minintapp
+      POSTGRES_PASSWORD: local-integration-only
+      POSTGRES_DB: minintapp_test
+    ports: ["127.0.0.1:15439:5432"]
+    tmpfs: [/var/lib/postgresql/data]
+    mem_limit: 384m
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U minintapp -d minintapp_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:16389:6379"]
+    mem_limit: 128m
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 2s
+      retries: 30

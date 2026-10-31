@@ -19,30 +19,42 @@
     "check": "npm run typecheck && npm test && npm run build",
     "start:standalone": "node scripts/start-standalone.mjs",
     "smoke:deploy": "node scripts/deploy-smoke.mjs",
+    "test:platform": "vitest run --config vitest.platform.config.ts",
+    "worker": "NODE_OPTIONS=--conditions=react-server tsx platform/worker.ts",
+    "test:storage": "vitest run --config vitest.storage.config.ts",
+    "smoke:runtime": "tsx platform/runtime-smoke.ts",
+    "build:worker": "node scripts/build-worker.mjs",
     "supabase:check": "node --env-file=.env.local scripts/check-supabase.mjs",
     "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts",
     "supabase:cleanup": "node --env-file=.env.local scripts/cleanup-supabase.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.118.0",
-    "nanoid": "^6.0.2",
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "bullmq": "^6.5.2",
+    "ioredis": "^6.0.0",
     "next": "16.4.3",
     "openai": "^7.46.0",
+    "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1",
-    "zod": "^4.0.0"
+    "tsx": "^4.23.15",
+    "zod": "^4.0.0",
+    "@supabase/supabase-js": "^2.118.0",
+    "nanoid": "^6.0.2"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.13",
     "@playwright/test": "1.64.1",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.28.2",
     "typescript": "^5.9.0",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "@electric-sql/pglite": "^0.5.13"
   },
   "type": "module"
 }

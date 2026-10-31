@@ -72,6 +72,7 @@ export function buildAppState(app: AppRecord, responses: ResponseRecord[], req: 
   const results = computeResults(app, responses, { isHost, participantHash }, prefetched);
   const hasSettleView = (r: (typeof results)[number]) => r?.type === "compose" && r.views.some((v) => v.kind === "settle");
   return {
+    ...(process.env.PLATFORM_ROLE === "control" && process.env.APPS_DOMAIN ? { shareUrl: `https://${app.id}.${process.env.APPS_DOMAIN}/rooms/${app.id}` } : {}),
     id: app.id,
     status: app.status,
     movedTo: app.movedTo,

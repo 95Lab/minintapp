@@ -17,16 +17,32 @@ origin=$(sed -n 's/^APP_ORIGIN=//p' .env)
 candidate=$(mktemp .image.next.XXXXXX)
 trap 'rm -f -- "$candidate"' EXIT
 printf 'MININTAPP_IMAGE=%s\n' "$image" > "$candidate"
-compose() { local file=$1; shift; docker compose --env-file .env --env-file "$file" -f compose.yml -p minintapp "$@"; }
+compose() {
+  local file=$1; shift
+  local args=(--env-file .env --env-file "$file" -f compose.yml)
+  if [[ -f /root/.config/ai-secrets/api.env ]]; then args+=(--env-file /root/.config/ai-secrets/api.env); fi
+  if [[ -f .platform-enabled ]]; then
+    args+=(-f platform.compose.yml)
+  fi
+  docker compose "${args[@]}" -p minintapp "$@"
+}
 # Fail before touching the running stack if configuration, pull or proxy validation fails.
 compose "$candidate" config --quiet
 python3 ./network-preflight.py
 compose "$candidate" pull app
+if [[ -f .platform-enabled ]]; then bash ./update-worker.sh "$image"; fi
 
 rollback() {
+  if [[ -f .platform-enabled && -f .worker.previous ]]; then
+    previous_worker=$(cat .worker.previous)
+    systemctl stop minintapp-worker
+    ln -sfnT "$previous_worker" worker-next
+    mv -Tf worker-next worker-current
+    systemctl start minintapp-worker
+  fi
   if [[ -f .image.env ]]; then
     echo 'Deploy failed; restoring the previous application image.' >&2
-    if ! compose .image.env up -d --force-recreate --wait --wait-timeout 120; then
+    if ! compose .image.env up -d --force-recreate --no-deps --wait --wait-timeout 120 app; then
       echo 'ROLLBACK FAILED: inspect docker compose logs on the VPS.' >&2
     fi
   else
@@ -35,7 +51,7 @@ rollback() {
   fi
   exit 1
 }
-if ! compose "$candidate" up -d --force-recreate --wait --wait-timeout 120; then rollback; fi
+if ! compose "$candidate" up -d --force-recreate --no-deps --wait --wait-timeout 120 app; then rollback; fi
 # Test the public proxy/TLS path too. Retry while the first TLS certificate is issued.
 if ! curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors --retry-max-time 90 --max-time 5 "$origin/api/health" | grep -q '"service":"minintapp"'; then rollback; fi
 if [[ -f .image.env ]]; then cp .image.env .image.previous.env; fi

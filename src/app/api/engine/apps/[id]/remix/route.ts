@@ -1,3 +1,4 @@
+import { managedEngineRemix } from "@/lib/control-plane/engine-remix";
 import {secureRoute} from "@/engine/api/secure-route";
 import {createdResponse} from "@/engine/api/created-response";
 // POST /api/engine/apps/[id]/remix (host) — current spec + results summary + instruction → child app.
@@ -34,6 +35,11 @@ async function handlePOST(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!isPresenter(req)) {
     const limit = await checkRateLimit("generate", clientIpHash(req));
     if (!limit.ok) return jsonError(429, "remix_rate_limited");
+  }
+  if (process.env.PLATFORM_ROLE === "control") {
+    const responses = await appsRepository().listResponses(app.id);
+    const summary = summarizeResultsForRemix(app.spec, computeResults(app, responses, { isHost: true, participantHash: null }));
+    return managedEngineRemix(req, app, body.instruction, summary);
   }
   const moderation = isObviousPhishingPrompt(body.instruction) ? { ok: false } : await moderatePrompt(body.instruction);
   if (!moderation.ok) {

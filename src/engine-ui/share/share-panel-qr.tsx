@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import type { UiLocale } from "@/engine/i18n/ui-strings-vi-en";
 import { t } from "@/engine/i18n/ui-strings-vi-en";
 
-export function SharePanelQr({ appId, locale, participantCount }: { appId: string; locale: UiLocale; participantCount: number }) {
+export function SharePanelQr({ appId, locale, participantCount, urlOverride }: { appId: string; locale: UiLocale; participantCount: number; urlOverride?: string }) {
   const s = t(locale);
   const [url, setUrl] = useState("");
   const [qr, setQr] = useState("");
@@ -14,13 +14,13 @@ export function SharePanelQr({ appId, locale, participantCount }: { appId: strin
   const [isLocalhost, setIsLocalhost] = useState(false);
 
   useEffect(() => {
-    const joinUrl = `${window.location.origin}/rooms/${appId}`;
+    const joinUrl = urlOverride || `${window.location.origin}/rooms/${appId}`;
     setUrl(joinUrl);
     setIsLocalhost(/^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname));
     QRCode.toDataURL(joinUrl, { errorCorrectionLevel: "M", margin: 1, width: 720, color: { dark: "#12141a", light: "#ffffff" } })
       .then(setQr)
       .catch(() => setQr(""));
-  }, [appId]);
+  }, [appId, urlOverride]);
 
   async function copy() {
     try {

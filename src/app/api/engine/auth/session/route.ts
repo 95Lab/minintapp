@@ -47,4 +47,4 @@ export const GET=(...args:Parameters<typeof handleGET>)=>secureRoute(args[0],()=
 
 export const POST=(...args:Parameters<typeof handlePOST>)=>secureRoute(args[0],()=>handlePOST(...args));
 
-export const DELETE=(...args:Parameters<typeof handleDELETE>)=>secureRoute(args[0],()=>handleDELETE(...args));
+export const DELETE=(request:Request)=>secureRoute(request,()=>handleDELETE(request));

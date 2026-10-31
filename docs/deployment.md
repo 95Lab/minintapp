@@ -2,6 +2,8 @@
 
 [Tiếng Việt](deployment.md) | [English](deployment.en.md)
 
+Khi bật Control Plane và sandbox riêng, xem [Kiến trúc runtime](architecture-runtime.md). Pipeline cập nhật cả Worker bundle đặc quyền và web image; database/queue/storage giữ nguyên.
+
 ## Luồng triển khai
 
 Push vào `main` → typecheck/unit/build/E2E → build và smoke image trên GitHub → publish GHCR theo digest → SSH bằng user `minintapp-deploy` → pull image → health check nội bộ và HTTPS → lưu phiên bản hoặc rollback.

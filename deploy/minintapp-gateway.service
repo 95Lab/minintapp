@@ -1,0 +1,19 @@
+[Unit]
+Description=MinintApp Traefik app gateway
+After=network-online.target
+
+[Service]
+Type=simple
+User=minintapp-gateway
+Group=minintapp-gateway
+ExecStart=/opt/minintapp/bin/traefik --configFile=/opt/minintapp/traefik.yml
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=192M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target

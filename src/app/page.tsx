@@ -25,7 +25,7 @@ const faqs = [
 ];
 
 export default function Home() {
-  const persistent = readRuntimeConfig().APP_STORAGE === "supabase";
+  const persistent = process.env.PLATFORM_ROLE === "control" || readRuntimeConfig().APP_STORAGE === "supabase";
   return <div className="home-shell">
     <a className="skip-link" href="#main-content">Đến nội dung chính</a>
     <header className="home-header"><a className="home-logo title-1" href="/" aria-label="MinintApp, trang chủ"><span className="logo-mark" aria-hidden="true">m<span>·</span></span>minintapp<span className="logo-period">.</span></a><nav aria-label="Điều hướng chính"><a className="title-4" href="/templates">Khám phá tất cả mẫu</a><a className="title-4" href="/my-apps">Ứng dụng của tôi</a><a className="title-4" href="#how-it-works">Cách hoạt động</a></nav><a className="nav-create button-sm" href="#create">Tạo ứng dụng <span aria-hidden="true">↗</span></a></header>
@@ -43,7 +43,7 @@ export default function Home() {
       <section className="tagline-section" aria-label="Thông điệp"><p className="heading-2">{"Việc nhỏ có công cụ riêng.".split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}<br />{"Khoảnh khắc có nhau.".split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}</p><a href="#create" className="text-link button-md">Tạo ứng dụng của bạn <span aria-hidden="true">↗</span></a></section>
       <section className="faq-section" aria-labelledby="faq-title" data-reveal><div><p className="eyebrow caption-3">TRƯỚC KHI BẮT ĐẦU</p><h2 id="faq-title" className="heading-3">Bạn có thể đang thắc mắc.</h2></div><div className="faq-grid">{faqs.map(([q, a]) => <article key={q}><h3 className="title-3">{q}</h3><p className="body-6">{a}</p></article>)}</div></section>
     </main>
-    <footer className="home-footer"><div><a className="title-1" href="/">minintapp.</a><p className="caption-2">Một sản phẩm từ 95LAB. Cho những nhu cầu vừa đủ.</p></div><div className="footer-links caption-2"><a href="/preview">Thư viện component</a><a href="/api/health">Kiểm tra trạng thái hệ thống</a></div><p className="storage-note caption-5">{persistent ? "Dữ liệu được lưu bền và đồng bộ giữa các thiết bị." : "Phiên dùng thử: dữ liệu được lưu tạm và có thể mất khi hệ thống khởi động lại."}</p></footer>
+    <footer className="home-footer"><div><a className="title-1" href="/">minintapp.</a><p className="caption-2">Một sản phẩm từ 95LAB. Cho những nhu cầu vừa đủ.</p></div><div className="footer-links caption-2"><a href="/dashboard">Ứng dụng của tôi</a><a href="/preview">Thư viện component</a><a href="/api/health">Kiểm tra trạng thái hệ thống</a></div><p className="storage-note caption-5">{persistent ? "Dữ liệu được lưu bền và đồng bộ giữa các thiết bị." : "Phiên dùng thử: dữ liệu được lưu tạm và có thể mất khi hệ thống khởi động lại."}</p></footer>
     <HomeMotion />
   </div>;
 }

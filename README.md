@@ -22,7 +22,7 @@ Ví dụ:
 
 Người dùng nhận bản xem trước, chỉnh sửa bằng hội thoại rồi publish lên subdomain HTTPS riêng để chia sẻ qua link hoặc QR. App có thể dùng tạm thời, giữ lại lâu dài hoặc phát triển thành sản phẩm trên marketplace.
 
-**Trạng thái:** Repo hiện chứa proposal và tài liệu thiết kế, chưa có mã nguồn triển khai. Các chức năng dưới đây là phạm vi đề xuất; MVP đặt mục tiêu xây dựng trong 7 giờ hackathon.
+**Trạng thái:** Repo đã có ứng dụng Next.js, engine tương tác và triển khai Control Plane/Runtime Plane với PostgreSQL, queue, sandbox gVisor, SQLite riêng và provisioning DNS. Xem [kiến trúc runtime](docs/architecture-runtime.md) để phân biệt phần đã có và giới hạn còn lại. Marketplace và thanh toán vẫn thuộc lộ trình sản phẩm.
 
 ## 2. Trải nghiệm all-in-one
 

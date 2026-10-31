@@ -85,6 +85,7 @@ export type LifecycleRequest =
 
 // ---- GET /api/engine/apps/[id]/state ----
 export interface AppStateResponse {
+  shareUrl?: string;
   sync?:import("@/lib/api/api-contract-types").AppSync;
   id: string;
   status: AppStatus;

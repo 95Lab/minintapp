@@ -1,3 +1,5 @@
+import { managedAppResponse } from "@/lib/control-plane/managed-app-response";
+import { managedEngineGeneration } from "@/lib/control-plane/engine-generation";
 import {createdResponse} from "@/engine/api/created-response";
 import {secureRoute} from "@/engine/api/secure-route";
 // POST /api/engine/generate — prompt → AppSpec → new app. Streams NDJSON progress events so the
@@ -17,8 +19,13 @@ import { readSession } from "@/engine/auth/host-session";
 export const maxDuration = 30;
 
 async function handlePOST(req: Request) {
+  if (process.env.PLATFORM_ROLE === "runtime") return Response.json({ ok: false, code: "forbidden" }, { status: 403 });
   const body = await parseBody(req, GenerateRequestSchema);
   if (!body) return jsonError(400, "prompt_invalid");
+  if (process.env.PLATFORM_ROLE === "control") {
+    const input = { ...body, engine: true, ownerId: readSession(req)?.userId };
+    return req.headers.get("accept") === "application/json" ? managedAppResponse(req, input) : managedEngineGeneration(req, input);
+  }
   if(!process.env.OPENAI_API_KEY)return Response.json({ok:false,code:"ai_not_configured",message:"OpenAI chưa được cấu hình."},{status:503});
   const { prompt, lifetime } = body;
   const ipHash = clientIpHash(req);

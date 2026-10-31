@@ -73,6 +73,14 @@ export function buildContentSecurityPolicy({ nonce, isDev, supabaseUrl }: CspBui
 }
 
 export function proxy(request: NextRequest) {
+  let runtimeTarget: URL | undefined;
+  if (process.env.PLATFORM_ROLE === "runtime") {
+    if (["/dashboard", "/preview", "/templates", "/login", "/my-apps"].some((path) => request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(path + "/"))) return new NextResponse("Not found", { status: 404 });
+    const id = process.env.RUNTIME_APP_ID;
+    if (request.nextUrl.pathname === "/" && id && /^[a-f0-9]{24}$/.test(id)) {
+      runtimeTarget = new URL(request.url); runtimeTarget.pathname = `/rooms/${id}`;
+    }
+  }
   // The sandbox route sets its own, much stricter CSP (no network, inline script only); a nonce CSP
   // here would be a second policy on the same response and only ever make it more permissive to reason about.
   if (request.nextUrl.pathname.startsWith("/sandbox/")) return NextResponse.next();
@@ -86,7 +94,7 @@ export function proxy(request: NextRequest) {
   requestHeaders.set(NONCE_HEADER, nonce);
   requestHeaders.set(CSP_HEADER, csp);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = runtimeTarget ? NextResponse.rewrite(runtimeTarget, { request: { headers: requestHeaders } }) : NextResponse.next({ request: { headers: requestHeaders } });
   if (process.env.CSP_REPORT_ONLY === "1") {
     response.headers.set(CSP_REPORT_ONLY_HEADER, csp);
     // Report-only must not loosen where a sandboxed page can be framed from: keep that one directive enforced.

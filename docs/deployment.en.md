@@ -2,6 +2,8 @@
 
 [Tiếng Việt](deployment.md) | [English](deployment.en.md)
 
+For Control Plane and per-app sandboxes, see [Runtime Architecture](architecture-runtime.en.md). The pipeline updates both the privileged Worker bundle and web image while retaining database/queue/storage services.
+
 ## Deployment flow
 
 Push to `main` → typecheck/unit/build/E2E → build and smoke-test image on GitHub → publish digest to GHCR → SSH as `minintapp-deploy` → pull image → internal and public HTTPS health checks → promote or roll back.

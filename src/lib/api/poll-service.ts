@@ -38,6 +38,8 @@ export async function readAppState(request: Request, id: string): Promise<AppSta
   });
   const env = readRuntimeConfig();
   return {
+    storage: process.env.PLATFORM_ROLE === "control" || process.env.PLATFORM_ROLE === "runtime" ? "sqlite" : "memory",
+    ...(process.env.PLATFORM_ROLE === "control" && process.env.APPS_DOMAIN ? { shareUrl: `https://${id}.${process.env.APPS_DOMAIN}/rooms/${id}` } : {}),
     sync: env.APP_STORAGE === "supabase" && app.realtimeChannel ? { mode: "supabase", url: env.NEXT_PUBLIC_SUPABASE_URL, publicKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY, channel: `app:${app.realtimeChannel}` } : { mode: "memory" },
     id, status: app.status, expiresAt: new Date(app.expiresAt).toISOString(), stateVersion: app.stateVersion,
     spec: stripPrivateFields(app.spec, app.runtime), runtime: app.runtime, isHost,

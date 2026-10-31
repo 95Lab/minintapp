@@ -1,5 +1,6 @@
 node_modules
 .next
+.platform
 .git
 .github
 .env*

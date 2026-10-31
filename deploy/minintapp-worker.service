@@ -1,0 +1,22 @@
+[Unit]
+Description=MinintApp provisioning worker and private agent
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/minintapp/worker-current
+EnvironmentFile=/opt/minintapp/.env.worker
+ExecStart=/usr/bin/node /opt/minintapp/worker-current/worker.mjs
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=150
+MemoryMax=1G
+CPUQuota=100%
+UMask=0027
+PrivateTmp=true
+# This is the privileged, root-owned worker. No Docker socket is mounted into app containers.
+
+[Install]
+WantedBy=multi-user.target
