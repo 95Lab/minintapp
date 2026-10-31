@@ -52,3 +52,50 @@ DROP TRIGGER IF EXISTS deployment_state_audit ON deployments;
 CREATE TRIGGER deployment_state_audit AFTER INSERT OR UPDATE OF state ON deployments
   FOR EACH ROW EXECUTE FUNCTION record_deployment_state();
 -- deployments doubles as a transactional outbox: queued_at is written only after queue.add succeeds.
+
+-- Releases are immutable image + AppSpec manifests. Data snapshots have a separate lifecycle.
+ALTER TABLE deployments ADD COLUMN IF NOT EXISTS active_version integer;
+ALTER TABLE deployments ADD COLUMN IF NOT EXISTS requested_version integer;
+CREATE TABLE IF NOT EXISTS app_releases (
+  app_id text NOT NULL REFERENCES deployments(id),
+  version integer NOT NULL CHECK (version > 0),
+  image text NOT NULL,
+  spec_digest text NOT NULL,
+  seed jsonb NOT NULL,
+  status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUCCEEDED','FAILED')),
+  previous_version integer,
+  rollback_of integer,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  PRIMARY KEY(app_id,version)
+);
+ALTER TABLE app_releases ADD COLUMN IF NOT EXISTS switch_started boolean NOT NULL DEFAULT false;
+CREATE TABLE IF NOT EXISTS app_logs (
+  id bigserial PRIMARY KEY,
+  app_id text NOT NULL REFERENCES deployments(id),
+  source text NOT NULL CHECK (source IN ('deployment','runtime')),
+  message text NOT NULL CHECK (length(message)<=4096),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS app_logs_recent ON app_logs(app_id,id DESC);
+CREATE OR REPLACE FUNCTION immutable_app_release() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF (OLD.app_id,OLD.version,OLD.image,OLD.spec_digest,OLD.seed,OLD.previous_version,OLD.rollback_of)
+    IS DISTINCT FROM (NEW.app_id,NEW.version,NEW.image,NEW.spec_digest,NEW.seed,NEW.previous_version,NEW.rollback_of) THEN
+    RAISE EXCEPTION 'Immutable release';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS app_release_immutable ON app_releases;
+CREATE TRIGGER app_release_immutable BEFORE UPDATE ON app_releases FOR EACH ROW EXECUTE FUNCTION immutable_app_release();
+CREATE OR REPLACE FUNCTION log_deployment_state() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP='INSERT' OR OLD.state IS DISTINCT FROM NEW.state THEN
+    INSERT INTO app_logs(app_id,source,message) VALUES(NEW.id,'deployment','state: ' || NEW.state);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS deployment_log ON deployments;
+CREATE TRIGGER deployment_log AFTER INSERT OR UPDATE OF state ON deployments FOR EACH ROW EXECUTE FUNCTION log_deployment_state();

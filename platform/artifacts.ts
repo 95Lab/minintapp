@@ -1,5 +1,5 @@
-import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadBucketCommand, CreateBucketCommand } from "@aws-sdk/client-s3";
-import { AppId, RuntimeSeedSchema, type RuntimeSeed } from "./contracts";
+import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadBucketCommand, CreateBucketCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { AppId, ImageDigest, RuntimeSeedSchema, type RuntimeSeed } from "./contracts";
 function storage() {
   for (const key of ["S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) if (!process.env[key]) throw new Error(`Missing ${key}`);
   return new S3Client({ region: process.env.S3_REGION || "us-east-1", endpoint: process.env.S3_ENDPOINT || undefined, forcePathStyle: !!process.env.S3_ENDPOINT,
@@ -30,14 +30,24 @@ export async function removeArtifacts(id: string) {
     } while (cursor);
   } finally { client.destroy(); }
 }
-export async function putArtifact(seed: RuntimeSeed, image: string) {
-  RuntimeSeedSchema.parse(seed);
+export async function putArtifact(seed: RuntimeSeed, image: string, version = 1) {
+  RuntimeSeedSchema.parse(seed); ImageDigest.parse(image);
+  if (!Number.isSafeInteger(version) || version < 1) throw new Error("Invalid artifact version");
   const client = storage();
+  const key = `apps/${seed.id}/versions/${version}/manifest.json`;
+  const body = JSON.stringify({ seed, image, version });
   try {
-    await client.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: `apps/${seed.id}/versions/1/manifest.json`,
-      Body: JSON.stringify({ seed, image, version: 1 }), ContentType: "application/json" }));
+    try { await client.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key,
+      Body: body, ContentType: "application/json", IfNoneMatch: "*" })); }
+    catch (error) {
+      if ((error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode !== 412) throw error;
+      const existing = await client.send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }));
+      const saved = JSON.parse(await existing.Body!.transformToString());
+      if (JSON.stringify(saved) !== body) throw new Error("Immutable artifact mismatch");
+    }
   } finally { client.destroy(); }
 }
+
 export async function putBackup(id: string, data: Uint8Array) {
   AppId.parse(id);
   const client = storage();

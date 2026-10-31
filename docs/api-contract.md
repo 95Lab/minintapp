@@ -96,4 +96,16 @@ Mutation kiểm tra cùng origin. Host dùng `x-host-token` hoặc cookie HttpOn
 
 ## Giới hạn tạo app ở control plane
 
-Các giới hạn không dùng chung `rate_limited`: `creation_hourly_limit` (429) là ngân sách tạo app toàn hệ thống trong giờ; `app_capacity_full` (503) là hết chỗ chạy app; `owner_app_limit` (409) là chủ sở hữu đã có 2 app hoạt động. Mặc định toàn hệ thống có 3 app hoạt động và 30 lần tạo/giờ (`MAX_ACTIVE_APPS`, `MAX_CREATIONS_PER_HOUR`). App kết thúc/hết hạn chỉ nhả chỗ sau khi vòng dọn dẹp cập nhật trạng thái deployment. Các giới hạn vẫn được kiểm tra trong transaction và giữ nguyên mức bảo vệ tài nguyên.
+Các giới hạn không dùng chung `rate_limited`: `creation_hourly_limit` (429) là ngân sách tạo app toàn hệ thống trong giờ; `app_capacity_full` (503) là hết chỗ chạy app; `owner_app_limit` (409) là chủ sở hữu đã có 2 app hoạt động. Mặc định toàn hệ thống có 100 app hoạt động và 30 lần tạo/giờ (`MAX_ACTIVE_APPS`, `MAX_CREATIONS_PER_HOUR`). App kết thúc/hết hạn chỉ nhả chỗ sau khi vòng dọn dẹp cập nhật trạng thái deployment. Các giới hạn vẫn được kiểm tra trong transaction và giữ nguyên mức bảo vệ tài nguyên.
+
+## Quản lý phiên bản và log của sandbox
+
+`GET /api/apps/:id/deployment` giữ response tiến độ cũ. Thêm `?details=1` để lấy `{ state, activeVersion, requestedVersion, versions, images, logs, runtimeLogsAvailable }`. `versions` chỉ có metadata (digest, trạng thái, thời gian, previousVersion/rollbackOf); không trả seed hoặc host hash. Chỉ chủ tenant/tài khoản hoặc host capability đọc được; response `no-store`. `images` chỉ gồm image đã cache trên Worker còn heartbeat, đúng repository và digest.
+
+`POST /api/apps/:id/deployment` nhận union strict từ `src/lib/api/deployment-management-contract.ts`:
+
+- `{ action: "deploy", image, expectedVersion }`: tạo phiên bản runtime mới.
+- `{ action: "rollback", version, expectedVersion }`: tạo phiên bản mới từ image của bản SUCCEEDED cũ cùng app.
+- `{ action: "suspend" | "resume" | "delete" }`: giữ luồng vòng đời hiện có.
+
+Mutation kiểm tra cùng origin và quyền chủ app; chỉ deploy/rollback khi RUNNING, chưa có thao tác chờ và expectedVersion khớp phiên bản đang chạy. Image đích và image phục hồi phải có sẵn trên Worker. Sai version/image trả `invalid_request` hoặc `runtime_unavailable`; đang triển khai trả `deployment_pending`. Response thành công chỉ xác nhận đã nhận lệnh; cần theo dõi state/requestedVersion và lịch sử để biết kết quả. Rollback giữ dữ liệu hiện tại, không khôi phục database backup.

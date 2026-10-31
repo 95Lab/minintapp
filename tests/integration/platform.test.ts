@@ -7,6 +7,7 @@ vi.hoisted(() => {
   process.env.APPS_DOMAIN = "apps.example.test";
   process.env.MAX_ACTIVE_APPS = "3";
 });
+import { manageDeployment, ensureInitialRelease, completeRelease, release } from "../../platform/release-store";
 import { Queue, Worker } from "bullmq";
 import { pool, reserveWorker } from "../../platform/store";
 import { dispatchOutbox } from "../../platform/scheduler";
@@ -98,4 +99,23 @@ it("returns 202 with scoped host cookies and exposes deployment state only to it
   const stranger = await listRoute(new Request("http://local"));
   expect((await stranger.json()).apps).toHaveLength(0);
   expect(JSON.stringify(statusBody).includes("host_token_hash")).toBe(false);
+});
+
+it("serializes competing release requests and refuses stale promotion against real PostgreSQL", async () => {
+  const firstImage = process.env.RUNTIME_IMAGE!;
+  const secondImage = `ghcr.io/95lab/minintapp@sha256:${"b".repeat(64)}`;
+  await pool.query("INSERT INTO workers(id,agent_url,capacity,available_images) VALUES('release-worker','http://127.0.0.1:19090',3,$1)", [[firstImage,secondImage]]);
+  const created = await create();
+  const seed = { id:created.id,spec:composeSpec(),prompt:"vote",ownerId:"owner",hostTokenHash:"c".repeat(64),createdAt:Date.now(),expiresAt:Date.now()+60000 };
+  await pool.query("UPDATE deployments SET seed=$2,state='RUNNING',worker_id='release-worker',active_version=1 WHERE id=$1",[created.id,seed]);
+  await ensureInitialRelease({id:created.id,image:firstImage,seed} as import("../../platform/contracts").Deployment);
+  await pool.query("UPDATE app_releases SET status='SUCCEEDED' WHERE app_id=$1",[created.id]);
+  const results = await Promise.allSettled([1,2].map(() => manageDeployment(created.id,{action:"deploy",image:secondImage,expectedVersion:1})));
+  expect(results.filter(value=>value.status==='fulfilled')).toHaveLength(1);
+  const app = (await pool.query<import("../../platform/contracts").Deployment>("SELECT * FROM deployments WHERE id=$1",[created.id])).rows[0];
+  expect(app).toMatchObject({active_version:1,requested_version:2,revision:2});
+  await pool.query("UPDATE deployments SET state='DEPLOYING' WHERE id=$1",[created.id]);
+  await expect(completeRelease({...app,revision:1},(await release(created.id,2))!)).rejects.toThrow("current");
+  await completeRelease(app,(await release(created.id,2))!);
+  expect((await pool.query("SELECT active_version,image FROM deployments WHERE id=$1",[created.id])).rows[0]).toEqual({active_version:2,image:secondImage});
 });

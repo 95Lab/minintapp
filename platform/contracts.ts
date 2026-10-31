@@ -19,7 +19,7 @@ export type Deployment = {
   host_token_hash: string; hostname: string; image: string; worker_id: string | null;
   port: number | null; dns_record_id: string | null; created_at: Date; expires_at: Date;
   generation: import("../src/lib/generation/llm-output-types").GenerationMeta | import("../src/engine/generation/llm-output-types").GenerationMeta | null;
-  revision: number;
+  revision: number; active_version: number | null; requested_version: number | null;
 };
 export function redisConnection(value: string) {
   const url = new URL(value);
