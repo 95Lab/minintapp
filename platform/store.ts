@@ -3,7 +3,13 @@ import { readFile } from "node:fs/promises";
 import type { Deployment } from "./contracts";
 
 const state = globalThis as typeof globalThis & { minintControlPool?: Pool };
-export const pool = state.minintControlPool ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 8, connectionTimeoutMillis: 5000 });
+function createControlPool() {
+  const created = new Pool({ connectionString: process.env.DATABASE_URL, max: 8, connectionTimeoutMillis: 5000 });
+  // pg emits this when an idle client drops; left unhandled, a Postgres restart kills the whole process.
+  created.on("error", () => console.error("Control database connection lost"));
+  return created;
+}
+export const pool = state.minintControlPool ??= createControlPool();
 export async function migrate() {
   const client = await pool.connect();
   try {
