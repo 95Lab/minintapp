@@ -1,3 +1,4 @@
+import "@/components/runtime-design.css";
 import { composeSpec, quizSpec } from "@/lib/app-spec/app-spec-examples";
 import { stripPrivateFields } from "@/lib/app-spec/strip-private-fields";
 import { initialRuntime } from "@/lib/blocks/block-definition-types";

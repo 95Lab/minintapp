@@ -1,6 +1,23 @@
 import type { Locale } from "./locale";
 
 const english = {
+  "Kiểm tra email để tiếp tục đăng nhập.": "Check your email to continue signing in.",
+  "Không thể gửi liên kết. Vui lòng thử lại.": "Could not send the link. Please try again.",
+  "Gửi liên kết đăng nhập": "Send sign-in link",
+  "Đăng nhập chưa kết nối dịch vụ xác thực.": "Sign-in is not connected in this demo.",
+  "Đã gửi yêu cầu remix.": "Remix request sent.",
+  "Không thể remix. Vui lòng thử lại.": "Could not remix. Please try again.",
+  "Remix ứng dụng": "Remix app",
+  "Bạn muốn thay đổi gì?": "What would you like to change?",
+  "Remix chưa kết nối API.": "Remix is not connected in this demo.",
+  "Tạo mini-app cho nhu cầu của bạn": "Create a mini-app for your needs",
+  "Bắt đầu từ mẫu": "Start with a template",
+  "Chưa có mẫu ứng dụng.": "No templates yet.",
+  "Chưa có ứng dụng.": "No apps yet.",
+  "Thông báo từ host": "Host announcement",
+  "Thông báo": "Announcement",
+  "Tài khoản nhận thanh toán": "Payment account",
+  "Thanh toán chưa khả dụng. Không nhập thông tin tài khoản ở bước này.": "Payments are unavailable. Do not enter account information here.",
   "Đến nội dung chính": "Skip to main content",
   "MinintApp, trang chủ": "MinintApp, home",
   "Điều hướng chính": "Main navigation",

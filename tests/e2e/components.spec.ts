@@ -33,3 +33,16 @@ test("unconnected features stay disabled and mobile preview fits the viewport", 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/components-mobile.png", fullPage: true });
 });
+
+test("preview shares home branding and translates its demo at 320px",async({page})=>{
+ await page.setViewportSize({width:320,height:844});await page.goto("/preview");
+ await expect(page.getByRole("banner").getByRole("link",{name:"MinintApp, trang chủ"})).toBeVisible();
+ await expect(page.getByText("BẢN MINH HỌA",{exact:true})).toBeVisible();
+ const header=page.getByRole("banner");await header.getByRole("button",{name:"Mở menu",exact:true}).click();await header.getByRole("button",{name:"EN",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Component library",exact:true})).toBeVisible();
+ await expect(page.getByRole("radio",{name:"Tea",exact:true})).toBeVisible();
+ await page.getByText("Account, remix and lifecycle",{exact:true}).click();
+ await expect(page.getByRole("button",{name:"Send sign-in link"})).toBeDisabled();
+ await expect(page.getByRole("heading",{name:"Remix app",exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
