@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { fetchSession } from "@/engine/auth/account-client";
 import { BrandLogo } from "@/components/brand-logo";
 import { useEffect, useState } from "react";
 import { DeploymentManagementPanel } from "@/components/deployment-management";
@@ -13,6 +14,18 @@ import styles from "./page.module.css";
 export default function Dashboard() {
   const { locale } = useLocale();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSession().then(session => {
+      if (cancelled) return;
+      if (!session) { setAuthError(true); return; }
+      if (!session.user) { window.location.replace("/login"); return; }
+      setAuthenticated(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [apps, setApps] = useState<MyAppsResponse["apps"]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,6 +34,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
   const [retry, setRetry] = useState(0);
   useEffect(() => {
+    if (!authenticated) return;
     const abort = new AbortController();
     const load = () => requestJson<MyAppsResponse>("/api/my-apps", { signal: abort.signal })
       .then((body) => { setApps(body.apps); setError(""); })
@@ -29,7 +43,7 @@ export default function Dashboard() {
     void load();
     const timer = setInterval(load, 3000);
     return () => { abort.abort(); clearInterval(timer); };
-  }, [locale, retry]);
+  }, [locale, retry, authenticated]);
   async function action(id: string, value: "suspend" | "resume" | "delete") {
     if (value === "delete" && !window.confirm(text("Xóa ứng dụng và dữ liệu riêng của ứng dụng này?", "Delete this app and its data?"))) return;
     setBusy(id); setError("");
@@ -49,6 +63,7 @@ export default function Dashboard() {
     { label: text("Đang triển khai", "In progress"), value: apps.filter((app) => ["QUEUED", "GENERATING", "BUILDING", "DEPLOYING"].includes(app.state)).length, note: text("Từ ý tưởng đến ứng dụng", "From idea to app") },
     { label: text("Cần chú ý", "Needs attention"), value: apps.filter((app) => ["FAILED", "EXPIRED"].includes(app.state)).length, note: text("Lỗi hoặc đã hết hạn", "Failed or expired") },
   ];
+  if (!authenticated) return <main><p role="status">{authError ? text("Không thể kiểm tra đăng nhập. Vui lòng tải lại trang.", "Could not verify your session. Please reload.") : text("Đang kiểm tra đăng nhập…", "Checking your session…")}</p>{authError && <Link href="/login">{text("Đăng nhập", "Sign in")}</Link>}</main>;
   return <div className={styles.shell}>
     <a className={styles.skip} href="#dashboard-content">{text("Đến nội dung", "Skip to content")}</a>
     <aside className={styles.sidebar}>

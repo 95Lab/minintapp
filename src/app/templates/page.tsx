@@ -1,3 +1,3 @@
-import "@/engine-ui/engine.css";
-import {HomeScreen} from "@/engine-ui/create/home-screen";
-export default function TemplatesPage(){return <div className="engine-shell"><HomeScreen initialPrompt=""/></div>;}
+import { TemplatesScreen } from "@/engine-ui/create/templates-screen";
+export const metadata = { title: "Templates · MinintApp" };
+export default function TemplatesPage(){return <TemplatesScreen />;}

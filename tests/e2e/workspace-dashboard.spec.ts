@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({page}) => {
+  await page.route("**/api/engine/auth/session",route=>route.fulfill({json:{user:{email:"host@example.test"},accountsEnabled:true}}));
+});
+
 test("workspace dashboard filters deployment data and fits mobile", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route("**/api/my-apps", (route) => route.fulfill({ json: { apps: [

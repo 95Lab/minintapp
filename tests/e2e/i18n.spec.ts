@@ -11,6 +11,8 @@ test("language preference survives navigation and reload with server-rendered En
   await expect(page).toHaveTitle(/Small apps/);
   await page.getByRole("link", { name: "Explore all templates" }).click();
   await expect(page.getByRole("button", { name: "EN", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.route("**/api/engine/auth/session", route => route.fulfill({json:{user:{email:"host@example.test"},accountsEnabled:true}}));
+  await page.route("**/api/my-apps", route => route.fulfill({json:{apps:[]}}));
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "My apps" })).toBeVisible();
   await page.getByRole("button", { name: "VI", exact: true }).click();
