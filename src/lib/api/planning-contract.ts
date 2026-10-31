@@ -1,5 +1,7 @@
 import { z } from "zod";
 export const PLANNING_TIMEOUT_MS = 25_000;
+export const PLANNING_MAX_MESSAGES = 25;
+export const PLANNING_MAX_CHARACTERS = 5000;
 export const PlanningErrorCodeSchema = z.enum(["invalid_request", "ai_not_configured", "ai_timeout", "ai_refused", "ai_invalid_output", "ai_unavailable", "rate_limited"]);
 
 export const PlanningMessageSchema = z.strictObject({
@@ -8,13 +10,13 @@ export const PlanningMessageSchema = z.strictObject({
 });
 export const PlanningRequestSchema = z.strictObject({
   locale: z.enum(["vi", "en"]),
-  messages: z.array(PlanningMessageSchema).min(1).max(25),
+  messages: z.array(PlanningMessageSchema).min(1).max(PLANNING_MAX_MESSAGES),
   currentBrief: z.string().trim().min(1).max(500).nullable(),
 }).superRefine((value, ctx) => {
   if (value.messages.some((message, index) => message.role !== (index % 2 === 0 ? "user" : "assistant"))) {
     ctx.addIssue({ code: "custom", message: "Messages must alternate, starting with the user" });
   }
-  if (value.messages.at(-1)?.role !== "user" || value.messages.reduce((sum, message) => sum + message.content.length, 0) > 5000) {
+  if (value.messages.at(-1)?.role !== "user" || value.messages.reduce((sum, message) => sum + message.content.length, 0) > PLANNING_MAX_CHARACTERS) {
     ctx.addIssue({ code: "custom", message: "Invalid conversation length" });
   }
 });
@@ -33,3 +35,13 @@ export const PlanningReplySchema = PlanningReplyWireSchema.superRefine((value, c
 export type PlanningMessage = z.infer<typeof PlanningMessageSchema>;
 export type PlanningRequest = z.infer<typeof PlanningRequestSchema>;
 export type PlanningReply = z.infer<typeof PlanningReplySchema>;
+
+// Keep the original idea and recent complete turns. The standalone currentBrief
+// carries agreed requirements from older turns; the UI retains the full log.
+export function planningContext(messages: PlanningMessage[]): PlanningMessage[] {
+  const context = [...messages];
+  while (context.length > 3 && (context.length > PLANNING_MAX_MESSAGES || context.reduce((sum, message) => sum + message.content.length, 0) > PLANNING_MAX_CHARACTERS)) {
+    context.splice(2, 2);
+  }
+  return context;
+}

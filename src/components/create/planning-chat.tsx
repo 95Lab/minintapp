@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ApiClientError, requestJson } from "@/lib/api/api-client";
-import { PlanningReplySchema, PlanningRequestSchema, type PlanningMessage, type PlanningReply } from "@/lib/api/planning-contract";
+import { planningContext, PlanningReplySchema, PlanningRequestSchema, type PlanningMessage, type PlanningReply } from "@/lib/api/planning-contract";
 import type { GenerateRequest, Lifetime } from "@/lib/api/api-contract-types";
 import styles from "./planning-chat.module.css";
 
@@ -32,10 +32,10 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate 
   async function send(content: string) {
     if (inFlight.current || !content.trim()) return;
     const next: PlanningMessage[] = [...messages, { role: "user", content: content.trim() }];
-    const input = PlanningRequestSchema.safeParse({ messages: next, currentBrief: brief, locale });
+    const input = PlanningRequestSchema.safeParse({ messages: planningContext(next), currentBrief: brief, locale });
     if (!input.success) {
       setPlan(null);
-      setError(text("Cuộc trò chuyện đã đạt giới hạn. Hãy bắt đầu lại với mô tả gọn hơn.", "This conversation has reached its limit. Start again with a shorter description."));
+      setError(text("Tin nhắn chưa hợp lệ. Hãy nhập từ 1 đến 1.200 ký tự rồi gửi lại.", "Invalid message. Enter 1–1,200 characters and try again."));
       return;
     }
     inFlight.current = true;

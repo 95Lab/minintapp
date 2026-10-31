@@ -53,3 +53,5 @@ Giữ Next.js/React/TypeScript, Vitest, Playwright và quy ước tên biến m�
 ## Deploy tự động
 
 Cấu hình Docker standalone, Caddy và GitHub Actions đã có trong repo. Xem [hướng dẫn VPS](deployment.md) để bootstrap, cấu hình secrets và kích hoạt deploy. Khi chưa có VPS/secrets hoặc chưa push workflow, deployment chưa hoạt động.
+
+Luồng chat lập yêu cầu giữ toàn bộ lịch sử trên giao diện, nhưng gửi ngữ cảnh có giới hạn đến API: giữ lượt đầu và các lượt gần nhất, bỏ các cặp trao đổi cũ ở giữa khi vượt 25 tin nhắn hoặc 5.000 ký tự. Bản yêu cầu hiện tại (`currentBrief`) tiếp tục được gửi kèm. Chi tiết cũ chưa được phản ánh trong bản yêu cầu có thể không còn trong ngữ cảnh model; giới hạn API và giới hạn 500 ký tự của bản yêu cầu không thay đổi.

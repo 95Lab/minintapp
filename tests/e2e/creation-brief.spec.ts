@@ -97,3 +97,35 @@ test("a pending revision locks confirmation and failure cannot reuse a stale rea
   await chat.getByLabel("Trao đổi thêm hoặc chỉnh yêu cầu").fill("");
   await expect(confirm).toBeDisabled();
 });
+
+test("long planning conversations continue within API limits without losing the visible history", async ({ page }) => {
+  const { PlanningRequestSchema } = await import("../../src/lib/api/planning-contract");
+  const original = "Bình chọn đồ uống cho workshop";
+  const brief = "Bình chọn trà và cà phê, ẩn kết quả đến khi host chốt.";
+  let turns = 0;
+  await page.route("**/api/engine/plan", async route => {
+    const input = PlanningRequestSchema.parse(route.request().postDataJSON());
+    expect(input.messages[0].content).toBe(original);
+    if (turns > 0) expect(input.currentBrief).toBe(brief);
+    turns++;
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({
+      status: "ready", message: `Phản hồi ${turns}: ${"Chi tiết. ".repeat(100)}`,
+      suggestions: [], brief,
+    }) });
+  });
+  await page.goto("/");
+  await page.getByLabel("Bạn cần mini-app gì?").fill(original);
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  const chat = page.getByRole("dialog");
+  const confirm = chat.getByRole("button", { name: "Chốt yêu cầu và tạo app" });
+  await expect(confirm).toBeEnabled();
+  for (let turn = 1; turn <= 14; turn++) {
+    await chat.getByLabel("Trao đổi thêm hoặc chỉnh yêu cầu").fill(`Điều chỉnh ${turn}`);
+    await chat.getByRole("button", { name: "Gửi tin nhắn" }).click();
+    await expect(confirm).toBeEnabled();
+  }
+  expect(turns).toBe(15);
+  await expect(chat.getByRole("alert")).toHaveCount(0);
+  await expect(chat.getByText(original, { exact: true })).toBeVisible();
+  await expect(chat.getByText("Điều chỉnh 14", { exact: true })).toBeVisible();
+});
