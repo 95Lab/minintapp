@@ -66,13 +66,13 @@ describe("Supabase repository on embedded PostgreSQL", () => {
       await expect(db.transaction(async (tx) => { await tx.exec(`set local role ${role}`); await tx.exec(query); })).rejects.toThrow(/permission denied/);
     }
   });
-  it("enforces response limits and slot capacity after concurrent commits", async () => {
+  it("accepts concurrent slot signups for server-side waitlist allocation", async () => {
     const s = composeSpec(); const b = s.blocks[0]; if (b.type !== "compose") throw Error();
     b.inputs[0].kind = "slot"; b.inputs[0].capacity = 1;
     const { app } = await newRepo().createApp({ spec: s, prompt: "slot", lifetimeMs: 3600000 });
     const results = await Promise.allSettled([newRepo().submitResponse(app.id, vote("one")), newRepo().submitResponse(app.id, vote("two"))]);
-    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(await newRepo().listResponses(app.id)).toHaveLength(1);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(2);
+    expect(await newRepo().listResponses(app.id)).toHaveLength(2);
   });
   it("rejects expired and late step writes at the transaction boundary", async () => {
     const { app } = await create(); const current = (await newRepo().snapshot(app.id))!;

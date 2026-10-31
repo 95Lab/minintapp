@@ -7,7 +7,6 @@ import type { AnswerRow, AppRuntime } from "@/engine/blocks/block-definition-typ
 import { composeBlock, ComposeBlockSchema, type ComposePayload } from "@/engine/blocks/compose/compose-block";
 import { settleTransfers } from "@/engine/blocks/compose/compose-view-aggregators";
 import { appSpecToFlatSpec, flatSpecToAppSpec } from "@/engine/generation/llm-flat-spec-conversion";
-import { mockGenerateAppSpec } from "@/engine/generation/mock-generate-app-spec";
 
 const runtime: AppRuntime = { openQuestionId: null, revealedQuestionIds: [] };
 const host = { appStatus: "active" as const, runtime, viewer: { isHost: true, participantHash: null } };
@@ -116,19 +115,3 @@ describe("compose views", () => {
   });
 });
 
-describe("compose in the keyword mock", () => {
-  it("builds sign-up slots with the stated list and seat limit", () => {
-    const out = mockGenerateAppSpec("Đăng ký trực nhật: thứ 2, thứ 3, thứ 4. Mỗi ngày tối đa 3 người");
-    const block = out.spec?.blocks[0];
-    expect(block?.type).toBe("compose");
-    if (block?.type === "compose") {
-      expect(block.inputs[0].capacity).toBe(3);
-      expect(block.inputs[0].options?.map((o) => o.label)).toEqual(["Thứ 2", "Thứ 3", "Thứ 4"]);
-    }
-  });
-
-  it("builds a star rating", () => {
-    const block = mockGenerateAppSpec("Đánh giá buổi học hôm nay").spec?.blocks[0];
-    expect(block?.type).toBe("compose");
-  });
-});

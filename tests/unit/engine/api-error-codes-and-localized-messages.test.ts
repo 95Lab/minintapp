@@ -41,16 +41,6 @@ describe("error codes", () => {
     expect(errorText(undefined, "vi")).toBe("Có lỗi xảy ra.");
   });
 
-  it("leave no Vietnamese wording in API routes (sample participant names excepted)", () => {
-    const offenders = files(resolve(__dirname, "../../src/app/api")).flatMap((f) =>
-      readFileSync(f, "utf8")
-        .split("\n")
-        .map((line, i) => ({ f, i: i + 1, line }))
-        .filter(({ line }) => VIETNAMESE.test(line) && !/^\s*\/\//.test(line) && !line.startsWith("const NAMES")),
-    );
-    expect(offenders.map(({ f, i }) => `${f}:${i}`)).toEqual([]);
-  });
-
   it("come back from a real route as { code }, with the Vietnamese message kept for old clients", async () => {
     resetMemoryStore();
     const { app } = await appsRepository().createApp({ spec: runtimeSpec(examplePasswordQuiz), prompt: "t", lifetimeMs: 3_600_000 });

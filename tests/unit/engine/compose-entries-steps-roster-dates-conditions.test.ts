@@ -5,7 +5,6 @@ import { AppSpecSchema, type AppSpecDraft, type ComposeBlock } from "@/engine/ap
 import type { AnswerRow, AppRuntime } from "@/engine/blocks/block-definition-types";
 import { composeBlock, ComposeBlockSchema, type ComposePayload } from "@/engine/blocks/compose/compose-block";
 import { rosterIdOf } from "@/engine/blocks/compose/compose-atoms-schema";
-import { mockGenerateAppSpec } from "@/engine/generation/mock-generate-app-spec";
 
 const empty: AppRuntime = { openQuestionId: null, revealedQuestionIds: [] };
 const hashOf = (n: string) => n.repeat(64).slice(0, 64); // fake hex participant hashes: "aaaa…", "bbbb…"
@@ -152,19 +151,3 @@ describe("conditional inputs (showIf)", () => {
   });
 });
 
-describe("keyword mock builds the richer compose apps", () => {
-  const first = (prompt: string) => mockGenerateAppSpec(prompt).spec?.blocks[0] as ComposeBlock | undefined;
-
-  it("expense log, leader vote, teams (with the stated count), steps, RSVP", () => {
-    expect(first("Sổ chi tiêu chuyến đi Đà Lạt, chia tiền cuối chuyến")).toMatchObject({ type: "compose", entries: "many" });
-    expect(first("Bầu trưởng nhóm dự án")?.inputs[0].kind).toBe("person");
-    expect(first("Chia 4 đội ngẫu nhiên cho buổi team building")?.views[0]).toMatchObject({ kind: "teams", teams: 4 });
-    expect(first("Hỏi nhanh từng câu một, host mở câu")).toMatchObject({ flow: "steps" });
-    expect(first("Xác nhận tham dự tiệc cuối năm")?.inputs.some((i) => i.showIf)).toBe(true);
-    expect(mockGenerateAppSpec("Chia 4 đội ngẫu nhiên").spec?.requireName).toBe(true);
-  });
-
-  it("rejects reserved input ids", () => {
-    expect(ComposeBlockSchema.safeParse({ type: "compose", id: "b", title: "T", note: null, inputs: [input({ id: "_join", kind: "text", label: "x" })], views: [] }).success).toBe(false);
-  });
-});

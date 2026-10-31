@@ -9,7 +9,6 @@ import { upgradeStoredSpec } from "@/engine/blocks/block-vocabulary";
 import { composeBlock, type ComposePayload } from "@/engine/blocks/compose/compose-block";
 import { orderLineTotal } from "@/engine/blocks/compose/compose-view-aggregators";
 import { optionIdsFromLabels } from "@/engine/blocks/presets/preset-definition-types";
-import { mockRemixAppSpec } from "@/engine/generation/mock-generate-app-spec";
 import { runtimeSpec } from "./runtime-spec-test-helper";
 
 const runtime: AppRuntime = { openQuestionId: null, revealedQuestionIds: [] };
@@ -54,26 +53,6 @@ describe("choice preset → compose poll", () => {
     const rows = [row("a", "", { vote: "ux" }), row("b", "", { vote: "ux" }, 2), row("c", "", { vote: "ai-agent" }, 3)];
     const summary = composeBlock.summarizeForRemix(poll, composeBlock.computeResults(poll, rows, view("active", true, null)));
     expect(summary).toMatch(/^Bạn muốn nghe chủ đề nào nhất\?: UX 2, AI agent 1/);
-  });
-});
-
-describe("remixing a poll stored as compose (keyword mock)", () => {
-  const stored = runtimeSpec(exampleWorkshopVote);
-  const poll = stored.blocks[0] as ComposeBlock;
-  const rows = [row("a", "", { vote: "bao-mat" }), row("b", "", { vote: "bao-mat" }, 2), row("c", "", { vote: "ux" }, 3)];
-  const summary = composeBlock.summarizeForRemix(poll, composeBlock.computeResults(poll, rows, view("active", true, null)));
-
-  it("turns the winning option into the quiz topic (demo line)", () => {
-    const out = mockRemixAppSpec(stored, summary, "Đổi thành quiz 3 câu về chủ đề vừa thắng, có bảng xếp hạng");
-    expect(out.spec?.blocks[0].type).toBe("quiz");
-    expect(out.spec?.title).toContain("Bảo mật");
-  });
-
-  it("adds an option and hides results on the compose poll", () => {
-    const added = mockRemixAppSpec(stored, summary, "Thêm lựa chọn: Cloud").spec?.blocks[0] as ComposeBlock;
-    expect(added.inputs[0].options!.map((o) => o.label)).toContain("Cloud");
-    const hidden = mockRemixAppSpec(stored, summary, "Ẩn kết quả tới khi đóng").spec?.blocks[0] as ComposeBlock;
-    expect(hidden.views[0].visibleTo).toBe("after_close");
   });
 });
 

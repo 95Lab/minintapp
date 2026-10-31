@@ -69,12 +69,12 @@ type Block = { id: string; inputs: ComposeInput[]; views: ComposeView[] };
 /** Host actions of a compose block (steps: next / close / restart; teams: shuffle). */
 export const composeHostActions: Record<string, (block: Block, runtime: AppRuntime, ctx: Ctx) => HostActionResult> = {
   /** Closes the open step (if any) and opens the next one not yet done. */
-  next(block, runtime) {
+  next(block, runtime, ctx) {
     const state = composeState(runtime, block.id);
     const done = state.step.current && !state.step.done.includes(state.step.current) ? [...state.step.done, state.step.current] : state.step.done;
     const nextInput = block.inputs.find((i) => !done.includes(i.id));
     if (!nextInput) return { ok: false, error: "no_more_steps" };
-    return { ok: true, runtime: withBlockState(runtime, block.id, { ...state, step: { current: nextInput.id, openedAt: Date.now(), done } }) };
+    return { ok: true, runtime: withBlockState(runtime, block.id, { ...state, step: { current: nextInput.id, openedAt: ctx.now ?? Date.now(), done } }) };
   },
   close(block, runtime) {
     const state = composeState(runtime, block.id);
