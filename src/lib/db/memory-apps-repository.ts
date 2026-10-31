@@ -13,6 +13,13 @@ export class MemoryAppsRepository implements AppsRepository {
     this.entries.set(result.app.id, { app: result.app, responses: [] });
     return structuredClone(result);
   }
+  async mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean}):Promise<T|null> {
+    const entry=this.entries.get(id); if(!entry)return null;
+    const copy=structuredClone(entry);const result=mutate(copy,this.now());
+    if(result.changed){copy.app.stateVersion=entry.app.stateVersion+1;this.entries.set(id,copy);}
+    return result.value;
+  }
+  async listAppsByOwner(userId:string) {return structuredClone([...this.entries.values()].map(s=>s.app).filter(a=>a.ownerId===userId&&a.status!=="ended"&&a.expiresAt>this.now()).sort((a,b)=>b.createdAt-a.createdAt));}
   async snapshot(id: string) { return structuredClone(this.entries.get(id) ?? null); }
   async findApp(id: string) { return structuredClone(this.entries.get(id)?.app ?? null); }
   async listResponses(id: string) { return structuredClone(this.entries.get(id)?.responses ?? []); }

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
+    "nanoid": "^6.0.2",
     "next": "16.4.3",
     "openai": "^7.46.0",
     "qrcode": "^1.5.4",

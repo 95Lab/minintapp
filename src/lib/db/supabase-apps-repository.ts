@@ -19,13 +19,17 @@ export function supabaseRpc(url: string, key: string, fetcher: typeof fetch = fe
 }
 interface TimedSnapshot { snapshot: AppSnapshot; now: number }
 export class SupabaseAppsRepository implements AppsRepository {
-  constructor(private readonly rpc: SupabaseRpc) {}
+  constructor(private readonly rpc: SupabaseRpc, private readonly listOwned?: (id:string)=>Promise<AppSnapshot["app"][]>) {}
   private async read(id: string, signal: AbortSignal): Promise<TimedSnapshot | null> {
     const raw = await this.rpc("minint_snapshot", { p_id: id }, signal) as TimedSnapshot | null;
     if (raw === null) return null;
     if (!raw?.snapshot?.app || !Array.isArray(raw.snapshot.responses) || !Number.isFinite(raw.now)) throw new AppError("storage_unavailable");
     return raw;
   }
+  async mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean}):Promise<T|null> {
+    return this.mutate<T|null>(id,()=>null,(snapshot,now)=>{const expected=snapshot.app.stateVersion;const r=mutate(snapshot,now);if(r.changed)snapshot.app.stateVersion=expected+1;return{value:r.value};});
+  }
+  async listAppsByOwner(userId:string){if(!this.listOwned)throw new AppError("storage_unavailable");return this.listOwned(userId);}
   async snapshot(id: string) { return (await this.read(id, AbortSignal.timeout(8000)))?.snapshot ?? null; }
   async findApp(id: string) { return (await this.snapshot(id))?.app ?? null; }
   async listResponses(id: string) { return (await this.snapshot(id))?.responses ?? []; }

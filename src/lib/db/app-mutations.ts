@@ -1,3 +1,4 @@
+import { AppSpecSchema as EngineSpecSchema } from "@/engine/app-spec/app-spec-schema";
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { AppSpecSchema } from "@/lib/app-spec/app-spec-schema";
@@ -9,11 +10,17 @@ import { applyHostAction } from "@/lib/blocks/host-actions";
 import { MAX_ENTRIES } from "@/lib/blocks/compose/compose-atoms-schema";
 import { isUsable, type AppsRepository, type AppRecord, type AppSnapshot, type ResponseRecord, type SubmitOutcome } from "./apps-repository-types";
 
+function parseStoredSpec(value:unknown):AppRecord["spec"] {
+  const legacy=AppSpecSchema.safeParse(value);
+  if(legacy.success)return legacy.data;
+  // v2 rooms use the wider engine contract while v1 API types stay backward compatible.
+  return EngineSpecSchema.parse(value) as unknown as AppRecord["spec"];
+}
 export function createAppRecord(input: Parameters<AppsRepository["createApp"]>[0], now: number): { app: AppRecord; hostToken: string } {
   if (!Number.isSafeInteger(input.lifetimeMs) || input.lifetimeMs <= 0 || input.lifetimeMs > 7 * 86_400_000) throw new AppError("invalid_request");
   const hostToken = newToken();
   return { hostToken, app: {
-    id: randomBytes(12).toString("hex"), spec: AppSpecSchema.parse(input.spec), prompt: input.prompt,
+    id: randomBytes(12).toString("hex"), spec: parseStoredSpec(input.spec), prompt: input.prompt,
     hostTokenHash: hashToken(hostToken), parentId: input.parentId ?? null, movedTo: null,
     status: "active" as const, runtime: initialRuntime(), stateVersion: 1, createdAt: now, expiresAt: now + input.lifetimeMs,
     endedAt: null, ownerId: input.ownerId ?? null, announcement: null,
