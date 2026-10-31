@@ -42,7 +42,12 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
     if (busyId) return;
     setBusyId(templateId);
     setError(null);
-    if (!await availability.refresh()) { setBusyId(null); return; }
+    if (!await availability.refresh()) {
+      // The availability notice sits above the grid, so a click far down the list needs its own message.
+      setError(locale === "vi" ? "Chưa thể tạo ứng dụng lúc này. Xem hạn mức ở đầu danh sách." : "Can't create an app right now. See the limit above the list.");
+      setBusyId(null);
+      return;
+    }
     const res = await createFromTemplate({ templateId, locale, lifetime });
     if (res.ok) {
       setHostToken(res.id, res.hostToken);
@@ -75,7 +80,8 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
         ))}
       </div>
       {visible.length===0&&<p className="catalog-empty">{locale==="vi"?"Không có mẫu phù hợp. Thử từ khóa khác hoặc chọn tất cả loại mẫu.":"No matching templates. Try another search or select all pricing types."}</p>}
-      {error && <div className="notice warn" role="alert">{error} <a href="/dashboard">{locale === "vi" ? "Mở Ứng dụng của tôi" : "Open My apps"}</a></div>}
+      {/* Sticky: the list is thousands of pixels tall and this renders after it. */}
+      {error && <div className="notice warn" role="alert" style={{ position: "sticky", bottom: 16, zIndex: 2, boxShadow: "0 8px 24px #0002" }}>{error} <a href="/dashboard">{locale === "vi" ? "Mở Ứng dụng của tôi" : "Open My apps"}</a></div>}
     </section>
   );
 }

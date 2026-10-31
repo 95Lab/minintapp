@@ -56,3 +56,12 @@ test("quota changes during planning preserve the brief and offer a management li
   await expect(chat.getByRole("complementary")).toContainText("Bình chọn trà hoặc cà phê");
   expect(creates).toBe(0);
 });
+
+test("a failed template click shows its reason on screen, not below the long list", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.route("**/api/creation-availability", route => route.fulfill({ json: { used: 0, limit: 50 } }));
+  await page.route("**/api/engine/apps/from-template", route => route.fulfill({ status: 503, json: { ok: false, code: "app_capacity_full" } }));
+  await page.goto("/templates");
+  await page.locator("button.template-card").first().click();
+  await expect(page.getByRole("alert").filter({ hasText: "hết chỗ" })).toBeInViewport();
+});
