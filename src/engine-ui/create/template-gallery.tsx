@@ -28,6 +28,11 @@ const KIND_LABEL: Record<VocabularyType, { vi: string; en: string }> = {
 
 export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifetime: Lifetime }) {
   const s = t(locale);
+  const [query,setQuery]=useState("");
+  const [price,setPrice]=useState("all");
+  const normalize=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase();
+  const catalog=APP_TEMPLATES.map((tpl,index)=>({tpl,paid:index%4===3,views:240+index*73,clones:18+index*11}));
+  const visible=catalog.filter(({tpl,paid})=>(price==="all"||(price==="paid")===paid)&&normalize(`${tpl.title[locale]} ${tpl.blurb[locale]}`).includes(normalize(query.trim())));
   const availability = useCreationAvailability();
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -54,16 +59,22 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
         <h2 id="templates-title" style={{ fontSize: 20 }}>{s.templatesTitle}</h2>
         <p className="muted" style={{ margin: "4px 0 0" }}>{s.templatesHint}</p>
       </div>
+      <div className="catalog-filters"><label>{locale==="vi"?"Tìm mẫu ứng dụng":"Search app templates"}<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={locale==="vi"?"Tên mẫu hoặc nhu cầu…":"Template name or need…"}/></label><label>{locale==="vi"?"Loại mẫu":"Template pricing"}<select value={price} onChange={e=>setPrice(e.target.value)}><option value="all">{locale==="vi"?"Tất cả":"All"}</option><option value="free">Free</option><option value="paid">Paid</option></select></label></div>
+      <p className="catalog-note">{locale==="vi"?"Demo marketplace: nhãn Free/Paid và lượt xem/clone là dữ liệu giả lập. Mọi mẫu đều dùng thử miễn phí, chưa thu phí.":"Marketplace demo: Free/Paid labels and view/clone counts are simulated. All templates are free to try; no payments."}</p>
+      <p className="catalog-note" role="status">{locale==="vi"?`${visible.length} mẫu phù hợp`:`${visible.length} matching templates`}</p>
       <CreationAvailabilityNotice {...availability} locale={locale} />
       <div className="template-grid">
-        {APP_TEMPLATES.map((tpl) => (
+        {visible.map(({tpl,paid,views,clones}) => (
           <button key={tpl.id} type="button" className="card template-card" data-app-theme={tpl.spec[locale].theme} onClick={() => open(tpl.id)} disabled={!!busyId || !!availability.availability && creationBlocked(availability.availability)}>
             <span className="template-kind">{KIND_LABEL[tpl.kind as VocabularyType]?.[locale] ?? tpl.kind}</span>
+            <span className="catalog-price" data-paid={paid}>{paid?"Paid · "+(locale==="vi"?"Có phí":"Paid template"):"Free · "+(locale==="vi"?"Miễn phí":"Free template")}</span>
             <strong>{tpl.title[locale]}</strong>
             <span className="muted" style={{ fontSize: 14 }}>{busyId === tpl.id ? s.usingTemplate : tpl.blurb[locale]}</span>
+            <span className="catalog-metrics">{views.toLocaleString(locale)} {locale==="vi"?"lượt xem":"views"} · {clones.toLocaleString(locale)} {locale==="vi"?"lượt clone":"clones"} <span>(demo)</span></span>
           </button>
         ))}
       </div>
+      {visible.length===0&&<p className="catalog-empty">{locale==="vi"?"Không có mẫu phù hợp. Thử từ khóa khác hoặc chọn tất cả loại mẫu.":"No matching templates. Try another search or select all pricing types."}</p>}
       {error && <div className="notice warn" role="alert">{error} <a href="/dashboard">{locale === "vi" ? "Mở Ứng dụng của tôi" : "Open My apps"}</a></div>}
     </section>
   );

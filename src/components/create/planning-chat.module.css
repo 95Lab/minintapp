@@ -35,3 +35,4 @@
 @media (prefers-reduced-motion: reduce) { .transcript { scroll-behavior: auto; } }
 
 .defaults { margin: 0 24px 20px; padding: 10px 14px; border: 1px solid #cbd3bc; border-radius: 10px; background: #fff; color: #263921; font-size: 13px !important; }
+.publication{padding:16px;border:1px solid #e3dfd7;border-radius:10px;background:#f4f2ec}.publication label{display:grid;gap:8px;font-size:14px;font-weight:500}.publication select{width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #d6d0c5;border-radius:8px;background:#fff;color:#282722;font:inherit;font-size:16px}.publication p{margin:10px 0 0;font-size:12px;line-height:1.6;color:#6e6b64}

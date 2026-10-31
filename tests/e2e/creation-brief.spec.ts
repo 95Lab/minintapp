@@ -25,6 +25,8 @@ test("chat clarifies context, revises the brief and only generates on explicit c
   const chat = page.getByRole("dialog");
   await expect(chat).toBeVisible();
   await expect(chat.getByText("Mỗi người chọn một hay nhiều đồ uống?", { exact: true })).toBeVisible();
+  await chat.getByRole("combobox",{name:"Đưa app lên Khám phá tất cả mẫu?"}).selectOption("paid");
+  await expect(chat.getByText("Giả lập demo:",{exact:false})).toBeVisible();
   const confirm = chat.getByRole("button", { name: "Chốt yêu cầu và tạo app" });
   await expect(confirm).toBeDisabled();
   await chat.getByRole("button", { name: "Chọn nhiều món" }).click();
