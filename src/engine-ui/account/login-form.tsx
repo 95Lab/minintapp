@@ -1,10 +1,11 @@
 "use client";
+import { useLocale } from "@/lib/i18n/locale-provider";
 // Email magic-link authentication; visual changes do not change the auth API contract.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { requestMagicLink } from "@/engine/auth/account-client";
 import { errorText } from "@/engine/api/app-error-codes";
-import { ACCOUNT_STRINGS, savedUiLocale } from "@/engine/i18n/account-strings-vi-en";
+import { ACCOUNT_STRINGS } from "@/engine/i18n/account-strings-vi-en";
 import styles from "./login-form.module.css";
 
 const copy = {
@@ -37,13 +38,12 @@ const copy = {
 };
 
 export function LoginForm() {
-  const [locale, setLocale] = useState<"vi" | "en">("vi");
+  const { locale, setLocale } = useLocale();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentHeading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => setLocale(savedUiLocale()), []);
   useEffect(() => { if (sent) sentHeading.current?.focus(); }, [sent]);
   const s = ACCOUNT_STRINGS[locale], c = copy[locale];
 

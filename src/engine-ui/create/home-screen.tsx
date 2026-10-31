@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/lib/i18n/locale-provider";
 // Home: thesis headline, the composer, and the six-step lifecycle strip. VI/EN toggle
 // switches the chrome and the example prompts.
 import { useEffect, useState } from "react";
@@ -29,7 +30,7 @@ const STEPS: Record<UiLocale, Array<[string, string]>> = {
 };
 
 export function HomeScreen({ initialPrompt }: { initialPrompt: string }) {
-  const [locale, setLocale] = useState<UiLocale>("vi");
+  const { locale } = useLocale();
   const [lifetime, setLifetime] = useState<Lifetime>("1h");
   useEffect(() => {
     try {
@@ -41,29 +42,16 @@ export function HomeScreen({ initialPrompt }: { initialPrompt: string }) {
         url.searchParams.delete("pk");
         history.replaceState(null, "", url.pathname + url.search);
       }
-      const saved = localStorage.getItem("minint:ui-locale");
-      if (saved === "vi" || saved === "en") setLocale(saved);
     } catch {
       /* default vi */
     }
   }, []);
-  function choose(l: UiLocale) {
-    setLocale(l);
-    try {
-      localStorage.setItem("minint:ui-locale", l);
-    } catch {
-      /* ignore */
-    }
-  }
   const s = t(locale);
   return (
     <>
       <BrandTopBar>
         <IntegrationStatusBadge />
-        <div className="segmented" role="group" aria-label="Language">
-          <button type="button" aria-pressed={locale === "vi"} onClick={() => choose("vi")}>VI</button>
-          <button type="button" aria-pressed={locale === "en"} onClick={() => choose("en")}>EN</button>
-        </div>
+
       </BrandTopBar>
       <main className="home">
         <section className="home-hero">

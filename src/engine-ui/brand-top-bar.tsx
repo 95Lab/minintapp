@@ -1,4 +1,6 @@
+"use client";
 // Top bar shared by every screen: wordmark on the left, contextual controls on the right.
+import { LanguageSwitcher } from "@/lib/i18n/locale-provider";
 import Link from "next/link";
 import { AccountNav } from "@/engine-ui/account/account-nav";
 
@@ -22,6 +24,7 @@ export function BrandTopBar({ children }: { children?: React.ReactNode }) {
       <div className="host-meta">
         {children}
         <AccountNav />
+        <LanguageSwitcher />
       </div>
     </header>
   );
