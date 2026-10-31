@@ -73,3 +73,9 @@ LOCAL_RUNTIME_IMAGE=minintapp-refine:local npm run smoke:runtime
 Remaining limits: anonymous tenants are browser-bound; marketplace/payments are not implemented; sandbox live-data outbound access is blocked by default and requires an egress proxy before enabling it. Multiple VMs have placement/routing contracts; the live demo still uses one VM. See [Business Flow](../business-flow.en.md) for the commercial roadmap.
 
 References: [gVisor installation](https://gvisor.dev/docs/user_guide/install/), [Docker firewall](https://docs.docker.com/engine/network/firewall-iptables/), [Traefik file provider](https://doc.traefik.io/traefik/reference/install-configuration/providers/others/file/).
+
+## Activated demo (2026-10-31)
+
+The platform profile is enabled on the demo VM; the Worker reads the OpenAI key directly from the central secrets file. The Control Plane does not hold the AI key. Live checks verified OpenAI generation, two gVisor sandboxes with separate HTTPS subdomains, and SQLite votes surviving restart and suspend/resume while the other app remained available. This validates one VM, not multi-VM HA.
+
+Gateway probes use an HTTP request that preserves `Host` to check the intended app. AI expression schemas use a finite `$defs`/`$ref` chain, preserving expression depth while avoiding excessive inline nesting in Structured Outputs. Integration status reads AI configuration from allowlisted Workers rather than the web key. Template creation quota errors return JSON following the API contract.

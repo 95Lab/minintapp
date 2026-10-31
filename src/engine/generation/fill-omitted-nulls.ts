@@ -16,21 +16,27 @@ function allowsNull(s: Schema | undefined): boolean {
 }
 
 /** The anyOf branch describing this value's shape (object / array), if any. */
-function branchFor(s: Schema, v: unknown): Schema | undefined {
-  const branches = (s.anyOf as Schema[] | undefined) ?? [s];
+function resolveReference(schema: Schema, root: Schema): Schema | undefined {
+  const reference = typeof schema.$ref === "string" && /^#\/\$defs\/[A-Za-z0-9_-]+$/.test(schema.$ref) ? schema.$ref.slice(8) : null;
+  return reference ? (root.$defs as Record<string, Schema> | undefined)?.[reference] : schema;
+}
+function branchFor(s: Schema, v: unknown, root: Schema): Schema | undefined {
+  const branches = ((s.anyOf as Schema[] | undefined) ?? [s]).map((branch) => resolveReference(branch, root)).filter((branch): branch is Schema => !!branch);
   return branches.find((b) => (isObject(v) && (types(b).includes("object") || !!b.properties)) || (Array.isArray(v) && (types(b).includes("array") || !!b.items)));
 }
 
-export function fillOmittedNulls(value: unknown, schema: Schema): unknown {
-  const s = branchFor(schema, value);
+export function fillOmittedNulls(value: unknown, schema: Schema, root: Schema = schema): unknown {
+  const resolved = resolveReference(schema, root);
+  if (!resolved) return value;
+  const s = branchFor(resolved, value, root);
   if (!s) return value;
-  if (Array.isArray(value)) return s.items ? value.map((item) => fillOmittedNulls(item, s.items as Schema)) : value;
+  if (Array.isArray(value)) return s.items ? value.map((item) => fillOmittedNulls(item, s.items as Schema, root)) : value;
   if (!isObject(value) || !s.properties) return value;
   const props = s.properties as Record<string, Schema>;
   const out: Record<string, unknown> = { ...value };
   for (const key of (s.required as string[] | undefined) ?? []) {
     if (!(key in out) && allowsNull(props[key])) out[key] = null;
   }
-  for (const key of Object.keys(out)) if (props[key]) out[key] = fillOmittedNulls(out[key], props[key]);
+  for (const key of Object.keys(out)) if (props[key]) out[key] = fillOmittedNulls(out[key], props[key], root);
   return out;
 }

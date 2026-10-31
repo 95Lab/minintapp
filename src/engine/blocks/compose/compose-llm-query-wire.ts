@@ -1,7 +1,6 @@
 // The AI's shape for a `summary` view's query, in the same flat, every-key-present style as the rest
 // of the AI format so OpenAI strict, Gemini and LM Studio all accept it. One node shape for every
-// expression and condition: `{op, key, v, args}`, depth-capped by unrolling (no `$ref`: some providers
-// reject recursive schemas).
+// expression and condition: `{op, key, v, args}`, depth-capped with a finite chain of `$defs` references.
 //   values      field (key = input id / measure key / "$total.<measure>") · lit (v = number or text)
 //   arithmetic  add sub mul div · round abs min max coalesce
 //   conditions  eq ne gt gte lt lte has empty notEmpty · and or not · if [cond, then, else]
@@ -34,13 +33,15 @@ function jsonExpr(depth: number): Record<string, unknown> {
       op: { enum: depth > 0 ? [...LEAF_OPS, ...NODE_OPS] : [...LEAF_OPS] },
       key: jsonNullableString,
       v: { type: ["number", "string", "null"] },
-      args: depth > 0 ? { anyOf: [{ type: "array", items: jsonExpr(depth - 1) }, { type: "null" }] } : { type: "null" },
+      args: depth > 0 ? { anyOf: [{ type: "array", items: { $ref: `#/$defs/composeExpr${depth - 1}` } }, { type: "null" }] } : { type: "null" },
     },
     required: ["op", "key", "v", "args"],
     additionalProperties: false,
   };
 }
-const jsonNullableExpr = { anyOf: [jsonExpr(AI_EXPR_DEPTH), { type: "null" }] };
+export const COMPOSE_EXPR_DEFINITIONS = Object.fromEntries(Array.from({ length: AI_EXPR_DEPTH + 1 }, (_, depth) => [`composeExpr${depth}`, jsonExpr(depth)]));
+const jsonExprReference = { $ref: `#/$defs/composeExpr${AI_EXPR_DEPTH}` };
+const jsonNullableExpr = { anyOf: [jsonExprReference, { type: "null" }] };
 
 const jsonColumn = (extra: Record<string, unknown>, required: string[]) => ({
   type: "object",
@@ -57,7 +58,7 @@ export const jsonQuery = {
         where: jsonNullableExpr,
         groupBy: jsonNullableString,
         measures: { type: "array", items: jsonColumn({ fn: { enum: [...AGGREGATES] }, field: jsonNullableString, expr: jsonNullableExpr }, ["fn", "field", "expr"]) },
-        derived: { type: "array", items: jsonColumn({ expr: jsonExpr(AI_EXPR_DEPTH) }, ["expr"]) },
+        derived: { type: "array", items: jsonColumn({ expr: jsonExprReference }, ["expr"]) },
         sort: { anyOf: [{ type: "object", properties: { key: { type: "string" }, dir: jsonNullableEnum(["asc", "desc"]) }, required: ["key", "dir"], additionalProperties: false }, { type: "null" }] },
         limit: jsonNullableInteger,
       },

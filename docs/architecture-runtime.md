@@ -73,3 +73,9 @@ LOCAL_RUNTIME_IMAGE=minintapp-refine:local npm run smoke:runtime
 Các giới hạn còn lại: tenant ẩn danh gắn trình duyệt, marketplace/thanh toán chưa triển khai; live-data outbound trong sandbox mặc định bị chặn và cần egress proxy trước khi bật. Nhiều VM mới có contract/định tuyến, demo thực tế vẫn một VM. Xem [Business Flow](../business-flow.md) cho lộ trình thương mại.
 
 Tham khảo: [gVisor installation](https://gvisor.dev/docs/user_guide/install/), [Docker firewall](https://docs.docker.com/engine/network/firewall-iptables/), [Traefik file provider](https://doc.traefik.io/traefik/reference/install-configuration/providers/others/file/).
+
+## Demo đã kích hoạt (31/10/2026)
+
+Profile platform đã bật trên VM demo; Worker đọc OpenAI key trực tiếp từ file secrets trung tâm. Control Plane không giữ key AI. Đã kiểm thử thật: tạo app bằng OpenAI, hai sandbox gVisor với hai subdomain HTTPS, lưu phiếu SQLite qua restart và suspend/resume mà app còn lại vẫn hoạt động. Đây là kiểm thử một VM, không phải xác nhận HA nhiều VM.
+
+Probe gateway dùng HTTP request giữ nguyên `Host` để kiểm tra đúng app. Schema biểu thức AI dùng chuỗi `$defs`/`$ref` hữu hạn, giữ độ sâu biểu thức hiện tại và tránh schema inline vượt giới hạn Structured Outputs. Endpoint trạng thái lấy cấu hình AI từ Worker đã allowlist, không suy ra từ key của web. Lỗi quota tạo template trả JSON theo contract API.

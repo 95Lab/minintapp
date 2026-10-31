@@ -5,6 +5,8 @@
 import { VOCABULARY_TYPES } from "@/engine/blocks/block-vocabulary";
 import { FLAT_FIELD_NAMES, MERGED_LLM_FIELDS } from "@/engine/blocks/block-llm-fields";
 
+import { COMPOSE_EXPR_DEFINITIONS } from "@/engine/blocks/compose/compose-llm-query-wire";
+
 type JsonSchema = Record<string, unknown>;
 
 /** One object type covering every brick's fields; unused fields are null. */
@@ -37,6 +39,7 @@ const APP_SPEC_FLAT_SCHEMA: JsonSchema = {
 
 /** Top-level shape the model must return: `LlmOutput` with `spec` in the flat wire format. */
 export const LLM_OUTPUT_JSON_SCHEMA: JsonSchema = {
+  $defs: COMPOSE_EXPR_DEFINITIONS,
   type: "object",
   properties: {
     outcome: { enum: ["ok", "unsupported", "refused"] },

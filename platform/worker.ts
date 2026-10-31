@@ -143,7 +143,7 @@ const server = createServer(async (request, response) => {
     const token = request.headers.authorization?.replace(/^Bearer /, "") || "";
     if (!timingSafeEqual(createHash("sha256").update(token).digest(), createHash("sha256").update(process.env.WORKER_TOKEN!).digest())) { response.writeHead(403).end(); return; }
     if (request.method === "GET" && request.url === "/health") {
-      response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ status: "ok", workerId })); return;
+      response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ status: "ok", workerId, aiConfigured: !!process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL || null })); return;
     }
     const backup = /^\/backup\/([a-f0-9]{24})$/.exec(request.url || "");
     if (request.method === "POST" && backup) {
