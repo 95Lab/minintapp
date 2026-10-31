@@ -13,7 +13,7 @@ test("owner deploys and rolls back per-app versions and can inspect archived log
     details={...details,activeVersion:version,versions:[{version,image:body.action==="rollback"?image1:image2,specDigest:"digest",status:"SUCCEEDED",previousVersion:details.activeVersion,rollbackOf:body.action==="rollback"?body.version:null,createdAt:now,completedAt:now},...details.versions]};
     return route.fulfill({json:{ok:true}});
   });
-  await page.goto("/dashboard");await page.getByRole("button",{name:"Phiên bản và log",exact:true}).click();
+  await page.goto("/dashboard");await page.addStyleTag({content:".mini-card { font-family: Arial, sans-serif; }"});await page.getByRole("button",{name:"Phiên bản và log",exact:true}).click();
   await expect(page.getByText("Phiên bản đang chạy: v1")).toBeVisible();
   await expect(page.getByLabel("Nhật ký ứng dụng",{exact:true})).toContainText("state: RUNNING");
   await expect(page.getByText("Log runtime hiện không khả dụng; đang hiển thị log đã lưu.")).toBeVisible();
@@ -27,7 +27,7 @@ test("pending deployment disables further changes and shows request failures", a
   const now=new Date().toISOString();
   await page.route("**/api/my-apps",route=>route.fulfill({json:{apps:[{id,state:"DEPLOYING",hostname:`${id}.example.test`,created_at:now,expires_at:now}]}}));
   await page.route(`**/api/apps/${id}/deployment*`,route=>route.fulfill({json:{state:"DEPLOYING",activeVersion:1,requestedVersion:2,versions:[],images:[image1,image2],logs:[],runtimeLogsAvailable:false}}));
-  await page.goto("/dashboard");await page.getByRole("button",{name:"Phiên bản và log",exact:true}).click();
+  await page.goto("/dashboard");await page.addStyleTag({content:".mini-card { font-family: Arial, sans-serif; }"});await page.getByRole("button",{name:"Phiên bản và log",exact:true}).click();
   await expect(page.getByText(/Đang triển khai v2/)).toBeVisible();await expect(page.getByRole("button",{name:"Triển khai phiên bản",exact:true})).toBeDisabled();
   await page.route(`**/api/apps/${id}/deployment*`,route=>route.fulfill({status:403,json:{code:"forbidden"}}));
   await page.getByRole("button",{name:"Làm mới log và phiên bản"}).click();await expect(page.getByRole("alert").filter({hasText:"Không thể tải hoặc thay đổi phiên bản"})).toContainText("Không thể tải hoặc thay đổi phiên bản");
