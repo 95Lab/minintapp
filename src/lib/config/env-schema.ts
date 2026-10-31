@@ -34,7 +34,7 @@ export const EnvSchema = z.object({
 }).superRefine((env, ctx) => {
   const required = env.PLATFORM_ROLE === "control"
     ? ["DATABASE_URL", "REDIS_URL", "WORKER_TOKEN", "WORKER_AGENT_URLS", "RUNTIME_IMAGE", "APPS_DOMAIN"] as const
-    : env.PLATFORM_ROLE === "runtime" ? ["RUNTIME_APP_ID", "RUNTIME_TOKEN", "RUNTIME_SEED"] as const : [];
+    : env.PLATFORM_ROLE === "runtime" ? ["RUNTIME_APP_ID", "RUNTIME_TOKEN", "RUNTIME_SEED", "DATABASE_URL"] as const : [];
   for (const key of required) if (!env[key]) ctx.addIssue({ code: "custom", path: [key], message: "Required for selected platform role" });
   if (env.APP_STORAGE === "supabase") {
     for (const key of ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const) {

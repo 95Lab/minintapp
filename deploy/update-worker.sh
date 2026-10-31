@@ -21,16 +21,13 @@ systemctl stop minintapp-worker
 ln -sfnT "$target" "$root/worker-next"
 mv -Tf "$root/worker-next" "$root/worker-current"
 systemctl start minintapp-worker
-if ! /usr/bin/node --input-type=module - <<'JS'
-import {readFileSync} from 'node:fs';
-import {parseEnv} from 'node:util';
-const credentials=parseEnv(readFileSync('/root/.config/ai-secrets/api.env','utf8'));
-const config=parseEnv(readFileSync('/opt/minintapp/.env.worker','utf8'));
+if ! /usr/bin/node --env-file=/root/.config/ai-secrets/api.env --env-file=/opt/minintapp/.env.worker --input-type=module - <<'JS'
+
 let ready=false;
 for(let n=0;n<60;n++) {
   try {
-    const r=await fetch(config.WORKER_AGENT_URL+'/health',{headers:{Authorization:'Bearer '+credentials.MININTAPP_WORKER_TOKEN},signal:AbortSignal.timeout(2000)});
-    if(r.ok && (await r.json()).workerId===config.WORKER_ID){ready=true;break;}
+    const r=await fetch(process.env.WORKER_AGENT_URL+'/health',{headers:{Authorization:'Bearer '+process.env.WORKER_TOKEN},signal:AbortSignal.timeout(2000)});
+    if(r.ok && (await r.json()).workerId===process.env.WORKER_ID){ready=true;break;}
   } catch {}
   await new Promise(r=>setTimeout(r,1000));
 }

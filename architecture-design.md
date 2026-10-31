@@ -136,7 +136,7 @@ Worker Agent là thành phần có đặc quyền, chỉ nhận yêu cầu đã 
 
 ### Dữ liệu MVP
 
-Dùng SQLite trên volume riêng, phù hợp với app tạm thời và **một replica/app**. Khi chuyển worker, cần dừng app, snapshot và chuyển volume trước khi chạy lại. Việc sao lưu phải bảo đảm tính nhất quán của SQLite.
+Mỗi app dùng một database PostgreSQL và login role riêng, không có quyền truy cập database metadata hoặc app khác. Runtime giữ **một replica/app**; chuyển worker cần fencing runtime cũ trước khi chạy writer mới. Backup là snapshot JSONB nhất quán trên object storage; khôi phục dữ liệu và rollback image là hai thao tác riêng.
 
 Nếu cần nhiều replica cho một app, chuyển sang PostgreSQL với database/role riêng theo app hoặc dịch vụ dữ liệu có kiểm soát quyền. Không đưa credential quản trị database chung vào code do AI tạo.
 
@@ -184,7 +184,7 @@ Mỗi app trong giai đoạn này vẫn có một replica. Khi worker lỗi, c�
 ## 8. Phạm vi hackathon 7 giờ
 
 - Một template full-stack được kiểm chứng.
-- Một replica/app, SQLite và volume riêng.
+- Một replica/app, database PostgreSQL và role riêng.
 - Tạo subdomain thật qua Cloudflare API.
 - Sandbox gVisor riêng cho từng app và build.
 - Quản lý start, stop, trạng thái, log và TTL.

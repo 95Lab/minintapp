@@ -42,6 +42,6 @@ export async function putBackup(id: string, data: Uint8Array) {
   AppId.parse(id);
   const client = storage();
   try {
-    await client.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: `apps/${id}/backups/${Date.now()}.sqlite`, Body: data, ContentType: "application/vnd.sqlite3" }));
+    await client.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: `apps/${id}/backups/${Date.now()}.json`, Body: data, ContentType: "application/json" }));
   } finally { client.destroy(); }
 }

@@ -2,13 +2,17 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHmac } from "node:crypto";
 import { readFile, statfs } from "node:fs/promises";
+import { appDatabaseURL } from "./app-database";
 import { AppId, ImageDigest, RuntimeSeedSchema, type Deployment } from "./contracts";
 const exec = promisify(execFile);
-export const run = async (file: string, args: string[]) => (await exec(file, args, { timeout: 120000, maxBuffer: 2 * 1024 * 1024 })).stdout.trim();
+export const run = async (file: string, args: string[], maxBuffer = 2 * 1024 * 1024) => (await exec(file, args, { timeout: 120000, maxBuffer })).stdout.trim();
 export const runtimeToken = (id: string) => createHmac("sha256", process.env.WORKER_TOKEN!).update(`runtime:${id}`).digest("hex");
 export async function cachedImages() {
   const lines = (await run("docker", ["image", "ls", "--digests", "--format", "{{.Repository}}@{{.Digest}}"])).split("\n");
-  return [...new Set(lines.filter((line) => ImageDigest.safeParse(line).success))];
+  const images = [...new Set(lines.filter((line) => ImageDigest.safeParse(line).success))];
+  const supported: string[] = [];
+  for (const image of images) if (await run("docker", ["image", "inspect", "--format", '{{index .Config.Labels "io.minintapp.runtime.storage"}}', image]) === "postgresql") supported.push(image);
+  return supported;
 }
 const label = "io.minintapp.app";
 const name = (id: string) => `minintapp-${AppId.parse(id)}`;
@@ -62,12 +66,19 @@ async function freePort(id: string) {
   throw new Error("No available sandbox port");
 }
 async function firewall(bridge: string, remove = false) {
-  // INPUT blocks sandbox-to-host services; FORWARD blocks new outbound connections.
-  // Replies to host-initiated gateway requests remain permitted by conntrack.
-  for (const chain of ["INPUT", "DOCKER-USER"]) {
-    const rule = ["-i", bridge, "-m", "conntrack", "--ctstate", "NEW", "-m", "comment", "--comment", "minintapp-sandbox", "-j", "REJECT"];
+  const endpoint = new URL(process.env.RUNTIME_POSTGRES_URL!);
+  const host = endpoint.hostname, port = Number(endpoint.port || 5432);
+  if (!/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/.test(host) || !/^\d+\.\d+\.\d+\.\d+$/.test(host) || !Number.isInteger(port) || port < 1024 || port > 65535) throw new Error("PostgreSQL endpoint must be an explicit private IPv4 address/port");
+  const apply = async (chain: string, rule: string[]) => {
     try { await run("iptables", ["-w", "-C", chain, ...rule]); if (remove) await run("iptables", ["-w", "-D", chain, ...rule]); }
-    catch (error) { if (!remove) await run("iptables", ["-w", "-I", chain, "1", ...rule]); else if (!(error instanceof Error)) throw error; }
+    catch { if (!remove) await run("iptables", ["-w", "-I", chain, "1", ...rule]); }
+  };
+  for (const chain of ["INPUT", "DOCKER-USER"]) {
+    const prefix = ["-i", bridge, "-m", "conntrack", "--ctstate", "NEW"];
+    await apply(chain, [...prefix, "-m", "comment", "--comment", "minintapp-sandbox", "-j", "REJECT"]);
+    // Only the configured database port is reachable; DNAT preserves its original destination.
+    const target = chain === "INPUT" ? ["-d", host, "--dport", String(port)] : ["-m", "conntrack", "--ctorigdst", host, "--ctorigdstport", String(port), "--ctdir", "ORIGINAL"];
+    await apply(chain, [...prefix, "-p", "tcp", ...target, "-m", "comment", "--comment", "minintapp-postgres", "-j", "ACCEPT"]);
   }
 }
 export async function provision(app: Deployment): Promise<number> {
@@ -91,15 +102,12 @@ export async function provision(app: Deployment): Promise<number> {
   if (network && network.Labels?.[label] !== id) throw new Error("Network ownership mismatch");
   if (!network) await run("docker", ["network", "create", "--ipv6=false", "--subnet", await freeSubnet(), "--opt", `com.docker.network.bridge.name=${bridge}`, "--opt", "com.docker.network.bridge.enable_icc=false", "--label", `${label}=${id}`, resource]);
   await firewall(bridge);
-  const volume = await inspect("volume", resource);
-  if (volume && volume.Labels?.[label] !== id) throw new Error("Volume ownership mismatch");
-  if (!volume) await run("docker", ["volume", "create", "--label", `${label}=${id}`, resource]);
-  await run("docker", ["image", "inspect", image]); // Admin pre-pulls approved images; no registry credentials enter sandboxes.
+  if (await run("docker", ["image", "inspect", "--format", '{{index .Config.Labels "io.minintapp.runtime.storage"}}', image]) !== "postgresql") throw new Error("Runtime image does not support PostgreSQL");
   const env = ["PLATFORM_ROLE=runtime", `RUNTIME_APP_ID=${id}`, `RUNTIME_SEED=${Buffer.from(JSON.stringify(seed)).toString("base64")}`,
-    `RUNTIME_TOKEN=${runtimeToken(id)}`, `IP_HASH_SALT=${runtimeToken(id)}`, `APP_ORIGIN=https://${app.hostname}`];
+    `DATABASE_URL=${appDatabaseURL(id, true)}`, `RUNTIME_TOKEN=${runtimeToken(id)}`, `IP_HASH_SALT=${runtimeToken(id)}`, `APP_ORIGIN=https://${app.hostname}`];
   await run("docker", ["create", "--name", resource, "--label", `${label}=${id}`, "--runtime=runsc", "--network", resource, "--dns", "127.0.0.1",
     "--publish", `127.0.0.1:${await freePort(id)}:3000`, "--memory", "512m", "--memory-swap", "512m", "--cpus", "0.5", "--pids-limit", "128", "--read-only", "--cap-drop", "ALL",
-    "--security-opt", "no-new-privileges:true", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m", "--mount", `type=volume,src=${resource},dst=/data`,
+    "--security-opt", "no-new-privileges:true", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
     "--log-opt", "max-size=5m", "--log-opt", "max-file=2", "--restart", "unless-stopped", ...env.flatMap((value) => ["--env", value]), image]);
   await run("docker", ["start", resource]);
   const state = await inspect("container", resource);

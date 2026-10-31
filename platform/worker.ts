@@ -1,4 +1,4 @@
-import "./worker-credentials";
+import { ensureAppDatabase, dropAppDatabase, secureAppDatabaseCluster } from "./app-database";
 import { createServer } from "node:http";
 import { runtimeHealth as health } from "./runtime-health";
 import { createHash, timingSafeEqual } from "node:crypto";
@@ -16,7 +16,7 @@ import { CloudflareDNS } from "./cloudflare";
 import { buildSpec } from "./build-spec";
 import { AppError } from "../src/lib/api/app-error-codes";
 
-for (const key of ["DATABASE_URL", "REDIS_URL", "WORKER_ID", "WORKER_TOKEN", "WORKER_AGENT_URL", "CLOUDFLARE_ZONE_ID", "CLOUDFLARE_API_TOKEN", "INGRESS_HOSTNAME", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
+for (const key of ["DATABASE_URL", "RUNTIME_POSTGRES_URL", "REDIS_URL", "WORKER_ID", "WORKER_TOKEN", "WORKER_AGENT_URL", "CLOUDFLARE_ZONE_ID", "CLOUDFLARE_API_TOKEN", "INGRESS_HOSTNAME", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
   if (!process.env[key]) throw new Error(`Missing ${key}`);
 }
 const workerId = process.env.WORKER_ID!;
@@ -32,6 +32,7 @@ function queue(id: string) {
   return queues.get(id)!;
 }
 await migrate();
+await secureAppDatabaseCluster();
 await ensureArtifactBucket();
 await pool.query(`INSERT INTO workers(id,agent_url,capacity,gateway_url,available_images) VALUES($1,$2,$3,$4,$5)
   ON CONFLICT(id) DO UPDATE SET agent_url=excluded.agent_url,capacity=excluded.capacity,gateway_url=excluded.gateway_url,available_images=excluded.available_images,heartbeat_at=now()`, [workerId, agentURL.origin, capacity, process.env.WORKER_GATEWAY_URL || null, await cachedImages()]);
@@ -42,7 +43,7 @@ async function cleanup(id: string, destroyData = false) {
   await unpublishRoute(id);
   await reclaim(id, destroyData);
   if (record.dns_record_id) { await dns.remove(record.dns_record_id, id); await pool.query("UPDATE deployments SET dns_record_id=NULL WHERE id=$1", [id]); }
-  if (destroyData) await removeArtifacts(id);
+  if (destroyData) { await dropAppDatabase(id); await removeArtifacts(id); }
 }
 const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(job.data.id, async () => {
   let app = await deployment(job.data.id);
@@ -65,6 +66,7 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
     await putArtifact(RuntimeSeedSchema.parse(app.seed), app.image);
     await updateState(app.id, "DEPLOYING");
     phase = "provision";
+    await ensureAppDatabase(RuntimeSeedSchema.parse(app.seed));
     const port = await provision(app);
     await pool.query("UPDATE deployments SET port=$2 WHERE id=$1", [app.id, port]);
     phase = "runtime-health";

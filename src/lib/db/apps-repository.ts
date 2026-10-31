@@ -1,6 +1,6 @@
 import "server-only";
 import { ControlPlaneAppsRepository } from "@/lib/control-plane/apps-repository";
-import { createRuntimeRepository } from "@/lib/runtime-plane/sqlite-apps-repository";
+import { createPostgresRuntimeRepository } from "@/lib/runtime-plane/postgres-apps-repository";
 import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { MemoryAppsRepository } from "./memory-apps-repository";
 import { SupabaseAppsRepository, supabaseRpc } from "./supabase-apps-repository";
@@ -14,7 +14,7 @@ function repository(): AppsRepository {
     if (!processState.minintMemoryRepository) {
       const seed = JSON.parse(Buffer.from(env.RUNTIME_SEED, "base64").toString("utf8"));
       if (seed.id !== env.RUNTIME_APP_ID) throw new Error("Runtime identity mismatch");
-      processState.minintMemoryRepository = createRuntimeRepository("/data/app.sqlite", seed);
+      processState.minintMemoryRepository = createPostgresRuntimeRepository(env.DATABASE_URL, seed.id);
     }
     return processState.minintMemoryRepository;
   }

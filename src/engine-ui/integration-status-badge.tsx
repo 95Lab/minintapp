@@ -42,7 +42,7 @@ export function IntegrationStatusBadge() {
   const mock = h.generator === "mock" || h.storage === "memory";
   const label = [
     h.generator === "mock" ? "Generator giả lập" : `${h.generatorLabel ?? h.generator} · ${h.model}`,
-    h.storage === "supabase" ? (h.storageOk ? "Supabase" : "Supabase lỗi") : h.storage === "postgresql" ? "PostgreSQL + SQLite" : h.storage === "sqlite" ? "SQLite" : "Bộ nhớ tạm",
+    h.storage === "supabase" ? (h.storageOk ? "Supabase" : "Supabase lỗi") : h.storage === "postgresql" ? "PostgreSQL" : h.storage === "sqlite" ? "SQLite" : "Bộ nhớ tạm",
     h.realtime === "supabase" ? "Realtime" : "Polling",
   ].join(" · ");
   return (

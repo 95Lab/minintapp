@@ -12,6 +12,7 @@ RUN npm run build:worker
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
+LABEL io.minintapp.runtime.storage=postgresql
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 RUN groupadd --system --gid 1001 nextjs && useradd --system --uid 1001 --gid nextjs nextjs
 RUN mkdir -p /data && chown nextjs:nextjs /data
