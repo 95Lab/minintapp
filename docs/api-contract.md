@@ -92,7 +92,7 @@ Mutation kiểm tra cùng origin. Host dùng `x-host-token` hoặc cookie HttpOn
 
 ## Lập kế hoạch trước khi tạo app
 
-`POST /api/engine/plan` nhận `{ locale, messages, currentBrief }`, trả `{ status, message, suggestions, brief }` theo schema `src/lib/api/planning-contract.ts`. Endpoint chỉ trao đổi và lập brief; không tạo app. Xem [chat và giới hạn](generation.md#chat-để-chốt-yêu-cầu-trên-trang-chủ).
+`POST /api/engine/plan` nhận `{ locale, messages, currentBrief }`, trả `{ status, message, suggestions, brief }` theo schema `src/lib/api/planning-contract.ts`. Endpoint chỉ trao đổi và lập brief; không tạo app. Khi chạy profile platform, Control Plane không giữ OpenAI key nên chuyển yêu cầu sang `POST /plan` của Worker đã allowlist. Xem [chat và giới hạn](generation.md#chat-để-chốt-yêu-cầu-trên-trang-chủ).
 
 ## Giới hạn tạo app ở control plane
 

@@ -11,7 +11,7 @@ a:focus-visible { outline: 3px solid #146344; outline-offset: 4px; }
 /* Reusable component primitives; kept scoped to avoid changing existing pages. */
 .mini-app { display: grid; gap: 20px; }
 .mini-app h1 { font-size: 2rem; margin: 12px 0; }
-.mini-card { background: white; border: 1px solid #cbd8ce; border-radius: 16px; padding: 24px; margin: 0; min-width: 0; }
+.mini-card { background: white; border: 1px solid #cbd8ce; border-radius: 16px; padding: 24px; margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .mini-card h2, .mini-card h3 { margin-top: 0; }
 .mini-card form, form.mini-card, .mini-stack { display: grid; gap: 16px; }
 .mini-field { display: grid; gap: 8px; margin: 16px 0; }

@@ -22,7 +22,7 @@ it("plans on the approved worker when the web server has no OpenAI key",async()=
 it("does not contact workers outside the allowlist or fall back to the web key",async()=>{
  vi.stubEnv("OPENAI_API_KEY","fixture-web-key-unused");query.mockResolvedValue({rows:[{agent_url:"http://untrusted:19090"}]});
  const fetcher=vi.fn();vi.stubGlobal("fetch",fetcher);
- const response=await POST(request());expect(response.status).toBe(502);expect((await response.json()).code).toBe("ai_unavailable");expect(fetcher).not.toHaveBeenCalled();
+ const response=await POST(request());expect(response.status).toBe(503);expect((await response.json()).code).toBe("runtime_unavailable");expect(fetcher).not.toHaveBeenCalled();
 });
 it.each(["ai_not_configured","rate_limited","ai_timeout"])("preserves safe worker error code %s without exposing its message",async code=>{
  const fetcher=vi.fn().mockResolvedValue(Response.json({code,message:"secret-provider-detail"},{status:503}));vi.stubGlobal("fetch",fetcher);

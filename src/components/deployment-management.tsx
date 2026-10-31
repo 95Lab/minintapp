@@ -33,7 +33,7 @@ export function DeploymentManagementPanel({ id }: { id: string }) {
   }
   const active = details?.versions.find(version => version.version === details.activeVersion);
   const canChange = !busy && details?.state === "RUNNING" && !details.requestedVersion && !!active;
-  return <section aria-label={text("Phiên bản và log", "Versions and logs")}>
+  return <section style={{ minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }} aria-label={text("Phiên bản và log", "Versions and logs")}>
     <button aria-expanded={open} onClick={() => setOpen(value => !value)}>{text("Phiên bản và log", "Versions and logs")}</button>
     {open && <div>
       {error && <p role="alert">{text("Không thể tải hoặc thay đổi phiên bản. Hãy làm mới và kiểm tra quyền host, trạng thái Worker.", "Unable to load or change versions. Refresh and check host access and worker status.")}</p>}
@@ -42,7 +42,7 @@ export function DeploymentManagementPanel({ id }: { id: string }) {
         <p>{text("Phiên bản đang chạy: ", "Active version: ")}{details.activeVersion ? `v${details.activeVersion}` : "—"}
           {details.requestedVersion && ` · ${text("Đang triển khai", "Deploying")} v${details.requestedVersion}`}</p>
         <p>{text("Đổi phiên bản sẽ khởi động lại app trong thời gian ngắn. Rollback giữ nguyên dữ liệu và câu trả lời hiện tại.", "Changing versions briefly restarts the app. Rollback preserves current data and responses.")}</p>
-        <label className="mini-field" style={{ display: "block" }}>{text("Image đã duyệt", "Approved image")}{" "}<select value={image} onChange={event => setImage(event.target.value)} disabled={!canChange}>
+        <label className="mini-field" style={{ display: "block" }}>{text("Image đã duyệt", "Approved image")}{" "}<select style={{ width: "100%", maxWidth: "100%", minWidth: 0 }} value={image} onChange={event => setImage(event.target.value)} disabled={!canChange}>
           <option value="">{text("Chọn phiên bản runtime", "Choose a runtime version")}</option>
           {details.images.filter(value => value !== active?.image).map(value => <option value={value} key={value}>sha256:{value.split("@sha256:")[1]?.slice(0,12)}</option>)}
         </select></label>{" "}
