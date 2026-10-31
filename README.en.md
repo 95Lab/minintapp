@@ -70,6 +70,7 @@ Real payments, refunds, creator payouts, automatic VM provisioning, and cross-VM
 | Overview | [README](README.md) | [README](README.en.md) |
 | Architecture | [Thiết kế kiến trúc](architecture-design.md) | [Architecture Design](architecture-design.en.md) |
 | Product and business | [Business Flow](business-flow.md) | [Business Flow](business-flow.en.md) |
+| Deployment and CI/CD | [Deployment](deployment.md) | [Deployment](deployment.en.md) |
 
 ## Team
 

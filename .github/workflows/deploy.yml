@@ -1,0 +1,46 @@
+name: Deploy main
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: minintapp-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deployment contract
+        run: |
+          test -f Dockerfile
+          bash -n scripts/deploy.sh
+          python3 -m py_compile scripts/network-preflight.py
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Upload and deploy immutable source revision
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$DEPLOY_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$DEPLOY_PORT" =~ ^[0-9]+$ ]]
+          git archive --format=tar.gz -o source.tar.gz HEAD
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+          ssh -p "$DEPLOY_PORT" "$target" "mkdir -p /opt/minintapp/releases/$GITHUB_SHA"
+          scp -P "$DEPLOY_PORT" source.tar.gz "$target:/opt/minintapp/releases/$GITHUB_SHA/source.tar.gz"
+          ssh -p "$DEPLOY_PORT" "$target" "cd /opt/minintapp/releases/$GITHUB_SHA && tar -xzf source.tar.gz && bash scripts/deploy.sh $GITHUB_SHA"

@@ -70,6 +70,7 @@ Thanh toán thật, hoàn tiền, payout cho creator, tự động cấp VM và 
 | Tổng quan | [README](README.md) | [README](README.en.md) |
 | Kiến trúc | [Thiết kế kiến trúc](architecture-design.md) | [Architecture Design](architecture-design.en.md) |
 | Sản phẩm và kinh doanh | [Business Flow](business-flow.md) | [Business Flow](business-flow.en.md) |
+| Triển khai và CI/CD | [Deployment](deployment.md) | [Deployment](deployment.en.md) |
 
 ## Đội thi
 
