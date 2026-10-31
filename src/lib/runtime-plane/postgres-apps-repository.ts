@@ -75,5 +75,8 @@ export class PostgresAppRepository implements AppsRepository {
   }
 }
 export function createPostgresRuntimeRepository(connectionString: string, appId: string) {
-  return new PostgresAppRepository(new Pool({ connectionString, max: 3, connectionTimeoutMillis: 5000, statement_timeout: 5000, application_name: `app-${appId}` }), appId);
+  const pool = new Pool({ connectionString, max: 3, connectionTimeoutMillis: 5000, statement_timeout: 5000, application_name: `app-${appId}` });
+  // pg emits this when an idle client drops; left unhandled, a Postgres restart kills the runtime.
+  pool.on("error", () => console.error("Runtime database connection lost"));
+  return new PostgresAppRepository(pool, appId);
 }
