@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { readFile } from "node:fs/promises";
-import type { Deployment } from "./contracts";
+import { RuntimeSeedSchema, type Deployment } from "./contracts";
+import { createHash } from "node:crypto";
 
 const state = globalThis as typeof globalThis & { minintControlPool?: Pool };
 function createControlPool() {
@@ -16,6 +17,14 @@ export async function migrate() {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(704128)");
     await client.query(await readFile(new URL("./schema.sql", import.meta.url), "utf8"));
+    const existing = await client.query<Deployment>("SELECT * FROM deployments WHERE seed IS NOT NULL AND active_version IS NULL AND state IN ('RUNNING','SUSPENDED')");
+    for (const app of existing.rows) {
+      const seed = RuntimeSeedSchema.parse(app.seed);
+      const digest = createHash("sha256").update(JSON.stringify(seed.spec)).digest("hex");
+      await client.query(`INSERT INTO app_releases(app_id,version,image,spec_digest,seed,status,completed_at)
+        VALUES($1,1,$2,$3,$4,'SUCCEEDED',now()) ON CONFLICT DO NOTHING`, [app.id, app.image, digest, seed]);
+      await client.query("UPDATE deployments SET active_version=1 WHERE id=$1", [app.id]);
+    }
     await client.query("COMMIT");
   } catch (error) { await client.query("ROLLBACK"); throw error; }
   finally { client.release(); }
@@ -26,7 +35,12 @@ export async function deployment(id: string): Promise<Deployment | null> {
 }
 export async function updateState(id: string, state: Deployment["state"]) {
   if (state === "DELETED") {
-    await pool.query("UPDATE deployments SET state='DELETED',seed=NULL,input=$2,generation=NULL,host_token_hash=repeat('0',64),updated_at=now() WHERE id=$1", [id, { prompt: "", lifetime: "1h" }]);
+    await pool.query("UPDATE deployments SET state='DELETED',active_version=NULL,requested_version=NULL,seed=NULL,input=$2,generation=NULL,host_token_hash=repeat('0',64),updated_at=now() WHERE id=$1", [id, { prompt: "", lifetime: "1h" }]);
+    return;
+  }
+  if (state === "EXPIRED") {
+    await pool.query(`WITH failed AS (UPDATE app_releases SET status='FAILED',completed_at=now() WHERE app_id=$1 AND status='PENDING' RETURNING version)
+      UPDATE deployments SET state='EXPIRED',requested_version=NULL,updated_at=now() WHERE id=$1`, [id]);
     return;
   }
   await pool.query("UPDATE deployments SET state=$2,updated_at=now() WHERE id=$1", [id, state]);

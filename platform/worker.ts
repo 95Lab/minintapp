@@ -1,3 +1,6 @@
+import { ensureInitialRelease, release, completeRelease, failRelease, beginReleaseSwitch } from "./release-store";
+import { runRelease } from "./release-runner";
+import { appendLog, archiveRuntimeLogs, runtimeLogs, pruneLogs } from "./logs";
 import { ensureAppDatabase, dropAppDatabase, secureAppDatabaseCluster } from "./app-database";
 import { createServer } from "node:http";
 import { runtimeHealth as health } from "./runtime-health";
@@ -22,7 +25,7 @@ for (const key of ["DATABASE_URL", "RUNTIME_POSTGRES_URL", "REDIS_URL", "WORKER_
 const workerId = process.env.WORKER_ID!;
 if (!/^[a-z0-9-]{1,40}$/.test(workerId)) throw new Error("Invalid worker ID");
 const agentURL = new URL(process.env.WORKER_AGENT_URL!);
-const capacity = Number(process.env.WORKER_CAPACITY || 3);
+const capacity = Number(process.env.WORKER_CAPACITY || 100);
 if (!Number.isInteger(capacity) || capacity < 1 || capacity > 20) throw new Error("Invalid capacity");
 const connection = redisConnection(process.env.REDIS_URL!);
 const dns = new CloudflareDNS(process.env.CLOUDFLARE_ZONE_ID!, process.env.CLOUDFLARE_API_TOKEN!, process.env.INGRESS_HOSTNAME!, fetch, process.env.DNS_AUTOMATION_APPROVED === "true");
@@ -41,18 +44,27 @@ async function cleanup(id: string, destroyData = false) {
   const record = await deployment(id);
   if (!record || record.worker_id !== workerId) throw new Error("Worker ownership mismatch");
   await unpublishRoute(id);
+  await archiveRuntimeLogs(id).catch(() => {});
   await reclaim(id, destroyData);
   if (record.dns_record_id) { await dns.remove(record.dns_record_id, id); await pool.query("UPDATE deployments SET dns_record_id=NULL WHERE id=$1", [id]); }
-  if (destroyData) { await dropAppDatabase(id); await removeArtifacts(id); }
+  if (destroyData) {
+    await dropAppDatabase(id); await removeArtifacts(id);
+    await pool.query("DELETE FROM app_releases WHERE app_id=$1", [id]);
+    await pool.query("DELETE FROM artifacts WHERE app_id=$1", [id]);
+    await pool.query("DELETE FROM app_logs WHERE app_id=$1", [id]);
+  }
 }
 const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(job.data.id, async () => {
-  let app = await deployment(job.data.id);
-  if (!app || app.worker_id !== workerId) throw new Error("Worker ownership mismatch");
+  const loaded = await deployment(job.data.id);
+  if (!loaded || loaded.worker_id !== workerId) throw new Error("Worker ownership mismatch");
+  let app = loaded;
+  if (job.id !== `${app.id}-v${app.revision}` || !["QUEUED", "GENERATING", "BUILDING", "DEPLOYING"].includes(app.state)) return;
   if (app.expires_at.getTime() <= Date.now()) { await cleanup(app.id); await updateState(app.id, "EXPIRED"); return; }
   let phase = "generation";
   try {
     if (!app.seed) {
       await updateState(app.id, "GENERATING");
+      await appendLog(app.id, "generation: started");
       const result = await buildSpec(app.input);
       const validated = { spec: result.spec };
       const seed = RuntimeSeedSchema.parse({ id: app.id, spec: validated.spec, prompt: app.input.prompt, hostTokenHash: app.host_token_hash,
@@ -62,42 +74,63 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
       await pool.query("INSERT INTO artifacts(app_id,version,spec_digest,image) VALUES($1,1,$2,$3) ON CONFLICT DO NOTHING", [app.id, digest, app.image]);
       app = (await deployment(app.id))!;
     }
-    phase = "artifact";
-    await putArtifact(RuntimeSeedSchema.parse(app.seed), app.image);
+    const target = app.requested_version ? await release(app.id, app.requested_version)
+      : app.active_version ? await release(app.id, app.active_version) : await ensureInitialRelease(app);
+    if (!target) throw new Error("Release missing");
     await updateState(app.id, "DEPLOYING");
-    phase = "provision";
-    await ensureAppDatabase(RuntimeSeedSchema.parse(app.seed));
-    const port = await provision(app);
-    await pool.query("UPDATE deployments SET port=$2 WHERE id=$1", [app.id, port]);
-    phase = "runtime-health";
-    let ready = false;
-    for (let attempt = 0; attempt < 40; attempt++) {
-      try { await health(`http://127.0.0.1:${port}/api/health`, app.id); ready = true; break; } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); }
-    }
-    if (!ready) throw new Error("Runtime startup timeout");
-    phase = "gateway-route";
-    await publishRoute(app.id, app.hostname, port);
-    if (process.env.INGRESS_HOSTNAME !== "ingress.minintapp.io.vn" || app.hostname !== `${app.id}.minintapp.io.vn`) throw new Error("DNS outside approved demo scope");
-    phase = "dns";
-    const dnsId = await dns.ensure(app.hostname, app.id);
-    await pool.query("UPDATE deployments SET dns_record_id=$2 WHERE id=$1", [app.id, dnsId]);
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-    phase = "gateway-health";
-    await health(`${process.env.LOCAL_GATEWAY_URL || "http://127.0.0.1:18081"}/api/health`, app.id, { Host: app.hostname });
-    phase = "public-health";
-    // Cloudflare needs a moment to serve a new record; retrying the whole job would re-provision the app.
-    let reachable = false;
-    for (let attempt = 0; attempt < 30 && !reachable; attempt++) {
-      try { await health(`https://${app.hostname}/api/health`, app.id, undefined, process.env.INGRESS_HOSTNAME); reachable = true; } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); }
-    }
-    if (!reachable) throw new Error("Public health timeout");
-    await updateState(app.id, "RUNNING");
+    await runRelease(app, target, {
+      previous: version => release(app.id, version),
+      artifact: async value => {
+        if (!(await cachedImages()).includes(value.image)) throw new Error("Release image unavailable");
+        await putArtifact(value.seed, value.image, value.version);
+      },
+      backup: () => backupApp(app.id),
+      beginSwitch: () => beginReleaseSwitch(app.id, target.version),
+      archive: () => archiveRuntimeLogs(app.id).catch(() => {}),
+      stop: async () => { await unpublishRoute(app.id); await reclaim(app.id); },
+      complete: (value, failedVersion) => completeRelease(app, value, failedVersion),
+      log: message => appendLog(app.id, message).catch(() => {}),
+      activate: async target => {
+        phase = "provision";
+        await ensureAppDatabase(target.seed);
+        const port = await provision({ ...app, image: target.image, seed: target.seed });
+        await pool.query("UPDATE deployments SET port=$2 WHERE id=$1", [app.id, port]);
+        phase = "runtime-health";
+        let ready = false;
+        for (let attempt = 0; attempt < 40; attempt++) {
+          try { await health(`http://127.0.0.1:${port}/api/health`, app.id); ready = true; break; } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); }
+        }
+        if (!ready) throw new Error("Runtime startup timeout");
+        phase = "gateway-route";
+        await publishRoute(app.id, app.hostname, port);
+        if (process.env.INGRESS_HOSTNAME !== "ingress.minintapp.io.vn" || app.hostname !== `${app.id}.minintapp.io.vn`) throw new Error("DNS outside approved demo scope");
+        phase = "dns";
+        const dnsId = await dns.ensure(app.hostname, app.id);
+        await pool.query("UPDATE deployments SET dns_record_id=$2 WHERE id=$1", [app.id, dnsId]);
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+        phase = "gateway-health";
+        await health(`${process.env.LOCAL_GATEWAY_URL || "http://127.0.0.1:18081"}/api/health`, app.id, { Host: app.hostname });
+        phase = "public-health";
+        // Cloudflare needs a moment to serve a new record; retrying the whole job would re-provision the app.
+        let reachable = false;
+        for (let attempt = 0; attempt < 30 && !reachable; attempt++) {
+          try { await health(`https://${app.hostname}/api/health`, app.id, undefined, process.env.INGRESS_HOSTNAME); reachable = true; } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); }
+        }
+        if (!reachable) throw new Error("Public health timeout");
+      },
+    });
   } catch (error) {
     console.error(JSON.stringify({ event: "deployment_phase_failed", id: app.id, phase }));
+    await appendLog(app.id, `deployment: ${phase} failed (attempt ${job.attemptsMade + 1})`).catch(() => {});
+    if (app.expires_at.getTime() <= Date.now()) { await cleanup(app.id); await updateState(app.id, "EXPIRED"); return; }
     const permanent = error instanceof AppError && ["ai_refused", "ai_invalid_output", "invalid_request", "ai_not_configured"].includes(error.code);
     if (permanent || job.attemptsMade + 1 >= (job.opts.attempts || 1)) {
       try { await cleanup(app.id); }
-      finally { await updateState(app.id, "FAILED"); }
+      finally {
+        if (app.requested_version) await failRelease(app.id, app.requested_version);
+        else if (!app.active_version) await failRelease(app.id, 1);
+        await updateState(app.id, "FAILED");
+      }
     }
     if (permanent) throw new UnrecoverableError("Generation rejected or not configured");
     throw new Error("Provisioning failed");
@@ -106,6 +139,7 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
 worker.on("error", () => console.error("Worker connection error"));
 worker.on("failed", (job) => console.error(JSON.stringify({ event: "deployment_failed", id: job?.data.id, attempt: job?.attemptsMade })));
 
+let lastLogPrune = 0;
 let ticking = false;
 const lastBackup = new Map<string, number>();
 async function tick() {
@@ -114,6 +148,7 @@ async function tick() {
   try {
     await pool.query("UPDATE workers SET heartbeat_at=now() WHERE id=$1", [workerId]);
     await dispatchOutbox(queue);
+    if (Date.now() - lastLogPrune > 3600000) { await pruneLogs(); lastLogPrune = Date.now(); }
     await pool.query("UPDATE deployments SET state='EXPIRED' WHERE worker_id IS NULL AND expires_at<=now() AND state='QUEUED'");
     const stopped = await pool.query<{ id: string }>("SELECT id FROM deployments WHERE worker_id=$1 AND state IN ('SUSPENDED','FAILED')", [workerId]);
     for (const row of stopped.rows) await withAppLock(row.id, async () => { if (["SUSPENDED", "FAILED"].includes((await deployment(row.id))?.state || "")) await cleanup(row.id); });
@@ -151,6 +186,13 @@ const server = createServer(async (request, response) => {
     if (!timingSafeEqual(createHash("sha256").update(token).digest(), createHash("sha256").update(process.env.WORKER_TOKEN!).digest())) { response.writeHead(403).end(); return; }
     if (request.method === "GET" && request.url === "/health") {
       response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ status: "ok", workerId, aiConfigured: !!process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL || null })); return;
+    }
+    const logs = /^\/logs\/([a-f0-9]{24})$/.exec(request.url || "");
+    if (request.method === "GET" && logs) {
+      const owned = await deployment(logs[1]);
+      if (!owned || owned.worker_id !== workerId || ["EXPIRED", "DELETED"].includes(owned.state)) { response.writeHead(404).end(); return; }
+      const entries = await runtimeLogs(owned.id);
+      response.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(JSON.stringify(entries)); return;
     }
     const backup = /^\/backup\/([a-f0-9]{24})$/.exec(request.url || "");
     if (request.method === "POST" && backup) {

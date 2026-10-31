@@ -1,4 +1,5 @@
 "use client";
+import { DeploymentManagementPanel } from "@/components/deployment-management";
 import { translate } from "@/lib/i18n/messages";
 import { BrandTopBar } from "@/components/brand-top-bar";
 import { useLocale } from "@/lib/i18n/locale-provider";
@@ -31,6 +32,6 @@ export default function Dashboard() {
       {app.state === "RUNNING" && <><Link href={`/rooms/${app.id}/host`}>{tr("Quản lý nội dung")}</Link>{" · "}<a href={`https://${app.hostname}/rooms/${app.id}`}>{tr("Mở ứng dụng")}</a></>}
       <div className="mini-actions">{app.state === "RUNNING" && <button disabled={busy === app.id} onClick={() => action(app.id, "suspend")}>{tr("Tạm dừng")}</button>}
         {app.state === "SUSPENDED" && <button disabled={busy === app.id} onClick={() => action(app.id, "resume")}>{tr("Chạy lại")}</button>}
-        {!["DELETED", "EXPIRED"].includes(app.state) && <button disabled={busy === app.id} onClick={() => action(app.id, "delete")}>{tr("Xóa")}</button>}</div></article>)}
+        {!["DELETED", "EXPIRED"].includes(app.state) && <button disabled={busy === app.id} onClick={() => action(app.id, "delete")}>{tr("Xóa")}</button>}</div>{app.state !== "DELETED" && <DeploymentManagementPanel id={app.id} />}</article>)}
   </main></>;
 }

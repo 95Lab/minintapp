@@ -35,7 +35,7 @@ export async function submitDeployment(input: Deployment["input"], ownerId: stri
     if (Number(recent.rows[0].count) >= Number(process.env.MAX_CREATIONS_PER_HOUR || 30)) throw new AppError("creation_hourly_limit");
     // Failed deployments have no runtime; counting them would let one bad deploy block every visitor until it expires.
     const count = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE state NOT IN ('EXPIRED','DELETED','FAILED')");
-    if (Number(count.rows[0].count) >= Number(process.env.MAX_ACTIVE_APPS || 3)) throw new AppError("app_capacity_full");
+    if (Number(count.rows[0].count) >= Number(process.env.MAX_ACTIVE_APPS || 100)) throw new AppError("app_capacity_full");
     const owned = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE owner_id=$1 AND state NOT IN ('EXPIRED','DELETED','FAILED')", [ownerId]);
     if (Number(owned.rows[0].count) >= 2) throw new AppError("owner_app_limit");
     await client.query(`INSERT INTO deployments(id,owner_id,state,input,host_token_hash,hostname,image,expires_at,request_key)
