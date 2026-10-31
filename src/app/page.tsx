@@ -1,6 +1,7 @@
 import { translate } from "@/lib/i18n/messages";
 import { getLocale } from "@/lib/i18n/server";
-import { LanguageSwitcher } from "@/lib/i18n/locale-provider";
+import { BrandLogo } from "@/components/brand-logo";
+import { SiteHeader } from "@/components/site-header";
 import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { GenerateAppForm } from "@/components/create/generate-app-form";
 import { CreatePollButton } from "@/components/create/create-poll-button";
@@ -35,11 +36,11 @@ const faqs = [
   const persistent = process.env.PLATFORM_ROLE === "control" || readRuntimeConfig().APP_STORAGE === "supabase";
   return <div className="home-shell">
     <a className="skip-link" href="#main-content">{tr("Đến nội dung chính")}</a>
-    <header className="home-header"><a className="home-logo title-1" href="/" aria-label={tr("MinintApp, trang chủ")}><span className="logo-mark" aria-hidden="true">m<span>·</span></span>minintapp<span className="logo-period">.</span></a><nav aria-label={tr("Điều hướng chính")}><a className="title-4" href="/templates">{tr("Khám phá tất cả mẫu")}</a><a className="title-4" href="/my-apps">{tr("Ứng dụng của tôi")}</a><a className="title-4" href="#how-it-works">{tr("Cách hoạt động")}</a></nav><LanguageSwitcher /><a className="nav-create button-sm" href="#create">{tr("Tạo ứng dụng")}<span aria-hidden="true">↗</span></a></header>
+    <SiteHeader home />
     <main id="main-content" className="home-main">
       <section className="home-hero" aria-labelledby="hero-title">
         <div className="hero-copy"><p className="eyebrow caption-3"><span className="status-dot" />{tr("Ứng dụng nhỏ. Đúng lúc cần.")}</p><h1 id="hero-title" className="heading-1">{tr("Ý tưởng nhỏ.")}<br />{tr("Kết nối ")}<span className="hero-emphasis">{tr("cả nhóm.")}</span></h1><p className="hero-description body-3">{tr("Một cuộc bình chọn, một trò quiz, một lần bốc thăm.")}<br className="desktop-break" />{tr(" Tạo ứng dụng cho khoảnh khắc của bạn, rồi chia sẻ bằng một đường link.")}</p><div className="hero-note caption-2"><span aria-hidden="true">↳</span> Temporary problem. Temporary software.</div></div>
-        <div id="create" className="hero-composer"><div className="composer-top caption-3"><span className="composer-symbol" aria-hidden="true">✳</span>{tr("TỪ Ý TƯỞNG ĐẾN ỨNG DỤNG")}<span className="ai-label caption-4">OpenAI</span></div><GenerateAppForm /><div className="composer-foot caption-2"><span aria-hidden="true">↗</span>{tr("Tạo xong, chia sẻ link để mọi người cùng tham gia.")}</div></div>
+        <div id="create" className="hero-composer"><div className="composer-top caption-3"><span className="composer-symbol" aria-hidden="true">✳</span>{tr("TỪ Ý TƯỞNG ĐẾN ỨNG DỤNG")}<span className="ai-label caption-4">AI</span></div><GenerateAppForm /><div className="composer-foot caption-2"><span aria-hidden="true">↗</span>{tr("Tạo xong, chia sẻ link để mọi người cùng tham gia.")}</div></div>
       </section>
       <div className="use-cases caption-4"><span>{tr("Dành cho những lúc")}</span><span>{tr("Họp nhóm")}</span><span>Workshop</span><span>{tr("Lớp học")}</span><span>{tr("Hẹn hò bạn bè")}</span><span className="use-case-end">{tr("Và mọi ý tưởng bất chợt ↗")}</span></div>
       <section id="templates" className="home-templates" aria-labelledby="templates-title" data-reveal><div className="section-heading"><div><p className="eyebrow caption-3">{tr("BẮT ĐẦU TỪ ĐÂY")}</p><h2 id="templates-title" className="heading-3">{tr("Có sẵn mẫu. Chọn là chạy.")}</h2></div><p className="body-6">{tr("Không cần nghĩ từ đầu.")}<br />{tr("Các mẫu sẵn sàng dùng, không cần AI.")}</p></div>
@@ -50,7 +51,7 @@ const faqs = [
       <section className="tagline-section" aria-label={tr("Thông điệp")}><p className="heading-2">{tr("Việc nhỏ có công cụ riêng.").split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}<br />{tr("Khoảnh khắc có nhau.").split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}</p><a href="#create" className="text-link button-md">{tr("Tạo ứng dụng của bạn")}<span aria-hidden="true">↗</span></a></section>
       <section className="faq-section" aria-labelledby="faq-title" data-reveal><div><p className="eyebrow caption-3">{tr("TRƯỚC KHI BẮT ĐẦU")}</p><h2 id="faq-title" className="heading-3">{tr("Bạn có thể đang thắc mắc.")}</h2></div><div className="faq-grid">{faqs.map(([q, a]) => <article key={q}><h3 className="title-3">{q}</h3><p className="body-6">{a}</p></article>)}</div></section>
     </main>
-    <footer className="home-footer"><div><a className="title-1" href="/">minintapp.</a><p className="caption-2">{tr("Một sản phẩm từ 95LAB. Cho những nhu cầu vừa đủ.")}</p></div><div className="footer-links caption-2"><a href="/dashboard">{tr("Ứng dụng của tôi")}</a><a href="/preview">{tr("Thư viện component")}</a><a href="/api/health">{tr("Kiểm tra trạng thái hệ thống")}</a></div><p className="storage-note caption-5">{persistent ? tr("Dữ liệu được lưu bền và đồng bộ giữa các thiết bị.") : tr("Phiên dùng thử: dữ liệu được lưu tạm và có thể mất khi hệ thống khởi động lại.")}</p></footer>
+    <footer className="home-footer"><div><BrandLogo /><p className="caption-2">{tr("Một sản phẩm từ 95LAB. Cho những nhu cầu vừa đủ.")}</p></div><div className="footer-links caption-2"><a href="/dashboard">{tr("Ứng dụng của tôi")}</a><a href="/preview">{tr("Thư viện component")}</a><a href="/api/health">{tr("Kiểm tra trạng thái hệ thống")}</a></div><p className="storage-note caption-5">{persistent ? tr("Dữ liệu được lưu bền và đồng bộ giữa các thiết bị.") : tr("Phiên dùng thử: dữ liệu được lưu tạm và có thể mất khi hệ thống khởi động lại.")}</p></footer>
     <HomeMotion />
   </div>;
 }

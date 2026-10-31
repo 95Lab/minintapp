@@ -1,8 +1,6 @@
 "use client";
 // Top bar shared by every screen: wordmark on the left, contextual controls on the right.
-import { LanguageSwitcher } from "@/lib/i18n/locale-provider";
-import Link from "next/link";
-import { AccountNav } from "@/engine-ui/account/account-nav";
+import { SiteHeader } from "@/components/site-header";
 
 export function BoltIcon({ size = 16 }: { size?: number }) {
   return (
@@ -13,19 +11,5 @@ export function BoltIcon({ size = 16 }: { size?: number }) {
 }
 
 export function BrandTopBar({ children }: { children?: React.ReactNode }) {
-  return (
-    <header className="topbar">
-      <Link href="/" className="brand" aria-label="MinintApp — trang chủ">
-        <span className="brand-mark">
-          <BoltIcon />
-        </span>
-        MinintApp
-      </Link>
-      <div className="host-meta">
-        {children}
-        <AccountNav />
-        <LanguageSwitcher />
-      </div>
-    </header>
-  );
+  return <SiteHeader>{children}</SiteHeader>;
 }

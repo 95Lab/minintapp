@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { useEffect, useState } from "react";
 import { DeploymentManagementPanel } from "@/components/deployment-management";
 import { AccountNav } from "@/engine-ui/account/account-nav";
@@ -51,7 +52,7 @@ export default function Dashboard() {
   return <div className={styles.shell}>
     <a className={styles.skip} href="#dashboard-content">{text("Đến nội dung", "Skip to content")}</a>
     <aside className={styles.sidebar}>
-      <Link className={styles.logo} href="/"><span className={styles.mark}>m<span>.</span></span>minintapp<span className={styles.period}>.</span></Link>
+      <BrandLogo className={styles.logo} />
       <p className={styles.caption}>{text("KHÔNG GIAN LÀM VIỆC", "WORKSPACE")}</p>
       <nav aria-label={text("Điều hướng chính", "Main navigation")}>
         <Link href="/dashboard" aria-current="page"><span aria-hidden="true">▦</span>{text("Ứng dụng của tôi", "My apps")}</Link>

@@ -18,6 +18,7 @@ test("homepage keeps creation and template navigation usable on mobile", async (
   await expect(page.getByRole("button", { name: "Trao đổi ý tưởng", exact: true })).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("homepage-mobile.png"), fullPage: true });
+  await page.getByRole("button", { name: "Mở menu", exact: true }).click();
   await page.getByRole("link", { name: "Tạo ứng dụng", exact: true }).click();
   await expect(page).toHaveURL(/#create$/);
   await expect(page.getByRole("button", { name: "Tạo bình chọn mẫu", exact: true })).toBeAttached();

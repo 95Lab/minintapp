@@ -6,6 +6,7 @@ import Link from "next/link";
 import { requestMagicLink } from "@/engine/auth/account-client";
 import { errorText } from "@/engine/api/app-error-codes";
 import { ACCOUNT_STRINGS } from "@/engine/i18n/account-strings-vi-en";
+import { BrandLogo } from "@/components/brand-logo";
 import styles from "./login-form.module.css";
 
 const copy = {
@@ -60,7 +61,7 @@ export function LoginForm() {
   return <div className={styles.shell} lang={locale}>
     <a className={styles.skip} href="#login-content">{c.skip}</a>
     <header className={styles.header}>
-      <Link href="/" className={styles.logo} aria-label="MinintApp"><span className={styles.mark} aria-hidden="true">m·</span>minintapp<span className={styles.period}>.</span></Link>
+      <BrandLogo className={styles.logo} />
       <div className={styles.headerActions}><button className={styles.language} type="button" aria-label={locale === "vi" ? "Switch to English" : "Chuyển sang tiếng Việt"} onClick={() => {
         const next = locale === "vi" ? "en" : "vi"; setLocale(next); setError(null);
         try { localStorage.setItem("minint:ui-locale", next); } catch { /* A blocked storage does not prevent changing this page. */ }
