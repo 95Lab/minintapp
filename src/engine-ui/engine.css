@@ -49,6 +49,7 @@
 * { box-sizing: border-box; }
 html, :scope { margin: 0; }
 :scope {
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);

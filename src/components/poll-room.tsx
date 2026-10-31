@@ -57,5 +57,5 @@ export function PollRoom({ id, host = false }: { id: string; host?: boolean }) {
     setActionError("");
     try { await sendVote(id, { blockId, itemId, participantToken: token, displayName: displayName || null, payload }); await refresh(); return true; }
     catch (error) { setActionError(apiErrorMessage(error, locale, tr("Không thể gửi câu trả lời."))); void refresh(); return false; }
-  } : undefined} /><AppResults state={state} />{pollOnly && <p>{tr("Bạn có thể đổi lựa chọn rồi gửi lại. Mỗi trình duyệt được tính một lượt bình chọn cho ứng dụng này.")}</p>}</>}</div>}</main></RuntimeLocaleProvider>;
+  } : undefined} /><AppResults state={state} />{pollOnly && state.status === "active" && <p>{tr("Bạn có thể đổi lựa chọn rồi gửi lại. Mỗi trình duyệt được tính một lượt bình chọn cho ứng dụng này.")}</p>}</>}</div>}</main></RuntimeLocaleProvider>;
 }

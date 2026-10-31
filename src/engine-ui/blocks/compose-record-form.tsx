@@ -159,7 +159,7 @@ export function ComposeRecordForm(props: {
           {s.composeNotSaved}
         </div>
       )}
-      {saved && !resetAfterSend && !failed && <div className="status-line">{tapToSubmit ? s.voted : s.composeSaved}</div>}
+      {saved && open && !resetAfterSend && !failed && <div className="status-line">{tapToSubmit ? s.voted : s.composeSaved}</div>}
     </form>
   );
 }

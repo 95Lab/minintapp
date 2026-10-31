@@ -51,7 +51,7 @@ export function WheelBlock({ block, results, myAnswers, open, locale, onSubmit }
       <WheelVisual entries={results?.entries ?? []} lastSpin={lastSpin(results)} size={300} />
       {block.source === "participants" &&
         (joined ? (
-          <div className="status-line">{s.wheelJoined}</div>
+          <div className="status-line">{lastSpin(results) ? s.wheelSpun : s.wheelJoined}</div>
         ) : (
           <button
             className="btn btn-app btn-lg"
