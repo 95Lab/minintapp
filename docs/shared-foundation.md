@@ -14,7 +14,7 @@ Implementation viết mới trong repo này, không nhập lịch sử hoặc se
 | `src/lib/api/request-schemas.ts` | Validation request ở trust boundary |
 | `src/lib/api/route-helpers.ts` | Chuyển lỗi sang HTTP mà không trả lỗi thô của provider |
 | `src/lib/config/` | Một schema môi trường cho CLI và server; guard `server-only` |
-| `src/lib/db/apps-repository-types.ts` | Interface lưu app/response tối thiểu, chưa có adapter |
+| `src/lib/db/apps-repository-types.ts` | Contract lưu app/response; memory adapter đã triển khai |
 | `src/lib/security/token-hashing.ts` | Token ngẫu nhiên, hash, so sánh và hash participant theo app |
 | `src/lib/i18n/api-strings-vi-en.ts` | Thông báo lỗi Việt/Anh |
 | `src/lib/generation/` | Hàm generate spec, system prompt và client OpenAI duy nhất |
@@ -27,9 +27,9 @@ Giữ tên trường AppSpec: `specVersion`, `locale`, `title`, `description`, `
 
 Compose hiện hỗ trợ input `text/number/choice/rating/slot/date/datetime`, view `bars/stat/table/leaderboard/cloud`, `entries=one`, `flow=open`. Trường `note` và các trường nullable được giữ. Kiểm tra option, range, nguồn view, loại dữ liệu và điều kiện `showIf` cơ bản. Payload chỉ có `kind` và `values`.
 
-Đây là contract ban đầu, chưa tương đương toàn bộ repo gốc. Chưa có preset expansion, query/expression, entries nhiều dòng, steps, roster, ảnh, map, settle, chat, live/custom block; các cấu hình này bị từ chối thay vì bị bỏ qua. Chưa có tính kết quả hoặc kiểm tra response theo app/quiz state ở server. `AppRuntime`, repository và lifecycle contract mới có phần tối thiểu; chưa có account, payee, redirect hoặc upload contract. Khi bổ sung một nhóm chức năng phải cập nhật schema, type và test cùng lúc.
+Đây là contract ban đầu, chưa tương đương toàn bộ repo gốc. Chưa có preset expansion, query/expression, entries nhiều dòng, steps, roster, ảnh, map, settle, chat, live/custom block; các cấu hình này bị từ chối thay vì bị bỏ qua. Đã có validation và tổng hợp cho poll một lựa chọn; chưa có tính điểm quiz, wheel hoặc compose nâng cao. `AppRuntime`, repository và lifecycle contract mới có phần tối thiểu; chưa có account, payee, redirect hoặc upload contract. Khi bổ sung một nhóm chức năng phải cập nhật schema, type và test cùng lúc.
 
-`GenerateEvent` giữ hướng thiết kế NDJSON với `done` trả id/hostToken cho route lưu trữ trong tương lai. Không dùng kết quả của hàm sinh spec thay cho event `done`: hàm chưa lưu app và chưa cấp token.
+`GenerateEvent` giữ hướng thiết kế NDJSON với `done` trả id/hostToken cho route lưu trữ trong tương lai. Không dùng kết quả của hàm sinh spec thay cho event `done`: hàm chưa lưu app và chưa cấp token. API tạo app từ mẫu đã lưu memory và cấp quyền host; xem `api-contract.md`.
 
 ## OpenAI
 

@@ -21,6 +21,21 @@ export const LifecycleRequestSchema = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("announce"), text: z.string().trim().min(1).max(140).nullable() }),
 ]);
 export async function parseBody<T extends z.ZodType>(request: Request, schema: T): Promise<z.output<T> | null> {
-  try { const result = schema.safeParse(await request.json()); return result.success ? result.data : null; }
-  catch { return null; }
+  try {
+    if (!request.body) return null;
+    const reader = request.body.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
+    let bytes = 0;
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > 16_384) { await reader.cancel(); return null; }
+      text += decoder.decode(chunk.value, { stream: true });
+    }
+    text += decoder.decode();
+    const result = schema.safeParse(JSON.parse(text));
+    return result.success ? result.data : null;
+  } catch { return null; }
 }

@@ -13,13 +13,13 @@ npm run dev
 
 Mở http://localhost:3000. `env:local` tạo `.env.local` từ mẫu và không ghi đè file đã tồn tại. File thật được Git bỏ qua. Không đưa khóa service-role vào biến `NEXT_PUBLIC_*`.
 
-Ứng dụng web hiện có trang chờ và `GET /api/health`. Các module dùng chung trong `src/lib/` đã có schema/type, request validation, lỗi Việt/Anh, token hashing, contract repository và adapter OpenAI. Xem [shared-foundation.md](shared-foundation.md) để biết phạm vi contract.
+Trang chủ đã tạo được bình chọn mẫu, mở trang host `/a/[id]/host` và chia sẻ trang participant `/a/[id]`. Memory repository lưu app và vote trong một tiến trình Node; dữ liệu mất khi restart. Client polling mỗi 1,5 giây. Host có thể đóng, mở lại hoặc kết thúc và xóa câu trả lời.
 
-Chỉ dùng OpenAI cho AI. Thêm `OPENAI_API_KEY` vào `.env.local`, chọn `OPENAI_MODEL` (mặc định `gpt-5-mini`) và chạy `npm run env:check`. Nếu model không hỗ trợ reasoning, đặt `OPENAI_REASONING_EFFORT=`. Thiếu key thì gọi generation sẽ báo `ai_not_configured`; không tự chuyển sang mock. Các biến Gemini/Groq/LM Studio không còn trong mẫu và không được dùng. `.env.local` cũ vẫn được giữ nguyên; có thể tự bỏ các dòng provider cũ. Nếu có `LLM_PROVIDER`, chỉ chấp nhận giá trị rỗng hoặc `openai`.
+Luồng này không cần API key, Supabase hoặc Docker. Chỉ dùng mẫu `poll-drinks`; chưa nối OpenAI vào việc tạo app. Adapter `generateAppSpec()` vẫn có thể dùng phía server khi cấu hình `OPENAI_API_KEY` và `OPENAI_MODEL`, nhưng chưa có route `/api/generate`. Không có Supabase adapter hoặc migration.
 
-`generateAppSpec({ prompt, lifetime })` là hàm server dùng Responses API + Structured Outputs, xác minh lại nghiệp vụ bằng Zod, không lưu dữ liệu và không mở endpoint HTTP mới. Không có route `/api/generate`, repository memory, Supabase adapter hay migration ở bước này. Health chỉ phản ánh tiến trình web. Build và kiểm thử không cần API key.
-Thư viện UI: mở `/preview`; xem [kiến trúc component](components.md) để nối callback và phân biệt tính năng hiện có với các điểm mở rộng.
+Thử trên điện thoại: chạy `npm run dev`, mở trang chủ bằng địa chỉ IP LAN của máy chạy server, ví dụ `http://192.168.1.10:3000`, rồi tạo app và chia sẻ QR. Các thiết bị cần cùng mạng và truy cập được cổng 3000. Link localhost chỉ dùng trên máy đang chạy server. Quyền host gắn với cookie của trình duyệt đã tạo app; link host không tự cấp quyền.
 
+Xem [API contract](api-contract.md), [file dùng chung](shared-foundation.md) và [component](components.md). Trang `/preview` tiếp tục là thư viện UI, riêng dữ liệu preview không được lưu lên server.
 ## Kiểm tra trước khi review
 
 ```sh
@@ -39,7 +39,7 @@ npm run smoke
 SMOKE_BASE_URL=http://127.0.0.1:3100 npm run smoke
 ```
 
-CI chạy trên Node 22, cài sạch bằng `npm ci`, kiểm tra môi trường mẫu, typecheck, unit test, build và E2E Chromium. Không dùng secret hay gọi AI thật. Khi bổ sung nghiệp vụ, thêm unit test vào `tests/unit`, E2E vào `tests/e2e`. Kiểm thử Supabase, AI eval và load sẽ được thêm khi có implementation và contract; không xem smoke bootstrap là bằng chứng tương đương chức năng.
+CI chạy trên Node 22, cài sạch bằng `npm ci`, kiểm tra môi trường mẫu, typecheck, unit test, build và E2E Chromium. Không dùng secret hay gọi AI thật. E2E kiểm tra bình chọn thật qua API với các browser context độc lập, đổi vote, giữ lựa chọn sau reload, host đóng/mở/kết thúc và chặn quyền participant. Khi bổ sung nghiệp vụ, thêm unit test vào `tests/unit`, E2E vào `tests/e2e`. Kiểm thử Supabase, AI eval và load sẽ được thêm khi có implementation và contract; không xem smoke bootstrap là bằng chứng tương đương chức năng.
 
 ## Nguồn tham chiếu và phạm vi
 

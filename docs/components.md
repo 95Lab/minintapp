@@ -1,5 +1,7 @@
 # Kiến trúc component
 
+Ngoài thư viện UI, `PollRoom`, `PollResults` và `CreatePollButton` đã nối luồng bình chọn mẫu vào API memory. Host và participant dùng polling; xem `api-contract.md`.
+
 `src/components/` có đủ các đường dẫn của cấu trúc component đã đối chiếu, cộng `ui/component-notice.tsx` làm thông báo dùng chung. Đây là implementation mới với contract tối thiểu của dự án; có đủ file không có nghĩa đã hoàn thành mọi chức năng.
 
 Mở `/preview` để xem thư viện và thử tương tác. Trang preview lưu câu trả lời trong React state, mất khi tải lại; không gọi OpenAI, không lưu database và không chia sẻ trạng thái giữa các thiết bị. QR sử dụng liên kết minh họa được ghi rõ trên trang.

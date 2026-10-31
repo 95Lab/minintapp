@@ -22,3 +22,12 @@ export type GenerateEvent = { stage: "thinking" | "validating" }
 export interface ApiErrorResponse { ok: false; code: ErrorCode; message: string }
 export type TemplateCreateResponse = { ok: true; id: string; hostToken: string } | ApiErrorResponse;
 export type RemixResponse = { ok: true; newId: string; hostToken: string } | ApiErrorResponse;
+
+export interface AppStateResponse {
+  id: string; status: AppStatus; expiresAt: string; stateVersion: number;
+  spec: import("@/lib/app-spec/strip-private-fields").PublicAppSpec;
+  runtime: import("@/lib/blocks/block-definition-types").AppRuntime;
+  isHost: boolean; participantCount: number;
+  results: import("@/lib/responses/compute-results").PollResult[];
+  myAnswers: Record<string, import("@/lib/blocks/block-registry").ResponsePayload>;
+}
