@@ -10,12 +10,10 @@ export async function GET() {
     configured = false;
     model = null;
     try {
-      const { pool } = await import("../../../../../platform/store");
-      const workers = await pool.query<{ agent_url: string }>("SELECT agent_url FROM workers WHERE heartbeat_at>now()-interval '30 seconds' AND $1=ANY(available_images)", [process.env.RUNTIME_IMAGE]);
-      const allowed = (process.env.WORKER_AGENT_URLS || "").split(",");
-      for (const worker of workers.rows.filter((worker) => allowed.includes(worker.agent_url))) {
+      const { readyWorkerAgents } = await import("@/lib/control-plane/worker-agents");
+      for (const agent of await readyWorkerAgents()) {
         try {
-          const response = await fetch(`${worker.agent_url}/health`, { headers: { Authorization: `Bearer ${process.env.WORKER_TOKEN}` }, signal: AbortSignal.timeout(2000), cache: "no-store" });
+          const response = await fetch(`${agent}/health`, { headers: { Authorization: `Bearer ${process.env.WORKER_TOKEN}` }, signal: AbortSignal.timeout(2000), cache: "no-store" });
           const health = await response.json();
           if (response.ok && health.aiConfigured === true) { configured = true; model = typeof health.model === "string" ? health.model : null; break; }
         } catch { /* Another healthy worker may be available. */ }
