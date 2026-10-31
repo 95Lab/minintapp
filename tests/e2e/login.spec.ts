@@ -28,7 +28,8 @@ test("login keeps email on failure and supports switching language", async ({ pa
   await page.goto("/login");
   await page.getByLabel("Email của bạn").fill("person@example.com");
   await page.getByRole("button", { name: "Gửi link đăng nhập", exact: true }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator("#login-error")).toBeVisible();
+  await expect(page.locator("#login-error")).toHaveText("Mất kết nối. Thử lại nhé.");
   await expect(page.getByLabel("Email của bạn")).toHaveValue("person@example.com");
   await expect(page.getByRole("button", { name: "Gửi link đăng nhập", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Switch to English" }).click();

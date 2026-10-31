@@ -6,12 +6,13 @@ test("how-it-works anchor opens the interactive guide and its real destinations"
   await expect(guide.getByRole("heading", { name: "Một ý tưởng nhỏ. Ba bước để bắt đầu." })).toBeInViewport();
   await expect(guide.getByRole("button", { name: /Nói điều bạn cần/ })).toHaveAttribute("aria-pressed", "true");
   await expect(guide.getByText("Tạo bình chọn đồ uống cho buổi workshop của nhóm.", { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("how-overview.png"), fullPage: false });
   await guide.getByRole("button", { name: /Gửi link, mời cả nhóm/ }).click();
   await expect(guide.getByRole("heading", { name: "Một link. Mọi người cùng vào." })).toBeVisible();
   await guide.getByRole("button", { name: "Xem bước tiếp theo", exact: true }).click();
   await expect(guide.getByRole("heading", { name: "Hôm nay uống gì?" })).toBeVisible();
   await expect(guide.getByText("Số liệu chỉ để minh họa")).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("how-desktop.png"), fullPage: false });
+  await guide.screenshot({ path: testInfo.outputPath("how-desktop.png") });
   await guide.getByRole("button", { name: "Xem lại từ đầu", exact: true }).click();
   await expect(guide.getByRole("button", { name: /Nói điều bạn cần/ })).toHaveAttribute("aria-pressed", "true");
   await page.setViewportSize({ width: 390, height: 844 });
