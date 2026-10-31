@@ -99,20 +99,34 @@ jobs:
   deploy:
     needs: image
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
-    runs-on: [self-hosted, linux, x64, minintapp-production]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
     permissions:
       contents: read
       packages: read
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Deploy on this runner machine
+      - name: Configure SSH
         env:
-          DEPLOY_APP_DIR: ${{ vars.DEPLOY_APP_DIR }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Deploy verified image through restricted SSH command
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ vars.VPS_PORT }}
           IMAGE_REF: ${{ needs.image.outputs.image }}@${{ needs.image.outputs.digest }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
-        run: bash scripts/deploy-runner.sh
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          [[ "$IMAGE_REF" =~ ^ghcr.io/95lab/minintapp@sha256:[a-f0-9]{64}$ ]]
+          printf '%s\n%s\n' "$GHCR_USER" "$GHCR_TOKEN" | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "deploy $IMAGE_REF"

@@ -12,13 +12,14 @@ function runDeploy(options: { previous?: boolean; failUp?: boolean; failPull?: b
   const dir = mkdtempSync(join(tmpdir(), "minint-deploy-")); dirs.push(dir);
   const bin = join(dir, "bin"); mkdirSync(bin);
   copyFileSync("deploy/deploy.sh", join(dir, "deploy.sh"));
+  writeFileSync(join(dir, "network-preflight.py"), "# Network preflight is tested separately on the target host.\n");
   writeFileSync(join(dir, ".env"), "APP_ORIGIN=https://app.example.com\n");
   writeFileSync(join(dir, ".env.app"), "");
   if (options.previous) writeFileSync(join(dir, ".image.env"), `MININTAPP_IMAGE=${oldImage}\n`);
   writeFileSync(join(bin, "flock"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   writeFileSync(join(bin, "docker"), `#!/bin/bash
 printf '%s\\n' "$*" >> "$DEPLOY_TEST_LOG"
-if [[ "$*" == *"pull app proxy"* && "$FAIL_PULL" == 1 ]]; then exit 1; fi
+if [[ "$*" == *"pull app"* && "$FAIL_PULL" == 1 ]]; then exit 1; fi
 if [[ "$*" == *".image.next."* && "$*" == *"up -d"* && "$FAIL_UP" == 1 ]]; then exit 1; fi
 exit 0
 `, { mode: 0o755 });
@@ -30,12 +31,17 @@ exit 0
   return { result, dir, log: existsSync(join(dir, "docker.log")) ? readFileSync(join(dir, "docker.log"), "utf8") : "" };
 }
 describe("deployment control flow with stubbed Docker/curl", () => {
+  it.each(["whoami", "deploy ghcr.io/95lab/minintapp:latest", `deploy ghcr.io/other/app@sha256:${"a".repeat(64)}`])("rejects unauthorized SSH command %s", (command) => {
+    const result = spawnSync("bash", ["deploy/ssh-gate.sh", command], { encoding: "utf8", input: "" });
+    expect(result.status).toBe(64);
+  });
   it("promotes a successful immutable image and retains the previous reference", () => {
     const { result, dir, log } = runDeploy({ previous: true });
     expect(result.status).toBe(0);
     expect(readFileSync(join(dir, ".image.env"), "utf8")).toContain(newImage);
     expect(readFileSync(join(dir, ".image.previous.env"), "utf8")).toContain(oldImage);
-    expect(log).toContain("caddy validate");
+    expect(log).toContain("pull app");
+    expect(log).not.toContain("proxy");
   });
   it.each([{ failUp: true }, { failCurl: true }])("rolls back on startup or public smoke failure", (failure) => {
     const { result, dir, log } = runDeploy({ previous: true, ...failure });
@@ -52,7 +58,7 @@ describe("deployment control flow with stubbed Docker/curl", () => {
     const { result, dir, log } = runDeploy({ failUp: true });
     expect(result.status).toBe(1);
     expect(existsSync(join(dir, ".image.env"))).toBe(false);
-    expect(log).toContain("stop app proxy");
+    expect(log).toContain("stop app");
   });
   it("rejects mutable tags before doing anything", () => {
     const { result, log } = runDeploy({ image: "ghcr.io/example/app:latest" });

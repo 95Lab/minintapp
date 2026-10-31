@@ -1,100 +1,33 @@
-# Tự động deploy lên VPS bằng Docker
+# Triển khai MinintApp trên VM dùng chung
 
-Luồng: push `main` → typecheck/unit/build/E2E → build Docker image → smoke trên container → đẩy chính image đã kiểm tra lên GHCR → SSH deploy → kiểm tra health nội bộ và HTTPS bên ngoài. Pull request chỉ chạy kiểm tra, không publish hoặc deploy. Có thể chạy lại bằng `workflow_dispatch` trên `main`.
+[Tiếng Việt](deployment.md) | [English](deployment.en.md)
 
-Workflow: `.github/workflows/check.yml`. Các action deploy được khóa tuần tự; image được chọn bằng SHA256 digest, không dùng `latest` để deploy.
+## Luồng triển khai
 
-## Trạng thái thiết lập
+Push vào `main` → typecheck/unit/build/E2E → build và smoke image trên GitHub → publish GHCR theo digest → SSH bằng user `minintapp-deploy` → pull image → health check nội bộ và HTTPS → lưu phiên bản hoặc rollback.
 
-Các file và workflow đã chuẩn bị trong repo. Chưa cấu hình kết nối VPS, chưa tạo GitHub Secrets và chưa chạy deploy thật. Cần đưa các thay đổi lên GitHub và hoàn tất bootstrap dưới đây để kích hoạt. Không có commit/push tự động trong tác vụ thiết lập.
+Không cần self-hosted runner. Build không chạy trên VM. App hiện lưu memory: deploy/restart/rollback làm mất app và vote. Chưa có AI key thì tạo app bằng template; không giả lập AI thật.
 
-Docker chưa có trên máy phát triển trong phiên thiết lập nên chưa kiểm tra container tại đây. Đã kiểm tra Next standalone bằng E2E, cú pháp workflow bằng actionlint và logic promote/rollback bằng các command giả lập. Job image trên GitHub sẽ thực sự build, kiểm tra Compose và smoke container trước khi publish.
+## Cách ly trên server
 
-## 1. Chuẩn bị VPS một lần
+Nginx hiện có giữ 80/443; MinintApp chỉ bind `127.0.0.1:18080`. Compose project `minintapp`, network `minintapp-platform`, subnet `172.30.240.0/24`. Preflight so sánh subnet với Docker networks và route trước mỗi deploy, xung đột thì dừng. Docker tự cấp IP. App giới hạn 1 CPU/768 MiB RAM và log. Không restart Docker, không prune, không sửa stack khác.
 
-Cấu hình hiện tại dành cho Linux x86_64/amd64, một replica. VPS cần Docker Engine, Docker Compose plugin từ 2.20 trở lên, `curl`, `flock`, `tar`, Bash và user SSH có quyền chạy Docker. Cài Docker theo [hướng dẫn chính thức](https://docs.docker.com/engine/install/ubuntu/) đúng hệ điều hành VPS. Khuyến nghị ít nhất 2 GiB RAM; build diễn ra trên GitHub, không trên VPS.
+Đây là nền tảng web dùng chung runtime hiện tại, chưa triển khai mỗi Flash App một sandbox. Trước khi chạy code không đáng tin cậy cần gVisor, kiểm soát egress và quota sandbox. Network riêng không phải toàn bộ ranh giới bảo mật.
 
-Trỏ bản ghi DNS A của domain về VPS (và AAAA chỉ khi IPv6 hoạt động). Mở TCP 80/443, UDP 443 nếu dùng HTTP/3 và cổng SSH. Không cần công khai cổng 3000. Đảm bảo không có web server khác chiếm 80/443.
+## Credential
 
-Tạo thư mục bằng user deploy, ví dụ:
+Repository secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS`. Variable `VPS_PORT=2299`, `DEPLOY_ENABLED=true` chỉ sau bootstrap. Environment `production`.
 
-```sh
-sudo install -d -m 750 -o "$USER" -g "$(id -gn)" /opt/minintapp
-cd /opt/minintapp
-umask 077
-printf '%s\n' 'APP_ORIGIN=https://app.example.com' > .env
-touch .env.app
-chmod 600 .env .env.app
-```
+Key CI riêng không được đăng nhập root, mở shell, upload file hoặc gọi Docker tùy ý. Authorized key dùng forced command; sudo chỉ cho gate root-owned `/usr/local/sbin/minintapp-ssh-gate`, gate chỉ chấp nhận `deploy ghcr.io/95lab/minintapp@sha256:<64 hex>`. Credential này có thể thay ứng dụng MinintApp; chỉ cấp workflow tin cậy trên main. Token GHCR nhận qua stdin, Docker config tạm bị xóa sau lệnh.
 
-Thay domain ví dụ bằng domain thật. APP_ORIGIN không có dấu `/` cuối, path hoặc dấu nháy trong file. Với domain thật Caddy tự quản lý HTTPS và giữ certificate trong Docker volume. Có thể dùng `http://IP_VPS` để kiểm tra ban đầu nhưng đó không phải kết nối HTTPS.
+## Bootstrap và thay đổi hạ tầng
 
-`.env.app` giữ biến runtime của ứng dụng, ví dụ OPENAI_API_KEY khi cần; hiện tại bình chọn mẫu không cần key. Không đưa `.env.app` vào Git hoặc upload như artifact. Workflow không ghi đè hai file môi trường của VPS.
+Admin cài `deploy/compose.yml`, `deploy/deploy.sh`, `deploy/network-preflight.py` vào `/opt/minintapp` và `deploy/ssh-gate.sh` vào `/usr/local/sbin/minintapp-ssh-gate`, tất cả root-owned. User CI không có quyền sửa các file này hoặc membership Docker. Admin tạo network sau khi preflight thành công; cấu hình Nginx domain và chứng chỉ TLS. Secret runtime giữ trong `.env.app` mode 600; `.env` chứa `APP_ORIGIN=https://minintapp.io.vn`.
 
-Chỉ một container app được chạy. App dùng memory, nên **mỗi deploy/restart/rollback làm mất app và vote hiện có**; rollback chỉ khôi phục phần mềm, không khôi phục dữ liệu. Có khoảng gián đoạn ngắn khi thay container. Cần chuyển sang database trước khi yêu cầu dữ liệu bền hoặc nhiều replica.
+Pipeline chỉ cập nhật image ứng dụng, không tự cập nhật file hạ tầng root-owned. Nếu thay Compose/gate/deploy script, admin phải kiểm tra và cài phiên bản mới trước khi bật workflow tương ứng. Không dùng `scripts/deploy-runner.sh` cho mô hình SSH này.
 
-## 2. GitHub Secrets và Variables
+## Kiểm tra và rollback
 
-Trong repository → Settings → Secrets and variables → Actions, thêm các repository secrets:
+`curl --fail https://minintapp.io.vn/api/health` phải trả service `minintapp`. Image chỉ promote sau khi health nội bộ và public thành công. Nếu lỗi, script thử khôi phục image cũ; lần đầu không có image cũ thì dừng app. Có downtime khi recreate. Rollback không phục hồi memory, migration hoặc cấu hình hạ tầng.
 
-| Secret | Nội dung |
-|---|---|
-| `VPS_HOST` | IPv4 hoặc hostname VPS, không có scheme/port |
-| `VPS_USER` | User SSH được cấp quyền deploy |
-| `VPS_SSH_KEY` | Private SSH key dành riêng cho deploy; public key tương ứng có trong authorized_keys của VPS |
-| `VPS_KNOWN_HOSTS` | Dòng host key của VPS đã được xác minh, đúng hostname và cổng SSH |
-
-Dùng key không cần passphrase trong automation. Giữ StrictHostKeyChecking; không tự tin cậy kết quả keyscan chưa đối chiếu fingerprint. Không gửi private key vào chat hoặc ghi vào repo. Có thể nạp key từ file local bằng GitHub CLI:
-
-```sh
-gh secret set VPS_SSH_KEY --repo 95Lab/minintapp < /path/to/deploy-private-key
-gh secret set VPS_KNOWN_HOSTS --repo 95Lab/minintapp < /path/to/verified-known-hosts
-```
-
-Thêm repository variables:
-
-| Variable | Giá trị |
-|---|---|
-| `VPS_PORT` | Tùy chọn, mặc định `22` |
-| `VPS_APP_DIR` | Tùy chọn, mặc định `/opt/minintapp`; đường dẫn tuyệt đối không có khoảng trắng |
-| `DEPLOY_ENABLED` | Đặt `true` sau khi VPS và secrets sẵn sàng |
-
-Job dùng GitHub Environment `production`; nếu đặt quy tắc approval trên environment thì mỗi deploy sẽ chờ theo quy tắc đó. Workflow này không tự yêu cầu reviewer.
-
-GHCR dùng GITHUB_TOKEN của workflow: job image có packages:write, job deploy có packages:read. Token đọc registry được chuyển qua stdin của SSH, lưu trong Docker config tạm trên VPS rồi xóa sau job; không cần lưu PAT dài hạn trên VPS cho deploy tự động. Nếu organization giới hạn package access, cấp Actions của repository quyền truy cập package vừa tạo. Không đưa token vào build args hoặc Docker image.
-
-## 3. Chạy và kiểm tra
-
-Sau khi các file được push lên `main`, theo dõi workflow **Check and deploy** trong GitHub Actions. Nếu DEPLOY_ENABLED chưa là true, image vẫn được kiểm tra/publish nhưng deploy VPS bị bỏ qua.
-
-Trên VPS, sau lần deploy đầu:
-
-```sh
-cd /opt/minintapp
-docker compose --env-file .env --env-file .image.env -f compose.yml ps
-curl --fail https://app.example.com/api/health
-```
-
-Mở domain, tạo bình chọn và thử bằng một trình duyệt khác. Host cookie là HttpOnly/SameSite=Lax và Secure khi APP_ORIGIN là HTTPS. Caddy chuyển tiếp Host của domain; app dùng APP_ORIGIN để kiểm tra Origin và tạo cookie đúng khi TLS kết thúc tại proxy.
-
-Xem logs giới hạn số dòng để tránh in dữ liệu không cần thiết:
-
-```sh
-docker compose --env-file .env --env-file .image.env -f compose.yml logs --tail 100 app proxy
-```
-
-## Rollback và lỗi
-
-`deploy/deploy.sh` kéo image và validate Caddy trước khi thay container. Sau đó chờ health, kiểm tra public endpoint qua Caddy/TLS. Nếu lỗi sau khi thay container, script thử chạy lại image trong `.image.env` và job vẫn báo failed; nếu rollback cũng lỗi, thông báo nêu rõ để kiểm tra VPS. Lần deploy đầu chưa có image cũ nên sẽ dừng stack lỗi. `.image.previous.env` lưu image của lần thành công trước đó.
-
-Rollback áp dụng image app với cấu hình Compose/Caddy hiện tại, không hoàn nguyên mọi thay đổi hạ tầng hoặc phục hồi memory. Không tự prune image/volume.
-
-Rollback thủ công cần quyền pull GHCR (đăng nhập lại nếu package private), rồi:
-
-```sh
-cd /opt/minintapp
-previous=$(sed -n 's/^MININTAPP_IMAGE=//p' .image.previous.env)
-bash deploy.sh "$previous"
-```
-
-Tham khảo: [GitHub Actions — publish Docker images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images), [Next standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output), [Caddy reverse proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
+Certbot quản lý chứng chỉ origin, renewal hook kiểm tra rồi reload Nginx. Giữ route ACME trên HTTP cho renewal. Cloudflare DNS/TLS policy không được pipeline tự thay đổi.

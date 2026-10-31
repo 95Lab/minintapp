@@ -11,8 +11,9 @@ services:
       HOSTNAME: 0.0.0.0
       PORT: "3000"
       APP_ORIGIN: ${APP_ORIGIN:?Set the public origin without a trailing slash}
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:18080:3000"
+    networks: [platform]
     mem_limit: 768m
     cpus: 1.0
     pids_limit: 256
@@ -23,27 +24,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  proxy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    environment:
-      APP_ORIGIN: ${APP_ORIGIN:?Set the public origin}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      app:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-volumes:
-  caddy_data:
-  caddy_config:
+networks:
+  platform:
+    external: true
+    name: minintapp-platform

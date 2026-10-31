@@ -20,8 +20,9 @@ printf 'MININTAPP_IMAGE=%s\n' "$image" > "$candidate"
 compose() { local file=$1; shift; docker compose --env-file .env --env-file "$file" -f compose.yml -p minintapp "$@"; }
 # Fail before touching the running stack if configuration, pull or proxy validation fails.
 compose "$candidate" config --quiet
-compose "$candidate" pull app proxy
-compose "$candidate" run --rm --no-deps proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+python3 ./network-preflight.py
+compose "$candidate" pull app
+
 rollback() {
   if [[ -f .image.env ]]; then
     echo 'Deploy failed; restoring the previous application image.' >&2
@@ -30,7 +31,7 @@ rollback() {
     fi
   else
     echo 'First deploy failed; no previous application image exists.' >&2
-    compose "$candidate" stop app proxy || true
+    compose "$candidate" stop app || true
   fi
   exit 1
 }
