@@ -32,14 +32,30 @@ describe("planning route and actual SDK parser (mocked HTTP)", () => {
     expect(await res.json()).toEqual(reply());
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body).toMatchObject({ store: false, max_output_tokens: 2500, text: { format: { type: "json_schema", name: "app_planning", strict: true } } });
-    expect(JSON.parse(body.input)).toEqual(input());
+    expect(JSON.parse(body.input)).toEqual({ ...input(), questionsLeft: 5 });
     expect(limit).toHaveBeenCalledWith("plan", expect.any(String));
+  });
+  const fiveAnswered = () => Array.from({ length: 11 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: i ? `Lượt ${i}` : "Tạo app cho team" }));
+  it("closes the conversation itself once five questions were asked", async () => {
+    fetchMock.mockResolvedValue(response({ status: "clarify", message: "Câu thứ sáu?", suggestions: ["A"], brief: "Bình chọn cho team" }));
+    const body = await (await POST(request({ ...input(), messages: fiveAnswered() }))).json();
+    expect(body).toMatchObject({ status: "ready", brief: "Bình chọn cho team", suggestions: [] });
+    expect(body.message).toContain("Chốt yêu cầu và tạo app");
+    expect(JSON.parse(JSON.parse(fetchMock.mock.calls[0][1].body).input).questionsLeft).toBe(0);
+  });
+  it("builds a brief from the conversation when the model has none at the limit", async () => {
+    fetchMock.mockResolvedValue(response({ status: "clarify", message: "Câu thứ sáu?", suggestions: [], brief: null }));
+    expect((await (await POST(request({ ...input(), messages: fiveAnswered() }))).json()).brief).toContain("Tạo app cho team");
+  });
+  it("never turns a refusal into a ready brief at the limit", async () => {
+    fetchMock.mockResolvedValue(response({ status: "unsupported", message: "Không hỗ trợ.", suggestions: [], brief: null }));
+    expect(await (await POST(request({ ...input(), messages: fiveAnswered() }))).json()).toMatchObject({ status: "unsupported", brief: null });
   });
   it("includes previous answers and the current brief when asking the next question", async () => {
     const value = { ...input(), lifetime: "24h", useDefaults: true, currentBrief: "Bình chọn trà", messages: [{ role: "user", content: "Bình chọn đồ uống" }, { role: "assistant", content: "Chọn một hay nhiều?" }, { role: "user", content: "Nhiều, ẩn kết quả đến khi chốt" }] };
     fetchMock.mockResolvedValue(response({ status: "clarify", message: "Các đồ uống gồm những gì?", suggestions: ["Trà và cà phê"], brief: "Chọn nhiều đồ uống, ẩn kết quả." }));
     expect((await POST(request(value))).status).toBe(200);
-    expect(JSON.parse(JSON.parse(fetchMock.mock.calls[0][1].body).input)).toEqual(value);
+    expect(JSON.parse(JSON.parse(fetchMock.mock.calls[0][1].body).input)).toMatchObject(value);
   });
   it("blocks cross-origin, runtime requests, invalid roles, sequence and oversized bodies before calling AI", async () => {
     expect((await POST(request(input(), "https://other"))).status).toBe(403);

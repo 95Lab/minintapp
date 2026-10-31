@@ -21,8 +21,19 @@ ${brickRules}
 Tiêu chuẩn giao diện / UI standard: ưu tiên các khối có sẵn để dùng giao diện chung. Nội dung ngắn, nhãn nút rõ hành động, một nhiệm vụ chính mỗi màn hình. Với custom HTML: mobile-first ở 320px, width:100%, không fixed-width hoặc cuộn ngang trang; chữ ít nhất 16px cho form, nút tối thiểu 44x44px, label rõ ràng, focus bàn phím, tương phản dễ đọc, nền giấy #faf9f6, chữ #282722, nhấn #ad472c; tôn trọng prefers-reduced-motion. Không dùng thư viện/font bên ngoài.
 
 locale của spec PHẢI theo ngôn ngữ của mô tả người dùng (tiếng Việt → "vi", tiếng Anh → "en").
-description là câu giới thiệu người tham gia đọc khi mở app: tối đa một câu ngắn, thân thiện; không chép lại
-yêu cầu, không nêu cấu hình nội bộ (điểm số, thời gian, trộn đáp án, host bấm gì), không có thì để null.
+description là lời mời người tham gia đọc khi mở app: một câu ngắn, thân thiện, nói họ sẽ làm gì hoặc được gì.
+KHÔNG nhắc tới "host", số câu, số điểm, thời gian, bảng xếp hạng, cách chấm hay cài đặt; không chép lại yêu cầu.
+Ví dụ tốt: "Cùng thử xem bạn hiểu lịch sử Việt Nam đến đâu." Ví dụ sai: "5 câu, host mở từng câu, đúng được 1 điểm."
+
+Giữ app tối giản (bắt buộc):
+- Chỉ tạo input mà người tham gia thực sự cần nhập. Không tự thêm ô ngoài yêu cầu (ghi chú, lý do, góp ý, email, số điện thoại).
+- Bình chọn chỉ có đúng một input lựa chọn. Khảo sát không nêu số lượng thì tối đa 4 input.
+- Tên người tham gia lấy bằng requireName: true, KHÔNG tạo input "Tên" hay "Họ tên".
+- Cấu hình của host (số đội, số vòng, thời lượng) nằm trong field của view/block, KHÔNG thành input cho người tham gia.
+  Chia đội ngẫu nhiên: inputs rỗng, một view teams với số đội ở field teams, requireName: true.
+- Một compose gồm cả inputs và views của nó; KHÔNG tách kết quả sang block riêng (block compose không input chỉ hợp lệ với view teams).
+- max của input text là số TỪ (1–50) hoặc null, không phải số ký tự.
+- Vòng quay source "options" chỉ quay các lựa chọn, không có bước "Tham gia"; đừng viết điều đó vào description.
 requireName: true khi cần biết ai trả lời (quiz có xếp hạng, gom đơn, bốc thăm người tham gia, compose có
 table/groups/split/leaderboard); còn lại false.
 layout: "tabs" (mỗi khối một tab, hiện từng khối một) khi app có từ 4 khối trở lên hoặc người dùng đòi "nhiều trang"/"tab"/
@@ -48,6 +59,8 @@ dưới, không dấu, không khoảng trắng).
 
 Bạn PHẢI trả JSON đúng schema đã cấu hình (strict): mỗi block có đủ mọi field, field không dùng tới
 với loại block đó thì để null, KHÔNG được bỏ field nào. "spec" chỉ khác null khi outcome là "ok".
+
+ĐỊNH DẠNG ĐẦU RA (bắt buộc): JSON tối giản trên MỘT dòng, không xuống dòng, không thụt lề, không khoảng trắng giữa các token. Kết thúc ngay sau dấu } cuối cùng.
 `.trim();
 
 /** Full instructions for a fresh "generate" call. */

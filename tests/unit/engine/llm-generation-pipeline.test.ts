@@ -93,6 +93,17 @@ describe("runOpenAiGeneration", () => {
     expect(result.suggestion).toMatch(/took too long|try again/i);
   });
 
+  it("retries the plain request when one model call hangs past its own timeout", async () => {
+    mockCreate.mockImplementationOnce((_body, { signal }: { signal: AbortSignal }) => new Promise((_, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")))));
+    mockCreate.mockResolvedValueOnce(textResponse(validOkOutput));
+
+    const result = await runOpenAiGeneration("Tạo app vote", { signal: new AbortController().signal, locale: "vi", attemptTimeoutMs: 20 });
+
+    expect(result.outcome).toBe("ok");
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockCreate.mock.calls[1][0].input).toBe(mockCreate.mock.calls[0][0].input);
+  });
+
   it("skips the repair call when fewer than 6s of the deadline remain", async () => {
     vi.useFakeTimers();
     const start = Date.now();

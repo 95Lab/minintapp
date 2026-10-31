@@ -32,6 +32,20 @@ describe("repairHarmlessSlips", () => {
   it("swaps an invented theme for the default", () => {
     expect((repairHarmlessSlips(out({ theme: "neon" })) as { spec: { theme: string } }).spec.theme).toBe("ink");
   });
+  it("drops a text limit written in characters and keeps a valid word limit", () => {
+    const r = repairHarmlessSlips(out({ blocks: [{ type: "compose", inputs: [{ kind: "text", max: 500 }, { kind: "text", max: 20 }, { kind: "number", max: 500 }] }] }));
+    expect((blocks(r)[0].inputs as Array<{ max: number | null }>).map((i) => i.max)).toEqual([null, 20, 500]);
+  });
+  it("moves a results-only compose block into the block before it", () => {
+    const form = { type: "compose", id: "form", inputs: [{ kind: "rating" }], views: [{ kind: "bars" }] };
+    const r = repairHarmlessSlips(out({ blocks: [form, { type: "compose", id: "results", inputs: [], views: [{ kind: "stat" }] }] }));
+    expect(blocks(r)).toHaveLength(1);
+    expect((blocks(r)[0].views as Array<{ kind: string }>).map((v) => v.kind)).toEqual(["bars", "stat"]);
+  });
+  it("keeps a teams block, which is valid without inputs", () => {
+    const r = repairHarmlessSlips(out({ blocks: [{ type: "compose", id: "a", inputs: [{ kind: "text" }], views: [] }, { type: "compose", id: "b", inputs: [], views: [{ kind: "teams" }] }] }));
+    expect(blocks(r)).toHaveLength(2);
+  });
   it("treats missing risk flags as none (the phishing scan runs anyway)", () => {
     const { riskFlags: _drop, ...noFlags } = out({});
     expect((repairHarmlessSlips(noFlags) as { riskFlags: string[] }).riskFlags).toEqual(["none"]);

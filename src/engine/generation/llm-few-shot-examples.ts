@@ -24,7 +24,7 @@ export const FEW_SHOT_EXAMPLES: FewShotExample[] = [
     "Tạo app vote chọn chủ đề workshop chiều nay: AI agent, bảo mật, dữ liệu, UX. Mỗi người 1 phiếu, hiện kết quả trực tiếp.",
     exampleWorkshopVote,
   ),
-  okExample("Quiz 3 câu về an toàn mật khẩu, có bảng xếp hạng, 20 giây mỗi câu.", examplePasswordQuiz),
+  okExample("Quiz 3 câu về an toàn mật khẩu, có bảng xếp hạng, 20 giây mỗi câu.", { ...examplePasswordQuiz, description: "Cùng thử xem bạn đặt mật khẩu an toàn đến đâu." }),
   okExample(
     "Gom đơn trà sữa: tên, món (trà sữa 35k, trà đào 40k, matcha 45k), size, số lượng, tính tổng tiền.",
     exampleMilkTeaOrder,
@@ -35,11 +35,11 @@ export const FEW_SHOT_EXAMPLES: FewShotExample[] = [
   okExample("Đăng ký ai mang gì đi picnic: bánh mì, nước uống, trái cây, thảm. Mỗi món tối đa 2 người.", exampleSignupSlots),
   okExample("Ghi chi tiêu chuyến đi theo loại (ăn uống, di chuyển, khách sạn), xem tổng từng loại và phần trăm trên tổng.", exampleExpenseByCategory),
   {
-    userPrompt: "Mọi người upload ảnh đẹp nhất chuyến đi rồi bình chọn",
+    userPrompt: "Mọi người upload file PDF hợp đồng rồi ký điện tử",
     output: {
       outcome: "unsupported",
       spec: null,
-      suggestion: "Chưa hỗ trợ upload ảnh. Thử: \"Bình chọn khoảnh khắc đáng nhớ nhất chuyến đi: leo núi, đốt lửa trại, tắm suối, BBQ\".",
+      suggestion: "Chưa hỗ trợ upload file hay ký điện tử. Thử: \"Khảo sát xác nhận đã đọc hợp đồng và góp ý từng điều khoản\".",
       riskFlags: ["none"],
     },
   },

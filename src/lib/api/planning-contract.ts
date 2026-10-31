@@ -2,6 +2,8 @@ import { z } from "zod";
 export const PLANNING_TIMEOUT_MS = 25_000;
 export const PLANNING_MAX_MESSAGES = 25;
 export const PLANNING_MAX_CHARACTERS = 5000;
+/** Clarifying questions the planner may ask in one conversation; each assistant turn is one question. */
+export const PLANNING_MAX_QUESTIONS = 5;
 export const PlanningErrorCodeSchema = z.enum(["invalid_request", "ai_not_configured", "ai_timeout", "ai_refused", "ai_invalid_output", "ai_unavailable", "rate_limited"]);
 
 export const PlanningMessageSchema = z.strictObject({
@@ -23,11 +25,12 @@ export const PlanningRequestSchema = z.strictObject({
   }
 });
 // Keep the wire shape simple for Structured Outputs; validate state invariants locally.
+// Field order is generation order: status comes last so the model settles the brief before deciding.
 export const PlanningReplyWireSchema = z.strictObject({
-  status: z.enum(["clarify", "ready", "unsupported"]),
+  brief: z.string().trim().min(1).max(500).nullable(),
   message: z.string().trim().min(1).max(1200),
   suggestions: z.array(z.string().trim().min(1).max(160)).max(3),
-  brief: z.string().trim().min(1).max(500).nullable(),
+  status: z.enum(["clarify", "ready", "unsupported"]),
 });
 export const PlanningReplySchema = PlanningReplyWireSchema.superRefine((value, ctx) => {
   if (value.status === "ready" && !value.brief || value.status === "unsupported" && value.brief !== null) {
@@ -37,6 +40,10 @@ export const PlanningReplySchema = PlanningReplyWireSchema.superRefine((value, c
 export type PlanningMessage = z.infer<typeof PlanningMessageSchema>;
 export type PlanningRequest = z.infer<typeof PlanningRequestSchema>;
 export type PlanningReply = z.infer<typeof PlanningReplySchema>;
+
+export function planningQuestionsLeft(messages: PlanningMessage[]): number {
+  return Math.max(0, PLANNING_MAX_QUESTIONS - messages.filter((message) => message.role === "assistant").length);
+}
 
 // Keep the original idea and recent complete turns. The standalone currentBrief
 // carries agreed requirements from older turns; the UI retains the full log.

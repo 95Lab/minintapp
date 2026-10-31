@@ -12,7 +12,11 @@ Kiểm thử unit/E2E giả lập AI để không phát sinh phí. Chưa gọi g
 
 ## Chat để chốt yêu cầu trên trang chủ
 
-Nút “Trao đổi ý tưởng” mở dialog chat với OpenAI qua `POST /api/engine/plan`. Planner đọc toàn bộ hội thoại và bản yêu cầu hiện tại, hỏi tiếp theo ngữ cảnh, đề xuất tối đa ba câu trả lời nhanh, hoặc chuyển ngay sang `ready` nếu mô tả đã đủ rõ. Planner phải nêu giả định, xử lý yêu cầu mâu thuẫn và đề xuất phạm vi thay thế khi capability chưa hỗ trợ. Các hướng dẫn này định hướng model; chưa có AI eval hoặc bằng chứng model thật luôn tuân thủ.
+Nút “Trao đổi ý tưởng” mở dialog chat với OpenAI qua `POST /api/engine/plan`. Planner đọc toàn bộ hội thoại và bản yêu cầu hiện tại, hỏi tiếp theo ngữ cảnh, đề xuất tối đa ba câu trả lời nhanh, hoặc chuyển ngay sang `ready` nếu mô tả đã đủ rõ. Planner phải nêu giả định, xử lý yêu cầu mâu thuẫn và đề xuất phạm vi thay thế khi capability chưa hỗ trợ.
+
+Khi đã biết loại hoạt động và chủ đề, planner chốt ngay bằng giá trị mặc định thay vì hỏi. Mỗi cuộc trò chuyện có tối đa `PLANNING_MAX_QUESTIONS` (5) câu hỏi, mỗi lượt một câu, câu quan trọng nhất trước. Model nhận `questionsLeft`; khi hết lượt, `planApp` tự chuyển `clarify` thành `ready` với brief hiện có hoặc dựng từ lời người dùng, nên giới hạn không phụ thuộc model. `unsupported` không bị chuyển.
+
+Đầu ra generation phải là JSON một dòng: với JSON có thụt lề, `gpt-5-mini` có lúc rơi vào vòng lặp sinh khoảng trắng tới trần `max_output_tokens`. Đo thật trên 32 lượt mỗi bên: 4 lượt lỗi khi có thụt lề, 0 lượt khi một dòng. Khi deadline từ 45 giây, mỗi lần gọi model còn có timeout riêng để lần lỗi không ăn hết thời gian của lượt thử lại.
 
 Contract Zod ở `src/lib/api/planning-contract.ts`: request gồm locale, messages user/assistant xen kẽ và currentBrief; response có status `clarify | ready | unsupported`, message, suggestions, brief. Tối đa 25 messages, tổng 5.000 ký tự, mỗi message 1.600 ký tự; body tối đa 16 KiB. Bản yêu cầu tối đa 500 ký tự để giữ contract generation hiện có. Không âm thầm cắt lịch sử/nội dung; vượt giới hạn cần bắt đầu lại với mô tả gọn hơn.
 
