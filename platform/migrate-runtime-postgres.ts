@@ -19,7 +19,9 @@ try {
   const volume = JSON.parse(await run("docker", ["volume", "inspect", resource]))[0];
   if (volume.Labels?.["io.minintapp.app"] !== id) throw new Error("Volume ownership mismatch");
   let container: { Config: { Labels?: Record<string,string>; Env: string[] } } | undefined;
-  try { container = JSON.parse(await run("docker", ["container", "inspect", resource]))[0]; } catch {}
+  try { container = JSON.parse(await run("docker", ["container", "inspect", resource]))[0]; } catch (error) {
+    if (!/no such (object|container)/i.test((error as { stderr?: string }).stderr || "")) throw new Error("Container inspection unavailable");
+  }
   if (container && (container.Config.Labels?.["io.minintapp.app"] !== id || container.Config.Env.some(value => value.startsWith("DATABASE_URL=")))) throw new Error("Container is not an owned legacy SQLite runtime");
   await unpublishRoute(id);
   if (container) await run("docker", ["stop", resource]);
@@ -45,6 +47,7 @@ try {
     if (renamed) await run("docker",["rm",rollback]);
     console.log(JSON.stringify({event:"runtime_migrated_to_postgres",id,responses:snapshot.responses.length,legacyVolumeRetained:true}));
   } catch {
+    await pool.query("UPDATE deployments SET image=$2,port=$3,updated_at=now() WHERE id=$1", [id,app.image,app.port]);
     if (upgraded) await run("docker",["rm","-f",resource]).catch(()=>{});
     if (renamed) await run("docker",["rename",rollback,resource]);
     if (container && app.state === "RUNNING") { await run("docker",["start",resource]); if(app.port)await publishRoute(id,app.hostname,app.port); }
