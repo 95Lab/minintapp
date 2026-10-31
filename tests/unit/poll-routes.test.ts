@@ -3,6 +3,7 @@ import { POST as create } from "@/app/api/apps/from-template/route";
 import { GET as state } from "@/app/api/apps/[id]/state/route";
 import { POST as submit } from "@/app/api/apps/[id]/responses/route";
 import { POST as lifecycle } from "@/app/api/apps/[id]/lifecycle/route";
+import { GET as upgrade } from "@/app/api/apps/[id]/upgrade/route";
 import { parseBody, GenerateRequestSchema } from "@/lib/api/request-schemas";
 import { appsRepository } from "@/lib/db/apps-repository";
 const request = (path: string, body?: unknown, headers: Record<string, string> = {}) => new Request(`http://local${path}`, { method: body === undefined ? "GET" : "POST", headers: { "Content-Type": "application/json", ...headers }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
@@ -15,6 +16,13 @@ async function newApp() {
 }
 const vote = (participantToken = "a".repeat(64)) => ({ blockId: "poll", itemId: "", participantToken, displayName: null, payload: { kind: "compose", values: { drink: "tea" } } });
 describe("poll API", () => {
+  it("upgrades a host with a redirect that does not expose the container address", async () => {
+    const { id, hostToken } = await newApp();
+    const response = await upgrade(new Request(`https://0.0.0.0:3000/api/apps/${id}/upgrade`, { headers: { "x-host-token": hostToken } }), context(id));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(`/rooms/${id}/host`);
+    expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+  });
   it("creates, accepts a vote and exposes only safe viewer-specific state", async () => {
     const { id, hostToken } = await newApp();
     expect((await submit(request(`/api/apps/${id}/responses`, vote()), context(id))).status).toBe(200);

@@ -17,7 +17,9 @@ import { provision, reclaim, runtimeToken, cachedImages } from "./docker-runtime
 import { publishRoute, unpublishRoute } from "./gateway";
 import { CloudflareDNS } from "./cloudflare";
 import { buildSpec } from "./build-spec";
-import { AppError } from "../src/lib/api/app-error-codes";
+import { planApp } from "../src/lib/generation/plan-app";
+import { PlanningRequestSchema } from "../src/lib/api/planning-contract";
+import { AppError, ERROR_STATUS } from "../src/lib/api/app-error-codes";
 
 for (const key of ["DATABASE_URL", "RUNTIME_POSTGRES_URL", "REDIS_URL", "WORKER_ID", "WORKER_TOKEN", "WORKER_AGENT_URL", "CLOUDFLARE_ZONE_ID", "CLOUDFLARE_API_TOKEN", "INGRESS_HOSTNAME", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
   if (!process.env[key]) throw new Error(`Missing ${key}`);
@@ -193,6 +195,21 @@ const server = createServer(async (request, response) => {
       if (!owned || owned.worker_id !== workerId || ["EXPIRED", "DELETED"].includes(owned.state)) { response.writeHead(404).end(); return; }
       const entries = await runtimeLogs(owned.id);
       response.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(JSON.stringify(entries)); return;
+    }
+    if (request.method === "POST" && request.url === "/plan") {
+      const chunks: Buffer[] = []; let size = 0;
+      for await (const chunk of request) { size += chunk.length; if (size > 64 * 1024) { response.writeHead(413).end(); return; } chunks.push(chunk); }
+      const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
+      try {
+        const input = PlanningRequestSchema.parse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+        const abort = new AbortController();
+        response.once("close", () => abort.abort());
+        response.writeHead(200, headers).end(JSON.stringify(await planApp(input, abort.signal)));
+      } catch (error) {
+        const code = error instanceof AppError ? error.code : "invalid_request";
+        if (!response.headersSent) response.writeHead(ERROR_STATUS[code], headers).end(JSON.stringify({ code }));
+      }
+      return;
     }
     const backup = /^\/backup\/([a-f0-9]{24})$/.exec(request.url || "");
     if (request.method === "POST" && backup) {

@@ -6,6 +6,7 @@ import { requireSameOrigin } from "@/lib/host/host-session";
 import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { generationBudget } from "@/lib/generation/generation-budget";
 import { planApp } from "@/lib/generation/plan-app";
+import { managedPlan } from "@/lib/control-plane/managed-planning";
 import { checkRateLimit } from "@/engine/security/check-rate-limit";
 import { clientIpHash } from "@/engine/security/client-ip-hash";
 
@@ -21,10 +22,11 @@ export async function POST(request: Request) {
     if (!input) throw new AppError("invalid_request");
     locale = input.locale;
     const config = readRuntimeConfig();
-    if (!config.OPENAI_API_KEY) throw new AppError("ai_not_configured");
+    const managed = process.env.PLATFORM_ROLE === "control";
+    if (!managed && !config.OPENAI_API_KEY) throw new AppError("ai_not_configured");
     if (!(await checkRateLimit("plan", clientIpHash(request))).ok) throw new AppError("rate_limited");
     release = generationBudget.acquire(config.GENERATION_MAX_PER_HOUR, config.GENERATION_MAX_CONCURRENT);
-    const result = await planApp(input, request.signal);
+    const result = managed ? await managedPlan(input, request.signal) : await planApp(input, request.signal);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return errorResponse(error, locale); }
   finally { release?.(); }
