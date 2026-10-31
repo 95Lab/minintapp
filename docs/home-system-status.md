@@ -9,3 +9,5 @@
 | Ngôn ngữ | Nội dung, nhãn menu và giờ kiểm tra hỗ trợ Việt–Anh. |
 
 Đây là kết quả kiểm tra của endpoint nền tảng, không phải cam kết sức khỏe của mọi tích hợp bên ngoài hay từng sandbox.
+
+Footer được rút gọn còn logo, 95LAB và trạng thái hệ thống; các liên kết điều hướng đã có trong menu. FAQ dùng cách diễn đạt quản lý ứng dụng sau khi tạo.

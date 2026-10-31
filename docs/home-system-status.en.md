@@ -9,3 +9,5 @@
 | Language | Content, menu labels and check time support Vietnamese and English. |
 
 This reflects the platform endpoint check, not a guarantee of every external integration or individual sandbox's health.
+
+The footer is reduced to the logo, 95LAB and system status; navigation links already live in the menu. The FAQ describes managing an app after creation.
