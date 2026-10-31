@@ -22,7 +22,7 @@ test("poll → remix into a quiz about the winner → quiz round → end", async
   await host.route("**/api/engine/apps/*/remix",async(route)=>{
     const created=await host.request.post("/api/engine/apps/from-template",{data:{templateId:"quick-quiz",locale:"vi",lifetime:"1h"}});
     const child=await created.json();expect(created.status()).toBe(201);
-    const parentId=new URL(appUrl).pathname.split("/").at(-1)!;
+    const parentId=new URL(appUrl,host.url()).pathname.split("/").at(-1)!;
     const moved=await host.request.post(`/api/engine/apps/${parentId}/lifecycle`,{headers:{"x-host-session":"1"},data:{action:"redirect",toId:child.id,toHostToken:child.hostToken}});expect(moved.ok()).toBe(true);
     await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({ok:true,newId:child.id,hostToken:child.hostToken})});
   });

@@ -13,7 +13,7 @@ export class MemoryAppsRepository implements AppsRepository {
     this.entries.set(result.app.id, { app: result.app, responses: [] });
     return structuredClone(result);
   }
-  async mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean}):Promise<T|null> {
+  async mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean;deadline?:number}):Promise<T|null> {
     const entry=this.entries.get(id); if(!entry)return null;
     const copy=structuredClone(entry);const result=mutate(copy,this.now());
     if(result.changed){copy.app.stateVersion=entry.app.stateVersion+1;this.entries.set(id,copy);}

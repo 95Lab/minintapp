@@ -26,8 +26,8 @@ export class SupabaseAppsRepository implements AppsRepository {
     if (!raw?.snapshot?.app || !Array.isArray(raw.snapshot.responses) || !Number.isFinite(raw.now)) throw new AppError("storage_unavailable");
     return raw;
   }
-  async mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean}):Promise<T|null> {
-    return this.mutate<T|null>(id,()=>null,(snapshot,now)=>{const expected=snapshot.app.stateVersion;const r=mutate(snapshot,now);if(r.changed)snapshot.app.stateVersion=expected+1;return{value:r.value};});
+  async mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean;deadline?:number}):Promise<T|null> {
+    return this.mutate<T|null>(id,()=>null,(snapshot,now)=>{const expected=snapshot.app.stateVersion;const r=mutate(snapshot,now);if(r.changed)snapshot.app.stateVersion=expected+1;return{value:r.value,deadline:r.deadline};});
   }
   async listAppsByOwner(userId:string){if(!this.listOwned)throw new AppError("storage_unavailable");return this.listOwned(userId);}
   async snapshot(id: string) { return (await this.read(id, AbortSignal.timeout(8000)))?.snapshot ?? null; }

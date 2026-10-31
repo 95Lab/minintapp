@@ -44,7 +44,7 @@ describe("error codes", () => {
   it("come back from a real route as { code }, with the Vietnamese message kept for old clients", async () => {
     resetMemoryStore();
     const { app } = await appsRepository().createApp({ spec: runtimeSpec(examplePasswordQuiz), prompt: "t", lifetimeMs: 3_600_000 });
-    const res = await blockAction(new Request("http://x", { method: "POST", body: "{}" }), { params: Promise.resolve({ id: app.id }) });
+    const res = await blockAction(new Request("http://x", { method: "POST", body: JSON.stringify({blockId:app.spec.blocks[0].id,action:"open",args:{questionId:"q1"}}) }), { params: Promise.resolve({ id: app.id }) });
     expect(res.status).toBe(403);
     expect(await res.json()).toMatchObject({ ok: false, code: "host_only", message: "Chỉ host thực hiện được." });
   });

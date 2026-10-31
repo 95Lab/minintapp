@@ -16,7 +16,7 @@ export type SubmitOutcome = "ok" | "gone" | "closed" | "limit";
 export interface AppSnapshot { app: AppRecord; responses: ResponseRecord[]; extension?: { reports?: Record<string,string>; photos?: Record<string,{ participantHash:string; mime:string; path?:string; base64?:string }> } }
 // Both adapters share domain validation and mutation semantics.
 export interface AppsRepository {
-  mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean}):Promise<T|null>;
+  mutateSnapshot<T>(id:string, mutate:(snapshot:AppSnapshot,now:number)=>{value:T;changed:boolean;deadline?:number}):Promise<T|null>;
   listAppsByOwner(userId:string):Promise<AppRecord[]>;
   createApp(input: { spec: AppSpec; prompt: string; lifetimeMs: number; parentId?: string | null; ownerId?: string | null }): Promise<{ app: AppRecord; hostToken: string }>;
   blockAction(id: string, token: string, input: import("@/lib/api/api-contract-types").BlockActionRequest): Promise<void>;
