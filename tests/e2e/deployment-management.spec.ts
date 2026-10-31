@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 const id = "a".repeat(24), image1 = `ghcr.io/95lab/minintapp@sha256:${"1".repeat(64)}`, image2 = `ghcr.io/95lab/minintapp@sha256:${"2".repeat(64)}`;
+test.beforeEach(async ({page}) => {
+  await page.route("**/api/engine/auth/session",route=>route.fulfill({json:{user:{email:"host@example.test"},accountsEnabled:true}}));
+});
+
 test("owner deploys and rolls back per-app versions and can inspect archived logs on mobile", async ({page}) => {
   await page.setViewportSize({width:390,height:844});
   const now = new Date().toISOString();
