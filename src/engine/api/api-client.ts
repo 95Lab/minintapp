@@ -60,12 +60,13 @@ async function asResult(res: Response): Promise<StateResult> {
 const etags = new Map<string, string>();
 
 export async function fetchState(appId: string, tokens: { host?: string | null; participant?: string | null }, opts: { fromSignal?: boolean } = {}): Promise<StateResult | { kind: "unchanged" }> {
-  const key = `${appId}|${tokens.host ?? ""}|${tokens.participant ?? ""}`;
+  const key = `${appId}|${tokens.host !== undefined ? "host" : "participant"}|${tokens.host ?? ""}|${tokens.participant ?? ""}`;
   try {
-    const known = etags.get(key);
+    const known = opts.fromSignal ? etags.get(key) : undefined;
     const res = await fetch(`/api/engine/apps/${appId}/state`, {
       headers: { ...headers(tokens), ...(known ? { "if-none-match": known } : {}), ...(opts.fromSignal ? { [STATE_REFRESH_HEADER]: "signal" } : {}) },
       cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
     if (res.status === 304) return { kind: "unchanged" };
     const etag = res.headers.get("etag");

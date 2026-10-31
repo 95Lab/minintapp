@@ -1,6 +1,4 @@
-// Postgres-backed fixed-window limiter via the `hit_rate_limit` rpc (supabase/migrations/
-// 20260928100000_init_schema.sql). Fails OPEN on any DB error (network blip, RPC missing, etc.)
-// so a database hiccup never blocks demo traffic — the failure is logged instead.
+// Shared atomic fixed-window limit. Database failures stop protected writes.
 import { AppError } from "@/lib/api/app-error-codes";
 import { supabaseServer } from "@/engine/db/supabase-server-client";
 import { logSecurityEvent } from "./log-security-event";

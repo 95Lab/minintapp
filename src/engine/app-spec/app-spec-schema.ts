@@ -46,9 +46,11 @@ export type AppSpecDraft = z.input<typeof AppSpecDraftSchema>;
 export const RuntimeAppSpecSchema = z.object({ ...specFields, blocks: z.array(BlockSchema).min(1).max(MAX_BLOCKS) }).superRefine((spec, ctx) => {
   // Answers, runtime state and results are keyed by block id.
   const seen = new Set<string>();
+  const questions = new Set<string>();
   spec.blocks.forEach((b, i) => {
     if (seen.has(b.id)) ctx.addIssue({ code: "custom", path: ["blocks", i, "id"], message: `duplicate block id "${b.id}"` });
     seen.add(b.id);
+    if(b.type==="quiz")b.questions.forEach((q,j)=>{if(questions.has(q.id))ctx.addIssue({code:"custom",path:["blocks",i,"questions",j,"id"],message:"Question ids must be unique across the app"});questions.add(q.id);});
   });
 });
 

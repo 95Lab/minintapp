@@ -29,6 +29,7 @@ async function handlePOST(req: Request) {
   }
 
   if(req.headers.get("accept")==="application/json") {
+    if(isObviousPhishingPrompt(prompt))return Response.json({ok:false,code:"ai_refused",message:"Không thể tạo ứng dụng từ yêu cầu này."},{status:422});
     const signal=AbortSignal.any([req.signal,AbortSignal.timeout(GENERATION_DEADLINE_MS)]);
     const [moderation,output]=await Promise.all([moderatePrompt(prompt),generateAppSpec(prompt,{signal})]);
     if(!moderation.ok||isObviousPhishingPrompt(prompt)||output.outcome==="refused"||output.spec&&!scanAppSpec(output.spec,output.riskFlags).ok)return Response.json({ok:false,code:"ai_refused",message:"Không thể tạo ứng dụng từ yêu cầu này."},{status:422});

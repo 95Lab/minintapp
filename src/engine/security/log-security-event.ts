@@ -8,7 +8,8 @@ const MAX_DETAIL_STRING_LENGTH = 500;
 
 function truncateStrings(value: unknown): unknown {
   if (typeof value === "string") {
-    return value.length > MAX_DETAIL_STRING_LENGTH ? `${value.replace(/(?:sk-|sb_secret_)[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,"[redacted]").slice(0, MAX_DETAIL_STRING_LENGTH)}…` : value;
+    const safe = value.replace(/(?:sk-|sb_secret_)[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, "[redacted]");
+    return safe.length > MAX_DETAIL_STRING_LENGTH ? `${safe.slice(0, MAX_DETAIL_STRING_LENGTH)}…` : safe;
   }
   if (Array.isArray(value)) return value.map(truncateStrings);
   if (value && typeof value === "object") {

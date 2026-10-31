@@ -1,6 +1,6 @@
 // Contract every LLM provider adapter implements. The generation pipeline (prompting, schema
 // validation, repair, deadline, fallbacks) is provider-neutral and only talks to this interface,
-// so adding a provider = one adapter file + one line in provider-registry.ts.
+// Internal contract for the OpenAI structured-output adapter.
 // See docs/llm-providers.md for the step-by-step guide.
 
 export type JsonSchema = Record<string, unknown>;
