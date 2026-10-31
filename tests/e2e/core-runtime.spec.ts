@@ -9,6 +9,10 @@ test("quiz host opens and reveals while participant answers stay private until r
   try {
     const player = await context.newPage();
     await player.goto(`${baseURL}/a/${id}`);
+    await player.setViewportSize({width:320,height:844});
+    await expect(player.getByLabel("Tên hiển thị")).toBeVisible();
+    expect(await player.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    for(const button of await player.locator("main button:visible").all()) expect((await button.boundingBox())?.height).toBeGreaterThanOrEqual(44);
     await player.getByLabel("Tên hiển thị").fill("Lan");
     await player.getByRole("button", { name: "Tham gia ứng dụng", exact: true }).click();
     const blocked = await context.request.post(`${baseURL}/api/apps/${id}/block-action`, { data: { blockId: "quiz-1", action: "reveal", args: { questionId: "q1" } } });

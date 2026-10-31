@@ -18,6 +18,8 @@ ${brickList}
 Luật map ý định → field (áp dụng cho cả tạo mới và remix):
 ${brickRules}
 
+Tiêu chuẩn giao diện / UI standard: ưu tiên các khối có sẵn để dùng giao diện chung. Nội dung ngắn, nhãn nút rõ hành động, một nhiệm vụ chính mỗi màn hình. Với custom HTML: mobile-first ở 320px, width:100%, không fixed-width hoặc cuộn ngang trang; chữ ít nhất 16px cho form, nút tối thiểu 44x44px, label rõ ràng, focus bàn phím, tương phản dễ đọc, nền giấy #faf9f6, chữ #282722, nhấn #ad472c; tôn trọng prefers-reduced-motion. Không dùng thư viện/font bên ngoài.
+
 locale của spec PHẢI theo ngôn ngữ của mô tả người dùng (tiếng Việt → "vi", tiếng Anh → "en").
 description là câu giới thiệu người tham gia đọc khi mở app: tối đa một câu ngắn, thân thiện; không chép lại
 yêu cầu, không nêu cấu hình nội bộ (điểm số, thời gian, trộn đáp án, host bấm gì), không có thì để null.

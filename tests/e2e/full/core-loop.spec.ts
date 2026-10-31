@@ -4,7 +4,7 @@
 import { expect, test } from "@playwright/test";
 import { enterNameIfAsked, hostFromTemplate, openPhone, option } from "./core-loop-helpers";
 
-test("poll → remix into a quiz about the winner → quiz round → end", async ({ page, browser }) => {
+test("poll → remix into a quiz about the winner → quiz round → end", async ({ page, browser }, testInfo) => {
   const { host, appUrl } = await hostFromTemplate(page, "Vote chủ đề");
   const phoneA = await openPhone(browser, appUrl, "An");
   const phoneB = await openPhone(browser, appUrl, "Bình");
@@ -16,6 +16,20 @@ test("poll → remix into a quiz about the winner → quiz round → end", async
   await expect(phoneA.locator(".bar-row").first()).toBeVisible();
   await option(phoneB, "Bảo mật").click();
   await expect(host.getByText("2 lượt gửi")).toBeVisible();
+
+  // Shared UI standard: both phone widths, including a dark device preference.
+  await phoneA.emulateMedia({colorScheme:"dark",reducedMotion:"reduce"});
+  for (const width of [320,390]) {
+    await phoneA.setViewportSize({width,height:844});
+    expect(await phoneA.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    for (const control of await phoneA.locator("main .opt").all()) expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    expect(await phoneA.locator(".engine-shell").evaluate(el=>getComputedStyle(el).colorScheme)).toBe("light");
+    await phoneA.screenshot({path:testInfo.outputPath(`participant-${width}.png`),fullPage:true});
+  }
+  await host.setViewportSize({width:320,height:844});
+  expect(await host.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await host.screenshot({path:testInfo.outputPath("host-320.png"),fullPage:true});
+  await host.setViewportSize({width:1280,height:900});
 
   // Mock the AI-dependent remix response while exercising real creation, host cookies,
   // parent redirect and cross-device follow. The full remix pipeline is covered by route tests.
