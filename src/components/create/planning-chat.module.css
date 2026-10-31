@@ -18,7 +18,7 @@
 .assistant { align-self: flex-start; background: white; border: 1px solid #e5e5db; }
 .thinking { font-size: 13px; color: #687060; }
 .suggestions { padding: 0 24px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-.suggestions button { font-size: 12px; border: 1px solid #cbd3bc; border-radius: 16px; padding: 7px 12px; background: #fff; text-align: left; overflow-wrap: anywhere; }
+.suggestions button { font-size: 12px; border: 1px solid #cbd3bc; border-radius: 16px; padding: 7px 12px; background: #fff; color: #263921; text-align: left; overflow-wrap: anywhere; }
 .reply { padding: 16px 24px 24px; border-top: 1px solid #e3e2d9; margin-top: auto; display: grid; gap: 8px; }
 .reply label, .lifetime { font-size: 12px; font-weight: 600; }
 .reply textarea { resize: vertical; width: 100%; min-height: 70px; box-sizing: border-box; padding: 12px; font: inherit; font-size: 13px; border-radius: 10px; border: 1px solid #d6d9ce; background: #fff; color: inherit; }
