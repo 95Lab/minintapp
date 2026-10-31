@@ -16,7 +16,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "start:standalone": "node scripts/start-standalone.mjs",
+    "smoke:deploy": "node scripts/deploy-smoke.mjs"
   },
   "dependencies": {
     "next": "16.4.3",

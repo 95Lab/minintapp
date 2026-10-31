@@ -1,4 +1,5 @@
 import "server-only";
+import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { AppError } from "@/lib/api/app-error-codes";
 import { verifyToken } from "@/lib/security/token-hashing";
 import type { AppRecord } from "@/lib/db/apps-repository-types";
@@ -19,9 +20,19 @@ export function requireSameOrigin(request: Request) {
   if (!origin) return; // Non-browser API clients may omit Origin; host credentials are still required.
   try {
     const source = new URL(origin);
+    const configured = readRuntimeConfig().APP_ORIGIN;
+    if (configured) {
+      if (source.origin !== configured || source.origin !== origin) throw new Error();
+      return;
+    }
     // Next's internal request URL may use the listen hostname (0.0.0.0).
     // The HTTP Host header identifies the origin actually addressed by the browser.
     const host = request.headers.get("host") ?? new URL(request.url).host;
     if (!["http:", "https:"].includes(source.protocol) || source.host !== host || source.origin !== origin) throw new Error();
   } catch { throw new AppError("forbidden"); }
+}
+
+export function secureHostCookie(request: Request) {
+  const configured = readRuntimeConfig().APP_ORIGIN;
+  return new URL(configured || request.url).protocol === "https:";
 }

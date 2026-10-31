@@ -10,7 +10,7 @@ describe("environment validation", () => {
     expect(result.stderr).not.toContain("secret-value");
   });
   it.each([{ SUPABASE_URL: "file:///tmp/db", SUPABASE_SERVICE_ROLE_KEY: "key" },
-    { GENERATION_DEADLINE_MS: "NaN" }, { OPENAI_REASONING_EFFORT: "invalid" },
+    { GENERATION_DEADLINE_MS: "NaN" }, { APP_ORIGIN: "https://app.example.com/path" }, { APP_ORIGIN: "bad-url" }, { OPENAI_REASONING_EFFORT: "invalid" },
     { LLM_PROVIDER: "gemini" }, { ENABLE_SIMULATE: "true" }])("rejects invalid config %j", (env) => {
     expect(run(env).status).toBe(1);
   });

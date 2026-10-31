@@ -10,7 +10,8 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:3100", trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run start -- --port 3100", url: "http://127.0.0.1:3100/api/health",
+    command: "npm run start:standalone",
+    env: { PORT: "3100", HOSTNAME: "127.0.0.1" }, url: "http://127.0.0.1:3100/api/health",
     reuseExistingServer: false, timeout: 60_000,
   },
 });

@@ -6,6 +6,10 @@ const httpUrl = optionalText.refine((value) => {
   try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; }
 }, "Must be an HTTP(S) URL");
 export const EnvSchema = z.object({
+  APP_ORIGIN: httpUrl.refine((value) => {
+    if (!value) return true;
+    try { return new URL(value).origin === value; } catch { return false; }
+  }, "Must be a bare origin without path or trailing slash"),
   SUPABASE_URL: httpUrl, SUPABASE_SERVICE_ROLE_KEY: optionalText,
   NEXT_PUBLIC_SUPABASE_URL: httpUrl, NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalText,
   OPENAI_API_KEY: optionalText, OPENAI_MODEL: z.preprocess((value) => value || "gpt-5-mini", z.string().trim().min(1)),

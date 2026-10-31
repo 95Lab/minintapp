@@ -46,3 +46,7 @@ CI chạy trên Node 22, cài sạch bằng `npm ci`, kiểm tra môi trường 
 Khung được viết mới trong repo này; không nhập lịch sử Git, secrets hay dữ liệu từ dự án khác.
 
 Giữ Next.js/React/TypeScript, Vitest, Playwright và quy ước tên biến môi trường. Phiên bản được xác minh qua npm; Vitest 5 yêu cầu Node từ 22.12; Node 20 không được hỗ trợ. Node 22 là môi trường chuẩn cho nhóm và CI. Không tạo commit hoặc push trong tác vụ thiết lập này.
+
+## Deploy tự động
+
+Cấu hình Docker standalone, Caddy và GitHub Actions đã có trong repo. Xem [hướng dẫn VPS](deployment.md) để bootstrap, cấu hình secrets và kích hoạt deploy. Khi chưa có VPS/secrets hoặc chưa push workflow, deployment chưa hoạt động.
