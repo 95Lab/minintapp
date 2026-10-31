@@ -1,4 +1,6 @@
-# MinintApp — Architecture Design
+# MinintApp — Thiết kế kiến trúc
+
+[Tiếng Việt](architecture-design.md) | [English](architecture-design.en.md)
 
 ## 1. Mục tiêu
 
