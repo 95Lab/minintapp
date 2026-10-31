@@ -24,7 +24,9 @@ test("unconnected features stay disabled and mobile preview fits the viewport", 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/preview");
   await page.getByLabel("Bạn cần mini-app gì?").fill("Một cuộc bình chọn");
-  await expect(page.getByRole("button", { name: "Tạo ứng dụng", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Tiếp tục làm rõ" }).click();
+  await page.getByRole("button", { name: "Xem lại yêu cầu" }).click();
+  await expect(page.getByRole("button", { name: "Xác nhận và tạo ứng dụng", exact: true })).toBeDisabled();
   await page.getByText("Tài khoản, remix và lifecycle", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Gửi liên kết đăng nhập" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Remix", exact: true })).toBeDisabled();

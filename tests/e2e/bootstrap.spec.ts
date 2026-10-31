@@ -15,7 +15,7 @@ test("homepage keeps creation and template navigation usable on mobile", async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.getByLabel("Bạn cần mini-app gì?")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Tạo ứng dụng", exact: true })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Tiếp tục làm rõ", exact: true })).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("homepage-mobile.png"), fullPage: true });
   await page.getByRole("link", { name: "Tạo ứng dụng", exact: true }).click();
