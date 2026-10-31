@@ -42,9 +42,9 @@ export function DeploymentManagementPanel({ id }: { id: string }) {
         <p>{text("Phiên bản đang chạy: ", "Active version: ")}{details.activeVersion ? `v${details.activeVersion}` : "—"}
           {details.requestedVersion && ` · ${text("Đang triển khai", "Deploying")} v${details.requestedVersion}`}</p>
         <p>{text("Đổi phiên bản sẽ khởi động lại app trong thời gian ngắn. Rollback giữ nguyên dữ liệu và câu trả lời hiện tại.", "Changing versions briefly restarts the app. Rollback preserves current data and responses.")}</p>
-        <label>{text("Image đã duyệt", "Approved image")}{" "}<select value={image} onChange={event => setImage(event.target.value)} disabled={!canChange}>
+        <label className="mini-field" style={{ display: "block" }}>{text("Image đã duyệt", "Approved image")}{" "}<select value={image} onChange={event => setImage(event.target.value)} disabled={!canChange}>
           <option value="">{text("Chọn phiên bản runtime", "Choose a runtime version")}</option>
-          {details.images.filter(value => value !== active?.image).map(value => <option value={value} key={value}>{value}</option>)}
+          {details.images.filter(value => value !== active?.image).map(value => <option value={value} key={value}>sha256:{value.split("@sha256:")[1]?.slice(0,12)}</option>)}
         </select></label>{" "}
         <button disabled={!canChange || !image || !details.images.includes(image)} onClick={() => { if (details.activeVersion) void submit({ action: "deploy", image, expectedVersion: details.activeVersion }); }}>{text("Triển khai phiên bản", "Deploy version")}</button>
         <div style={{ overflowX: "auto" }}><table><caption>{text("Lịch sử phiên bản", "Version history")}</caption>

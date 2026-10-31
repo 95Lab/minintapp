@@ -28,3 +28,21 @@ it("stores private version manifests and SQLite backups and deletes only the sel
     client.destroy();
   }
 });
+
+it("keeps version manifests immutable while permitting an identical retry", async () => {
+  process.env.S3_ENDPOINT = "http://127.0.0.1:19009";
+  process.env.S3_ACCESS_KEY_ID = "minint-integration";
+  process.env.S3_SECRET_ACCESS_KEY = "only-local-testing-123456789";
+  process.env.S3_BUCKET = `minint-version-test-${randomBytes(6).toString("hex")}`;
+  const id = randomBytes(12).toString("hex");
+  const seed = { id,spec:composeSpec(),prompt:"version test",ownerId:"test",hostTokenHash:"a".repeat(64),createdAt:Date.now(),expiresAt:Date.now()+60000 };
+  const image = `ghcr.io/95lab/minintapp@sha256:${"a".repeat(64)}`;
+  const client = new S3Client({endpoint:process.env.S3_ENDPOINT,region:"us-east-1",forcePathStyle:true,credentials:{accessKeyId:process.env.S3_ACCESS_KEY_ID,secretAccessKey:process.env.S3_SECRET_ACCESS_KEY}});
+  try {
+    await ensureArtifactBucket();
+    await putArtifact(seed,image,2); await putArtifact(seed,image,2);
+    await expect(putArtifact(seed,`ghcr.io/95lab/minintapp@sha256:${"b".repeat(64)}`,2)).rejects.toThrow("Immutable");
+    const saved = await client.send(new GetObjectCommand({Bucket:process.env.S3_BUCKET,Key:`apps/${id}/versions/2/manifest.json`}));
+    expect(JSON.parse(await saved.Body!.transformToString())).toMatchObject({version:2,image});
+  } finally { await removeArtifacts(id);await client.send(new DeleteBucketCommand({Bucket:process.env.S3_BUCKET}));client.destroy(); }
+});

@@ -30,5 +30,5 @@ test("pending deployment disables further changes and shows request failures", a
   await page.goto("/dashboard");await page.getByRole("button",{name:"Phiên bản và log",exact:true}).click();
   await expect(page.getByText(/Đang triển khai v2/)).toBeVisible();await expect(page.getByRole("button",{name:"Triển khai phiên bản",exact:true})).toBeDisabled();
   await page.route(`**/api/apps/${id}/deployment*`,route=>route.fulfill({status:403,json:{code:"forbidden"}}));
-  await page.getByRole("button",{name:"Làm mới log và phiên bản"}).click();await expect(page.getByRole("alert")).toContainText("Không thể tải hoặc thay đổi phiên bản");
+  await page.getByRole("button",{name:"Làm mới log và phiên bản"}).click();await expect(page.getByRole("alert").filter({hasText:"Không thể tải hoặc thay đổi phiên bản"})).toContainText("Không thể tải hoặc thay đổi phiên bản");
 });

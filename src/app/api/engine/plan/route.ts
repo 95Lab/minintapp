@@ -5,12 +5,13 @@ import { errorResponse } from "@/lib/api/route-helpers";
 import { requireSameOrigin } from "@/lib/host/host-session";
 import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { generationBudget } from "@/lib/generation/generation-budget";
+import { planViaWorker } from "@/lib/control-plane/worker-planning";
 import { planApp } from "@/lib/generation/plan-app";
 import { checkRateLimit } from "@/engine/security/check-rate-limit";
 import { clientIpHash } from "@/engine/security/client-ip-hash";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 export async function POST(request: Request) {
   let release: (() => void) | undefined;
   let locale: "vi" | "en" = "vi";
@@ -21,10 +22,12 @@ export async function POST(request: Request) {
     if (!input) throw new AppError("invalid_request");
     locale = input.locale;
     const config = readRuntimeConfig();
-    if (!config.OPENAI_API_KEY) throw new AppError("ai_not_configured");
+    if (config.PLATFORM_ROLE !== "control" && !config.OPENAI_API_KEY) throw new AppError("ai_not_configured");
     if (!(await checkRateLimit("plan", clientIpHash(request))).ok) throw new AppError("rate_limited");
     release = generationBudget.acquire(config.GENERATION_MAX_PER_HOUR, config.GENERATION_MAX_CONCURRENT);
-    const result = await planApp(input, request.signal);
+    const result = config.PLATFORM_ROLE === "control"
+      ? await planViaWorker(input, request.signal)
+      : await planApp(input, request.signal);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return errorResponse(error, locale); }
   finally { release?.(); }

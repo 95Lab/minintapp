@@ -1,3 +1,4 @@
+import { handleWorkerPlanning } from "./planning";
 import { ensureInitialRelease, release, completeRelease, failRelease, beginReleaseSwitch } from "./release-store";
 import { runRelease } from "./release-runner";
 import { appendLog, archiveRuntimeLogs, runtimeLogs, pruneLogs } from "./logs";
@@ -86,9 +87,13 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
       },
       backup: () => backupApp(app.id),
       beginSwitch: () => beginReleaseSwitch(app.id, target.version),
-      archive: () => archiveRuntimeLogs(app.id).catch(() => {}),
+      archive: () => archiveRuntimeLogs(app.id).catch(() => appendLog(app.id, "runtime: log capture unavailable").catch(() => {})),
       stop: async () => { await unpublishRoute(app.id); await reclaim(app.id); },
       complete: (value, failedVersion) => completeRelease(app, value, failedVersion),
+      committed: async version => {
+        const current = await deployment(app.id);
+        return current?.state === "RUNNING" && current.active_version === version && current.revision === app.revision;
+      },
       log: message => appendLog(app.id, message).catch(() => {}),
       activate: async target => {
         phase = "provision";
@@ -120,6 +125,8 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
       },
     });
   } catch (error) {
+    const current = await deployment(app.id);
+    if (current?.state === "RUNNING" && current.revision === app.revision) return;
     console.error(JSON.stringify({ event: "deployment_phase_failed", id: app.id, phase }));
     await appendLog(app.id, `deployment: ${phase} failed (attempt ${job.attemptsMade + 1})`).catch(() => {});
     if (app.expires_at.getTime() <= Date.now()) { await cleanup(app.id); await updateState(app.id, "EXPIRED"); return; }
@@ -186,6 +193,9 @@ const server = createServer(async (request, response) => {
     if (!timingSafeEqual(createHash("sha256").update(token).digest(), createHash("sha256").update(process.env.WORKER_TOKEN!).digest())) { response.writeHead(403).end(); return; }
     if (request.method === "GET" && request.url === "/health") {
       response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ status: "ok", workerId, aiConfigured: !!process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL || null })); return;
+    }
+    if (request.method === "POST" && request.url === "/plan") {
+      await handleWorkerPlanning(request, response); return;
     }
     const logs = /^\/logs\/([a-f0-9]{24})$/.exec(request.url || "");
     if (request.method === "GET" && logs) {

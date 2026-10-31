@@ -14,6 +14,7 @@ function setup() {
     previous: vi.fn(async () => old), artifact: vi.fn(async () => { calls.push("artifact"); }),
     backup: vi.fn(async () => { calls.push("backup"); }), beginSwitch: vi.fn(async () => { calls.push("begin-switch"); }), archive: vi.fn(async () => { calls.push("archive"); }),
     stop: vi.fn(async () => { calls.push("stop"); }), activate: vi.fn(async value => { calls.push(`activate-${value.version}`); }),
+    committed: vi.fn(async () => false),
     complete: vi.fn(async (value, failed) => { calls.push(`complete-${value.version}-${failed ?? "ok"}`); }), log: vi.fn(async () => {}),
   };
   return { ops, calls };
@@ -56,8 +57,17 @@ it("can retry a switch after a worker crash and can resume the active release wi
 it("leaves the old writer in place when backup fails, but recovers a switch already started before a crash", async () => {
   const { ops } = setup(); vi.mocked(ops.backup).mockRejectedValue(Error("backup offline"));
   await runRelease(app, target, ops);
-  expect(ops.stop).not.toHaveBeenCalled(); expect(ops.activate).toHaveBeenCalledWith(old);
+  expect(ops.stop).not.toHaveBeenCalled(); expect(ops.activate).not.toHaveBeenCalled();
   expect(ops.complete).toHaveBeenCalledWith(old, 2);
   await runRelease(app, { ...target, switch_started: true }, ops);
   expect(ops.stop).toHaveBeenCalledOnce();
+});
+
+it("does not stop a promoted runtime when the database COMMIT acknowledgement was lost", async () => {
+  const { ops } = setup();
+  vi.mocked(ops.complete).mockRejectedValueOnce(Error("connection closed after commit"));
+  vi.mocked(ops.committed).mockResolvedValue(true);
+  await runRelease(app, target, ops);
+  expect(ops.stop).toHaveBeenCalledOnce();
+  expect(ops.activate).toHaveBeenCalledExactlyOnceWith(target);
 });

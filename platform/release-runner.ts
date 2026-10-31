@@ -6,6 +6,7 @@ export type ReleaseOperations = {
   backup: () => Promise<void>; beginSwitch: () => Promise<void>; archive: () => Promise<void>;
   stop: () => Promise<void>; activate: (target: Release) => Promise<void>;
   complete: (target: Release, failedVersion?: number) => Promise<void>;
+  committed: (version: number) => Promise<boolean>;
   log: (message: string) => Promise<void>;
 };
 /** The old writer is stopped before the replacement starts. Release manifests never change app data. */
@@ -31,11 +32,15 @@ export async function runRelease(app: Deployment, target: Release, ops: ReleaseO
     await ops.activate(target);
     await ops.complete(target);
   } catch {
+    // A lost COMMIT acknowledgement must not undo a release already promoted in PostgreSQL.
+    if (await ops.committed(target.version)) return;
     if (!previous) throw new Error("Release activation failed");
     await ops.log(`release v${target.version}: failed; restoring v${previous.version}`);
     // Recovery is idempotent after a worker crash, and uses the same database without reverting writes.
-    if (displaced) { await ops.archive(); await ops.stop(); }
-    await ops.activate(previous);
+    if (displaced) {
+      await ops.archive(); await ops.stop();
+      await ops.activate(previous);
+    }
     await ops.complete(previous, target.version);
     await ops.log(`release v${target.version}: failed; v${previous.version} restored`);
     return;

@@ -1,4 +1,6 @@
 import { z } from "zod";
+export const PLANNING_TIMEOUT_MS = 25_000;
+export const PlanningErrorCodeSchema = z.enum(["invalid_request", "ai_not_configured", "ai_timeout", "ai_refused", "ai_invalid_output", "ai_unavailable", "rate_limited"]);
 
 export const PlanningMessageSchema = z.strictObject({
   role: z.enum(["user", "assistant"]),

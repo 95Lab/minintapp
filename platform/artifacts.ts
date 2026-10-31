@@ -1,3 +1,4 @@
+import "server-only";
 import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadBucketCommand, CreateBucketCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { AppId, ImageDigest, RuntimeSeedSchema, type RuntimeSeed } from "./contracts";
 function storage() {
