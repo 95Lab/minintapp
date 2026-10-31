@@ -89,3 +89,7 @@ State bổ sung `sync`: `{mode:"memory"}` hoặc `{mode:"supabase",url,publicKey
 | `POST /api/engine/account/claim` | Nhận quyền phòng bằng token/cookie host hợp lệ |
 
 Mutation kiểm tra cùng origin. Host dùng `x-host-token` hoặc cookie HttpOnly kèm `x-host-session: 1`; participant dùng `x-participant-token`. Request schema và enum action chi tiết ở `src/engine/api/request-schemas.ts`. Không truyền host token trong link chia sẻ.
+
+## Lập kế hoạch trước khi tạo app
+
+`POST /api/engine/plan` nhận `{ locale, messages, currentBrief }`, trả `{ status, message, suggestions, brief }` theo schema `src/lib/api/planning-contract.ts`. Endpoint chỉ trao đổi và lập brief; không tạo app. Xem [chat và giới hạn](generation.md#chat-để-chốt-yêu-cầu-trên-trang-chủ).

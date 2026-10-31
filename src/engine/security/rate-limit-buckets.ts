@@ -7,7 +7,7 @@
 //   announce    -> appId (host announcements)
 //   create      -> ipHash (instant apps from templates: cheap, but still rows in the DB)
 //   auth_link   -> ipHash (sign-in emails: each one costs a real email)
-export type RateBucket = "generate" | "create" | "respond" | "respond_ip" | "report" | "announce" | "auth_link";
+export type RateBucket = "plan" | "generate" | "create" | "respond" | "respond_ip" | "report" | "announce" | "auth_link";
 
 export interface RateLimitConfig {
   windowSeconds: number;
@@ -15,6 +15,7 @@ export interface RateLimitConfig {
 }
 
 export const RATE_LIMIT_CONFIG: Record<RateBucket, RateLimitConfig> = {
+  plan: { windowSeconds: 600, max: 30 }, // planning turns per IP
   generate: { windowSeconds: 600, max: 5 }, // 5 / 10 min
   create: { windowSeconds: 600, max: 30 }, // 30 / 10 min
   respond: { windowSeconds: 60, max: 30 }, // 30 / min per participant
