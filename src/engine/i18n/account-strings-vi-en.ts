@@ -26,7 +26,7 @@ const vi = {
   callbackFailed: "Không đăng nhập được.",
   backToLogin: "Gửi lại link",
   claimedSome: (n: number) => `Đã lưu ${n} app trên thiết bị này vào tài khoản.`,
-  myAppsTitle: "App của tôi",
+  myAppsTitle: "Ứng dụng của tôi",
   myAppsEmpty: "Chưa có app nào trong tài khoản. App bạn tạo khi đã đăng nhập sẽ hiện ở đây.",
   signedInAs: (email: string) => `Đang đăng nhập: ${email}`,
   openHost: "Mở trang host",

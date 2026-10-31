@@ -2,7 +2,7 @@
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BrandTopBar } from "@/engine-ui/brand-top-bar";
+import { WorkspaceShell } from "@/components/account/workspace-shell";
 import { fetchAccountApps, fetchSession } from "@/engine/auth/account-client";
 import { postHost } from "@/engine/api/api-client";
 import { errorText } from "@/engine/api/app-error-codes";
@@ -59,8 +59,8 @@ export function MyApps() {
  }
  const changeFilter=(setter:(v:string)=>void,value:string)=>{setter(value);setSelected(new Set());};
  const date=(value:string)=>new Date(value).toLocaleString(locale==="vi"?"vi-VN":"en-GB");
- return <><BrandTopBar/><main className={styles.dashboard} aria-busy={busy||loading}>
-  <div className={styles.header}><div><p className={styles.eyebrow}>{locale==="vi"?"KHÔNG GIAN CỦA BẠN":"YOUR WORKSPACE"}</p><h1>{s.myAppsTitle}</h1>{data&&<p className="muted">{s.signedInAs(data.email)}</p>}<p className="muted">{s.maxLifetimeNote}</p></div><div className="toolbar"><Link className="btn btn-primary" href="/templates">{s.createApp}</Link><button className="btn" disabled={busy||loading} onClick={()=>{setMessage(null);void load();}}>{s.refresh}</button></div></div>
+ return <WorkspaceShell><main className={styles.dashboard} aria-busy={busy||loading}>
+  <div className={styles.header}><div><p className={styles.eyebrow}>{locale==="vi"?"KHÔNG GIAN LÀM VIỆC":"WORKSPACE"}</p><h1>{s.myAppsTitle}</h1>{data&&<p className="muted">{s.signedInAs(data.email)}</p>}<p className="muted">{s.maxLifetimeNote}</p></div><div className="toolbar"><Link className="btn btn-primary" href="/templates">{s.createApp}</Link><button className="btn" disabled={busy||loading} onClick={()=>{setMessage(null);void load();}}>{s.refresh}</button></div></div>
   {message&&<div className={styles.notice} role="status">{message}</div>}
   {!data?loading?<p role="status">{s.loading}</p>:<button className="btn" onClick={()=>void load()}>{s.retry}</button>:<>
    <section className={styles.stats} aria-label={s.overview}>
@@ -85,5 +85,5 @@ export function MyApps() {
     {visible.map(a=><li key={a.id} className={styles.row} data-selected={selected.has(a.id)} data-testid="my-app"><input className={styles.check} type="checkbox" aria-label={s.selectApp(a.title)} checked={selected.has(a.id)} disabled={busy||loading} onChange={()=>toggle(a.id)}/><div className={styles.content}><h2>{a.title}</h2><div className={styles.meta}><span className={styles.badge} data-status={a.status}>{a.status==="closed"?s.statusClosed:s.statusActive}</span><span>{s.expiresAt} {date(a.expiresAt)}{!canExtend(a)&&<> · {s.atLimit}</>}</span></div><div className={styles.actions}><Link className="btn btn-primary" href={`/rooms/${a.id}/host`}>{s.openHost}</Link><button className="btn" disabled={busy||loading||!canExtend(a)} onClick={()=>void act([a.id],{action:"extend",by:"7d"})}>{s.extend7d}</button><button className="btn btn-danger" disabled={busy||loading} onClick={()=>void act([a.id],{action:"end"})}>{s.endApp}</button></div></div></li>)}
    </ul>}
   </>}
- </main></>;
+ </main></WorkspaceShell>;
 }
