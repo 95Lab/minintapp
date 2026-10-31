@@ -1,0 +1,2 @@
+import {runtimeConfig,storageMode,accountsEnabled} from "@/engine/config/runtime-config";
+export function GET(){return Response.json({storage:storageMode(),storageOk:true,generator:runtimeConfig.openaiApiKey?"openai":"unconfigured",generatorLabel:"OpenAI",model:runtimeConfig.openaiModel,realtime:storageMode()==="supabase"?"supabase":"polling",simulate:runtimeConfig.simulateEnabled,accountsEnabled:accountsEnabled()},{headers:{"Cache-Control":"no-store"}});}

@@ -8,6 +8,7 @@ services:
       DATABASE_URL: postgresql://minintapp:${MININTAPP_POSTGRES_PASSWORD:?Required}@postgres:5432/minintapp
       REDIS_URL: redis://:${MININTAPP_REDIS_PASSWORD:?Required}@redis:6379
       WORKER_TOKEN: ${MININTAPP_WORKER_TOKEN:?Required}
+      IP_HASH_SALT: ${MININTAPP_SIGNING_SECRET:?Required}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

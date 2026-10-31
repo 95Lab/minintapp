@@ -33,10 +33,12 @@ Form compose hỗ trợ các input đang có trong schema, điều kiện `showI
 
 ## Phần mở rộng
 
-`compose-map-canvas`, `compose-map-view`, `compose-photo-field`, `compose-photo-upload`, `compose-place-field`, `compose-settle-view`, `compose-steps`, `custom-block`, `live-block` và `payee-form` hiện hiển thị thông báo chưa khả dụng. Chưa có upload, map service, payment, step runtime, iframe sandbox hoặc live fetching. Những component này chưa được đăng ký vào renderer vì schema chưa hỗ trợ.
+`compose-map-canvas`, `compose-map-view`, `compose-photo-field`, `compose-photo-upload`, `compose-place-field`, `compose-settle-view`, `custom-block`, `live-block` và `payee-form` hiện hiển thị thông báo chưa khả dụng. Chưa có upload, map service, payment, iframe sandbox hoặc live fetching. Những component này chưa được đăng ký vào renderer vì schema chưa hỗ trợ.
 
 Không dùng `dangerouslySetInnerHTML`, thực thi code tùy biến hay tải ảnh/bản đồ từ nguồn ngoài trong các component này. Mở rộng schema, API, quyền và test trước khi bật các điểm mở rộng.
 
 ## Kiểm tra
 
 `npm run check` kiểm tra type, unit test và production build. `npm run test:e2e` sau build kiểm tra preview: gửi câu trả lời local, tabs bằng bàn phím, khôi phục đáp án đã gửi khi đổi tab, QR, nút host bị khóa, form chưa nối API và viewport mobile.
+
+Compose đã nối runtime thật: form nhiều trường, danh sách bản ghi thêm/sửa/xóa, controls mở/đóng/restart bước, countdown và renderer bars/stat/table/leaderboard/cloud/summary. Ba template trên trang chủ cho phép thử độc lập với OpenAI.

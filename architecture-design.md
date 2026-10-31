@@ -2,6 +2,8 @@
 
 [Tiếng Việt](architecture-design.md) | [English](architecture-design.en.md)
 
+Chi tiết triển khai hiện tại: [Kiến trúc runtime](docs/architecture-runtime.md).
+
 Định hướng sản phẩm, marketplace và luồng mua bán được mô tả trong [Business Flow](business-flow.md).
 
 ## 1. Mục tiêu
@@ -188,7 +190,7 @@ Mỗi app trong giai đoạn này vẫn có một replica. Khi worker lỗi, c�
 - Quản lý start, stop, trạng thái, log và TTL.
 - Thiết kế giao diện Worker Agent để mở rộng đa VM.
 
-Tự động cấp VM, phục hồi liên VM và chạy nhiều replica/app thuộc giai đoạn sau. Kiến trúc trên là thiết kế đề xuất; repo chưa có phần triển khai các thành phần này.
+Tự động cấp VM, phục hồi liên VM và chạy nhiều replica/app thuộc giai đoạn sau. Tài liệu này là thiết kế mục tiêu; trạng thái triển khai và các giới hạn hiện tại được ghi trong tài liệu kiến trúc runtime.
 
 ## 9. Tài liệu tham chiếu
 

@@ -35,10 +35,10 @@ export function PollRoom({ id, host = false }: { id: string; host?: boolean }) {
     catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể thay đổi trạng thái ứng dụng."); }
     finally { setBusy(false); }
   }
-  const pollOnly = state?.spec.blocks.every((block) => block.type === "compose");
+  const pollOnly = state?.spec.blocks.every((block) => block.type === "compose" && block.inputs.length === 1 && block.inputs[0].kind === "choice" && block.entries === "one" && block.flow === "open");
   if (failureStatus === 404 || failureStatus === 410) return <main className="component-preview"><ExpiredNotice reason={failureStatus === 404 ? "not_found" : "unavailable"} /></main>;
   if (failureStatus === 403) return <main className="component-preview"><h1>Không có quyền host</h1><p>Hãy mở bằng trình duyệt đã tạo ứng dụng. Liên kết host không tự cấp quyền điều khiển.</p><Link href={`/a/${id}`}>Tham gia ứng dụng</Link></main>;
-  return <main className="component-preview"><BrandTopBar />{state && state.storage !== "sqlite" && <p className="mini-notice">Chế độ memory: dữ liệu tạm thời, mất khi server khởi động lại.</p>}{storageError && <p role="alert">{storageError}</p>}{error && <p role="alert">{error}</p>}{actionError && <p role="alert">{actionError}</p>}{!state && !storageError && <p role="status">Đang tải ứng dụng…</p>}{state && <div className="mini-app"><ExpiryCountdown expiresAt={state.expiresAt} />{host ? <><AppRendererHost spec={state.spec} runtime={state.runtime} blockResults={state.results} canControl={state.isHost && state.status === "active" && !error && !busy} busy={busy} onAction={async (blockId, action, args) => {
+  return <main className="component-preview"><BrandTopBar /><p className="mini-notice">{state?.storage === "sqlite" ? "Dữ liệu được giữ theo thời hạn của ứng dụng." : state?.sync?.mode === "supabase" ? "Dữ liệu được lưu trên Supabase · đồng bộ Realtime." : state ? "Chế độ memory: dữ liệu tạm thời, mất khi server khởi động lại." : "Đang kết nối ứng dụng…"}</p>{storageError && <p role="alert">{storageError}</p>}{error && <p role="alert">{error}</p>}{actionError && <p role="alert">{actionError}</p>}{!state && !storageError && <p role="status">Đang tải ứng dụng…</p>}{state && <div className="mini-app"><ExpiryCountdown expiresAt={state.expiresAt} />{host ? <><AppRendererHost spec={state.spec} runtime={state.runtime} blockResults={state.results} canControl={state.isHost && state.status === "active" && !error && !busy} busy={busy} onAction={async (blockId, action, args) => {
     setBusy(true); setActionError("");
     try { await sendBlockAction(id, blockId, action, args); await refresh(); }
     catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể điều khiển ứng dụng."); throw error; }
@@ -51,5 +51,5 @@ export function PollRoom({ id, host = false }: { id: string; host?: boolean }) {
     setActionError("");
     try { await sendVote(id, { blockId, itemId, participantToken: token, displayName: displayName || null, payload }); await refresh(); return true; }
     catch (error) { setActionError(error instanceof ApiClientError ? error.message : "Không thể gửi câu trả lời."); void refresh(); return false; }
-  } : undefined} /><AppResults state={state} />{state.spec.blocks.every((b) => b.type === "compose") && <p>Bạn có thể đổi lựa chọn rồi gửi lại. Mỗi trình duyệt được tính một lượt bình chọn cho ứng dụng này.</p>}</>}</div>}</main>;
+  } : undefined} /><AppResults state={state} />{pollOnly && <p>Bạn có thể đổi lựa chọn rồi gửi lại. Mỗi trình duyệt được tính một lượt bình chọn cho ứng dụng này.</p>}</>}</div>}</main>;
 }

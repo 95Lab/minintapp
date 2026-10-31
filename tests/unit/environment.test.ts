@@ -15,3 +15,11 @@ describe("environment validation", () => {
     expect(run(env).status).toBe(1);
   });
 });
+it("requires complete Supabase configuration and rejects a secret in the public key", () => {
+  expect(run({ APP_STORAGE: "supabase" }).status).toBe(1);
+  const base = { APP_STORAGE: "supabase", SUPABASE_URL: "https://test.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "sb_secret_private", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_test" };
+  expect(run(base).status).toBe(0);
+  expect(run({ ...base, NEXT_PUBLIC_SUPABASE_URL: "https://other.supabase.co" }).status).toBe(1);
+  const bad = run({ ...base, NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_secret_private" });
+  expect(bad.status).toBe(1); expect(bad.stderr).not.toContain("sb_secret_private");
+});

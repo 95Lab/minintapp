@@ -14,7 +14,7 @@ Implementation viết mới trong repo này, không nhập lịch sử hoặc se
 | `src/lib/api/request-schemas.ts` | Validation request ở trust boundary |
 | `src/lib/api/route-helpers.ts` | Chuyển lỗi sang HTTP mà không trả lỗi thô của provider |
 | `src/lib/config/` | Một schema môi trường cho CLI và server; guard `server-only` |
-| `src/lib/db/apps-repository-types.ts` | Contract lưu app/response; memory adapter đã triển khai |
+| `src/lib/db/apps-repository-types.ts` | Contract lưu app/response; memory và Supabase adapter dùng chung domain mutations |
 | `src/lib/security/token-hashing.ts` | Token ngẫu nhiên, hash, so sánh và hash participant theo app |
 | `src/lib/i18n/api-strings-vi-en.ts` | Thông báo lỗi Việt/Anh |
 | `src/lib/generation/` | Hàm generate spec, system prompt và client OpenAI duy nhất |
@@ -25,9 +25,9 @@ Request types được suy ra từ schema Zod. Không khai báo lại type ở f
 
 Giữ tên trường AppSpec: `specVersion`, `locale`, `title`, `description`, `theme`, `requireName`, `layout`, `blocks`. Các id phải duy nhất trong collection. Quiz và wheel giữ trường lõi của bản tham chiếu; wheel participant bắt buộc `requireName=true`.
 
-Compose hiện hỗ trợ input `text/number/choice/rating/slot/date/datetime`, view `bars/stat/table/leaderboard/cloud`, `entries=one`, `flow=open`. Trường `note` và các trường nullable được giữ. Kiểm tra option, range, nguồn view, loại dữ liệu và điều kiện `showIf` cơ bản. Payload chỉ có `kind` và `values`.
+Compose hiện hỗ trợ input `text/number/choice/rating/slot/date/datetime`, view `bars/stat/table/leaderboard/cloud/summary`, `entries=one|many`, `flow=open|steps`. Trường `note` và các trường nullable được giữ. Kiểm tra option, range, nguồn view, loại dữ liệu và điều kiện `showIf` cơ bản. Payload có `kind`, `values` và `removed:true` khi xóa bản ghi nhiều dòng.
 
-Đây là contract ban đầu, chưa tương đương toàn bộ repo gốc. Chưa có preset expansion, query/expression, entries nhiều dòng, steps, roster, ảnh, map, settle, chat, live/custom block; các cấu hình này bị từ chối thay vì bị bỏ qua. Đã có validation và tổng hợp cho poll một lựa chọn, tính điểm quiz sau reveal và wheel chọn ở server. Compose nâng cao vẫn chưa có backend. `AppRuntime`, repository và lifecycle contract mới có phần tối thiểu; chưa có account, payee, redirect hoặc upload contract. Khi bổ sung một nhóm chức năng phải cập nhật schema, type và test cùng lúc.
+Đây là contract ban đầu, chưa tương đương toàn bộ repo gốc. Chưa có preset expansion, roster, ảnh, map, settle, chat, live/custom block; các cấu hình này bị từ chối thay vì bị bỏ qua. Đã có validation và tổng hợp cho poll một lựa chọn, tính điểm quiz sau reveal và wheel chọn ở server. Compose có validation server, thống kê, nhiều bản ghi, steps và query/expression; xem `compose-engine.md`. `AppRuntime`, repository và lifecycle contract mới có phần tối thiểu; chưa có account, payee, redirect hoặc upload contract. Khi bổ sung một nhóm chức năng phải cập nhật schema, type và test cùng lúc.
 
 `GenerateEvent` dùng cho trạng thái UI. `/api/generate` hiện trả JSON `GenerateResponse` một lần sau khi sinh/validate và lưu thành công; không phải stream NDJSON. Cách này cho phép đặt cookie host HttpOnly khi id đã biết. Hàm `generateAppSpec()` chỉ sinh spec; route chịu trách nhiệm giới hạn yêu cầu, lưu và cấp quyền host.
 ## OpenAI
@@ -46,3 +46,5 @@ SDK chính thức dùng `responses.parse()` với `zodTextFormat`, `store: false
 Tham khảo [Structured Outputs — OpenAI Docs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
 
 Các bài kiểm tra dùng provider mock, có chạy SDK parser thật với HTTP response giả lập và route tạo app; chưa gọi OpenAI thật hoặc xác nhận quota/model trên tài khoản. System prompt có hướng dẫn an toàn nhưng chưa thay thế moderation hay kiểm tra phishing. Đã có giới hạn generation theo giờ/concurrency của một process và kiểm tra plain text/URL/HTML, nhưng chưa có moderation, đánh giá đúng ý định hoặc rate limit theo IP/tài khoản. Xem `generation.md` để cấu hình và biết giới hạn.
+
+Supabase lưu snapshot bằng RPC compare-and-swap, chỉ service role đọc/ghi bảng; Realtime chỉ broadcast version rồi client tải state theo quyền. Xem [Supabase](supabase.md).

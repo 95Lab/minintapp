@@ -2,7 +2,8 @@ import { Pool } from "pg";
 import { readFile } from "node:fs/promises";
 import type { Deployment } from "./contracts";
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 8, connectionTimeoutMillis: 5000 });
+const state = globalThis as typeof globalThis & { minintControlPool?: Pool };
+export const pool = state.minintControlPool ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 8, connectionTimeoutMillis: 5000 });
 export async function migrate() {
   const client = await pool.connect();
   try {

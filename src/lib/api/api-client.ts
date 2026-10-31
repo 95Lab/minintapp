@@ -29,11 +29,12 @@ export const createGeneratedApp = async (input: GenerateRequest) => {
   return awaitProvisioned(await requestJson<GenerateResponse>("/api/generate", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(input) }, 310_000));
 };
 
-async function awaitProvisioned<T extends TemplateCreateResponse | GenerateResponse>(result: T): Promise<T> {
+export async function awaitProvisioned<T extends { ok: boolean }>(result: T): Promise<T> {
   if (!result.ok || !("deploymentState" in result)) return result;
+  if (!("id" in result) || typeof result.id !== "string") throw new ApiClientError(502, "Invalid deployment response");
   const deadline = Date.now() + 180_000;
   while (Date.now() < deadline) {
-    const status = await requestJson<{ state: string; generation?: unknown }>(`/api/apps/${result.id}/deployment`);
+    const status = await requestJson<{ state: string; generation?: unknown }>(`/api/apps/${result.id}/deployment`, { headers: "hostToken" in result && typeof result.hostToken === "string" ? { "x-host-token": result.hostToken } : {} });
     if (status.state === "RUNNING") return { ...result, ...(status.generation ? { generation: status.generation } : {}) } as T;
     if (["FAILED", "EXPIRED", "DELETED"].includes(status.state)) throw new ApiClientError(502, "Không thể triển khai ứng dụng. Xem trạng thái trong dashboard.");
     await new Promise((resolve) => setTimeout(resolve, 1500));

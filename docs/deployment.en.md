@@ -2,11 +2,13 @@
 
 [Tiếng Việt](deployment.md) | [English](deployment.en.md)
 
+For Control Plane and per-app sandboxes, see [Runtime Architecture](architecture-runtime.en.md). The pipeline updates both the privileged Worker bundle and web image while retaining database/queue/storage services.
+
 ## Deployment flow
 
 Push to `main` → typecheck/unit/build/E2E → build and smoke-test image on GitHub → publish digest to GHCR → SSH as `minintapp-deploy` → pull image → internal and public HTTPS health checks → promote or roll back.
 
-No self-hosted runner is required. Builds do not run on the VM. The current app stores data in memory: deploy/restart/rollback loses apps and votes. Without an AI key, use template creation; do not present it as real AI generation.
+No self-hosted runner is required. Builds do not run on the VM. The default `APP_STORAGE=memory` loses apps and votes on deploy/restart/rollback. For persistence, set `APP_STORAGE=supabase` and the Supabase keys in `deploy/.env.app`, then apply the migration described in [Supabase setup](supabase.md). These are runtime settings; no image rebuild is required. Without an AI key, use template creation; do not present it as real AI generation.
 
 ## Server isolation
 

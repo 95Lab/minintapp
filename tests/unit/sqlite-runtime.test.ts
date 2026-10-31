@@ -19,6 +19,14 @@ it("keeps app data and lifecycle across runtime restarts and refuses another app
   const restarted = createRuntimeRepository(path, seed);
   expect((await restarted.snapshot(id))?.responses).toHaveLength(1);
   expect((await restarted.findApp(id))?.status).toBe("closed");
+  const before = (await restarted.snapshot(id))!;
+  const proposed = structuredClone(before);
+  proposed.app.announcement = { text: "Stored after a compare-and-swap", at: Date.now() };
+  expect(await restarted.compareAndSwap(id, before.app.stateVersion, proposed)).toBe(true);
+  expect(await restarted.compareAndSwap(id, before.app.stateVersion, before)).toBe(false);
+  const changed = (await restarted.snapshot(id))!;
+  await expect(restarted.compareAndSwap(id, changed.app.stateVersion, { ...changed, app: { ...changed.app, hostTokenHash: "f".repeat(64) } })).rejects.toThrow("forbidden");
+  expect((await createRuntimeRepository(path, seed).findApp(id))?.announcement?.text).toBe("Stored after a compare-and-swap");
   expect(await restarted.findApp("c".repeat(24))).toBeNull();
   const storage = new SQLiteAppPersistence(path, id);
   const snapshot = storage.load()[0];

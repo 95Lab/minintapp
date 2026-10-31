@@ -43,9 +43,9 @@ Body lỗi có `{ok:false,code,message}`. Các HTTP status chính: 400 payload k
 
 Memory repository hoạt động trong một tiến trình Node, được dùng chung giữa các route bundle và hot reload. Giới hạn 200 app đang giữ, tối đa 1.000 bản ghi/app; participant cũ vẫn đổi vote được khi đạt giới hạn. Ghi và đổi lifecycle không có await giữa kiểm tra và cập nhật. Snapshot app và responses được clone cùng lúc để kết quả và version nhất quán.
 
-Hết hạn chặn đọc/ghi; dữ liệu hết hạn hơn 10 phút được dọn khi tạo app tiếp theo. Kết thúc xóa answers ngay. Restart server xóa toàn bộ app và quyền host tương ứng. Chưa có lưu bền, đồng bộ nhiều process, rate limit theo IP hay production deployment với Supabase. Không triển khai memory mode lên nhiều replica/serverless rồi kỳ vọng dùng chung dữ liệu.
+Hết hạn chặn đọc/ghi; dữ liệu hết hạn hơn 10 phút được dọn khi tạo app tiếp theo. Kết thúc xóa answers ngay. Restart server xóa toàn bộ app và quyền host tương ứng. Có Supabase adapter và Realtime cho lưu bền/nhiều process khi bật `APP_STORAGE=supabase`; xem `supabase.md`. Chưa rate limit theo IP. Không triển khai memory mode lên nhiều replica/serverless rồi kỳ vọng dùng chung dữ liệu.
 
-Client đọc state ngay và polling mỗi 1,5 giây sau mỗi lần đọc. Mỗi request có timeout 10 giây, mất mạng hiển thị lỗi và tiếp tục thử lại, tạm khóa vote khi trạng thái chưa cập nhật. Chưa có Supabase Realtime/WebSocket.
+Client đọc state ngay. Memory polling mỗi 1,5 giây; Supabase dùng Broadcast/WebSocket và chỉ polling dự phòng 10 giây khi mất kết nối hoặc đọc state lỗi. Mỗi request có timeout 10 giây, mất mạng hiển thị lỗi và thử lại, tạm khóa vote khi state chưa cập nhật. Xem `supabase.md`.
 
 ## Quy tắc quiz và wheel
 
@@ -54,3 +54,13 @@ Quiz host mở từng câu; câu hỏi khác hoặc câu đã reveal từ chối
 Wheel chọn bằng `crypto.randomInt` ở server trong cùng đoạn mutation đồng bộ với dữ liệu participant. Client không gửi winner. `removeWinner=true` loại người đã trúng cho đến khi reset; join lại không xoá dấu đã trúng. Lịch sử hiển thị tối đa 50 lượt nhưng danh sách loại trừ được giữ riêng để không cho trúng lại khi cắt lịch sử. Reset xoá lịch sử và dấu loại trừ, giữ người đã tham gia. Kết thúc app xoá cả answers và runtime/spins.
 
 Quiz question id bắt buộc duy nhất trong toàn app vì runtime mở/reveal dùng id toàn cục. Đây là kiểm tra chặt hơn schema cũ để tránh reveal nhầm giữa hai quiz block dùng trùng question id.
+
+## Compose engine
+
+Xem `compose-engine.md` cho contract đầy đủ. Template bổ sung: `compose-survey`, `compose-expenses`, `compose-steps`.
+
+- Một bản ghi: `itemId=""`; nhiều bản ghi: `itemId` khớp `^e-[a-z0-9]{6,16}$`, tối đa 50 mỗi participant/block. Cùng id cập nhật bản ghi, `{kind:"compose",values:{},removed:true}` xóa riêng bản ghi của participant gửi.
+- Steps: `itemId` là id input đang mở, values chỉ chứa input đó. Host gọi block-action `next`, `close`, `restart`. `restart` giữ answers. Deadline server cho phép thêm 2 giây truyền mạng; host vẫn phải chuyển/đóng bước.
+- State trả bars/stat/cloud/table/leaderboard/summary đã tính ở server, không trả hash nhóm participant. View `after_step` chỉ xuất hiện sau khi nguồn đóng; view không có source đợi tất cả bước đóng. View `host` không xuất hiện trong state participant.
+
+State bổ sung `sync`: `{mode:"memory"}` hoặc `{mode:"supabase",url,publicKey,channel}`. Chỉ chứa public key, không có service role key. Broadcast `state_changed` chỉ yêu cầu tải lại state, không chứa answers. Lỗi lưu trữ trả `503 storage_unavailable`; conflict quá mức trả `429 rate_limited`.

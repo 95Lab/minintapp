@@ -24,9 +24,11 @@ export interface ApiErrorResponse { ok: false; code: ErrorCode; message: string 
 export type TemplateCreateResponse = { ok: true; id: string; hostToken: string } | ApiErrorResponse;
 export type RemixResponse = { ok: true; newId: string; hostToken: string } | ApiErrorResponse;
 
+export type AppSync = { mode: "memory" } | { mode: "supabase"; url: string; publicKey: string; channel: string };
 export interface AppStateResponse {
   shareUrl?: string;
   storage?: "memory" | "sqlite";
+  sync?: AppSync;
   id: string; status: AppStatus; expiresAt: string; stateVersion: number;
   spec: import("@/lib/app-spec/strip-private-fields").PublicAppSpec;
   runtime: import("@/lib/blocks/block-definition-types").AppRuntime;

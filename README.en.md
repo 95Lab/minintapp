@@ -22,7 +22,7 @@ Example:
 
 Users receive a preview, refine it through conversation, and publish to a dedicated HTTPS subdomain for sharing through a link or QR code. Apps can serve temporary needs, remain available long term, or become marketplace products.
 
-**Status:** This repository currently contains a proposal and design documents, with no application implementation yet. The capabilities below are proposed; the MVP targets a seven-hour hackathon build.
+**Status:** The repository now includes a Next.js application, interactive engine, and Control/Runtime Plane implementation with PostgreSQL, queues, gVisor sandboxes, dedicated SQLite storage, and DNS provisioning. See the [runtime architecture](docs/architecture-runtime.en.md) for implemented behavior and remaining limits. Marketplace and payments remain on the roadmap.
 
 ## 2. The all-in-one experience
 

@@ -4,10 +4,11 @@ import { AppError } from "@/lib/api/app-error-codes";
 import { verifyToken } from "@/lib/security/token-hashing";
 import type { AppRecord } from "@/lib/db/apps-repository-types";
 export const hostCookieName = (id: string) => `minint_host_${id}`;
+export const engineHostCookieName = (id: string) => `minint_engine_host_${id}`;
 export function hostTokenFrom(request: Request, id: string) {
   const explicit = request.headers.get("x-host-token");
   if (explicit) return explicit;
-  const cookie = (request.headers.get("cookie") ?? "").split(";").map((s) => s.trim()).find((s) => s.startsWith(`${hostCookieName(id)}=`));
+  const cookie = (request.headers.get("cookie") ?? "").split(";").map((s) => s.trim()).find((s) => s.startsWith(`${hostCookieName(id)}=`) || s.startsWith(`${engineHostCookieName(id)}=`));
   return cookie?.slice(cookie.indexOf("=") + 1) ?? "";
 }
 export function requireHost(request: Request, app: AppRecord) {

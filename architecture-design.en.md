@@ -2,6 +2,8 @@
 
 [Tiếng Việt](architecture-design.md) | [English](architecture-design.en.md)
 
+Current implementation details: [Runtime Architecture](docs/architecture-runtime.en.md).
+
 Product direction, marketplace behavior, and transaction flows are described in [Business Flow](business-flow.en.md).
 
 ## 1. Goals
@@ -188,7 +190,7 @@ Each app still has one replica at this stage. After a worker failure, confirm th
 - Start, stop, status, logs, and TTL management.
 - A Worker Agent interface designed for multiple VMs.
 
-Automatic VM provisioning, cross-VM recovery, and multiple replicas per app belong to later phases. This document is a proposed design; the repository does not yet implement these components.
+Automatic VM provisioning, cross-VM recovery, and multiple replicas per app belong to later phases. This document describes the target design; see the runtime architecture document for implementation status and current limits.
 
 ## 9. References
 

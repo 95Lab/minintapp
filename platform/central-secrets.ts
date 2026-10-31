@@ -7,7 +7,7 @@ export function loadCentralCredentials(path = process.env.CENTRAL_API_ENV_FILE |
   for (const key of ["OPENAI_API_KEY", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_ZONE_ID"] as const) {
     if (parsed[key]) process.env[key] = parsed[key];
   }
-  for (const [target, source] of Object.entries({ S3_ACCESS_KEY_ID: "MININTAPP_S3_ACCESS_KEY_ID", S3_SECRET_ACCESS_KEY: "MININTAPP_S3_SECRET_ACCESS_KEY", WORKER_TOKEN: "MININTAPP_WORKER_TOKEN" })) {
+  for (const [target, source] of Object.entries({ S3_ACCESS_KEY_ID: "MININTAPP_S3_ACCESS_KEY_ID", S3_SECRET_ACCESS_KEY: "MININTAPP_S3_SECRET_ACCESS_KEY", WORKER_TOKEN: "MININTAPP_WORKER_TOKEN", IP_HASH_SALT: "MININTAPP_SIGNING_SECRET" })) {
     if (parsed[source]) process.env[target] = parsed[source];
   }
   if (parsed.MININTAPP_POSTGRES_PASSWORD) process.env.DATABASE_URL = `postgresql://minintapp:${encodeURIComponent(parsed.MININTAPP_POSTGRES_PASSWORD)}@${process.env.DATABASE_HOST || "127.0.0.1"}:${process.env.DATABASE_PORT || "15432"}/minintapp`;

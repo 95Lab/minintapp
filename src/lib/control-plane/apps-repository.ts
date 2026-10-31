@@ -2,9 +2,41 @@ import "server-only";
 import { AppError, ERROR_STATUS, type ErrorCode } from "@/lib/api/app-error-codes";
 import type { AppsRepository, AppRecord } from "@/lib/db/apps-repository-types";
 import { deployment, pool } from "../../../platform/store";
+import { submitDeployment } from "./deployments";
+import { LIFETIME_MS } from "@/lib/api/api-contract-types";
+import type { AppSnapshot } from "@/lib/db/apps-repository-types";
 
 export class ControlPlaneAppsRepository implements AppsRepository {
-  async createApp(): ReturnType<AppsRepository["createApp"]> { throw new Error("Use deployment service to create managed apps"); }
+  async createApp(input: Parameters<AppsRepository["createApp"]>[0]): ReturnType<AppsRepository["createApp"]> {
+    const lifetime = (Object.keys(LIFETIME_MS) as (keyof typeof LIFETIME_MS)[]).find((key) => LIFETIME_MS[key] === input.lifetimeMs);
+    if (!lifetime) throw new AppError("invalid_request");
+    const created = await submitDeployment({ spec: input.spec, prompt: input.prompt, lifetime, ownerId: input.ownerId || undefined, parentId: input.parentId || undefined }, input.ownerId || `anonymous-${crypto.randomUUID()}`);
+    for (let attempt = 0; attempt < 180; attempt++) {
+      const record = await deployment(created.id);
+      if (record?.state === "RUNNING") return { app: (await this.findApp(created.id))!, hostToken: created.hostToken };
+      if (!record || ["FAILED", "EXPIRED", "DELETED"].includes(record.state)) throw new AppError("deployment_failed");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    throw new AppError("deployment_pending");
+  }
+  async mutateSnapshot<T>(id: string, mutate: (snapshot: AppSnapshot, now: number) => { value: T; changed: boolean }): Promise<T | null> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const snapshot = await this.snapshot(id); if (!snapshot) return null;
+      const expected = snapshot.app.stateVersion;
+      const result = mutate(snapshot, Date.now());
+      if (!result.changed) return result.value;
+      if (await this.rpc<boolean>(id, "compareAndSwap", [expected, snapshot])) {
+        await pool.query("UPDATE deployments SET expires_at=$2,owner_id=COALESCE($3,owner_id) WHERE id=$1", [id, new Date(snapshot.app.status === "ended" ? Date.now() : snapshot.app.expiresAt), snapshot.app.ownerId]);
+        return result.value;
+      }
+    }
+    throw new AppError("rate_limited");
+  }
+  async listAppsByOwner(userId: string) {
+    const records = await pool.query<{ id: string }>("SELECT id FROM deployments WHERE owner_id=$1 AND state='RUNNING' AND expires_at>now() ORDER BY created_at DESC", [userId]);
+    const apps = await Promise.all(records.rows.map((row) => this.findApp(row.id)));
+    return apps.filter((app): app is AppRecord => !!app && app.ownerId === userId && app.status !== "ended");
+  }
   private async rpc<T>(id: string, op: string, args: unknown[] = []): Promise<T> {
     const app = await deployment(id);
     if (!app) throw new AppError("not_found");

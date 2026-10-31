@@ -12,8 +12,7 @@ import { RuntimeSeedSchema, redisConnection } from "./contracts";
 import { provision, reclaim, runtimeToken, cachedImages } from "./docker-runtime";
 import { publishRoute, unpublishRoute } from "./gateway";
 import { CloudflareDNS } from "./cloudflare";
-import { generateAppSpec } from "../src/lib/generation/generate-app-spec";
-import { validateRunnableSpec } from "../src/lib/generation/runnable-spec";
+import { buildSpec } from "./build-spec";
 import { AppError } from "../src/lib/api/app-error-codes";
 
 for (const key of ["DATABASE_URL", "REDIS_URL", "WORKER_ID", "WORKER_TOKEN", "WORKER_AGENT_URL", "CLOUDFLARE_ZONE_ID", "CLOUDFLARE_API_TOKEN", "INGRESS_HOSTNAME", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
@@ -56,11 +55,10 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
   try {
     if (!app.seed) {
       await updateState(app.id, "GENERATING");
-      const result = app.input.spec ? { spec: app.input.spec, generation: null } : await generateAppSpec(app.input);
-      const validated = validateRunnableSpec(result.spec);
-      if (!validated.spec) throw new Error("Unsupported app specification");
+      const result = await buildSpec(app.input);
+      const validated = { spec: result.spec };
       const seed = RuntimeSeedSchema.parse({ id: app.id, spec: validated.spec, prompt: app.input.prompt, hostTokenHash: app.host_token_hash,
-        createdAt: app.created_at.getTime(), expiresAt: app.expires_at.getTime(), ownerId: app.owner_id });
+        createdAt: app.created_at.getTime(), expiresAt: app.expires_at.getTime(), ownerId: app.input.ownerId || null, parentId: app.input.parentId || null });
       await pool.query("UPDATE deployments SET seed=$2,generation=$3,state='BUILDING',updated_at=now() WHERE id=$1", [app.id, seed, result.generation]);
       const digest = createHash("sha256").update(JSON.stringify(seed)).digest("hex");
       await pool.query("INSERT INTO artifacts(app_id,version,spec_digest,image) VALUES($1,1,$2,$3) ON CONFLICT DO NOTHING", [app.id, digest, app.image]);
@@ -76,6 +74,7 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
     }
     if (!ready) throw new Error("Runtime startup timeout");
     await publishRoute(app.id, app.hostname, port);
+    if (process.env.INGRESS_HOSTNAME !== "ingress.minintapp.io.vn" || app.hostname !== `${app.id}.minintapp.io.vn`) throw new Error("DNS outside approved demo scope");
     const dnsId = await dns.ensure(app.hostname, app.id);
     await pool.query("UPDATE deployments SET dns_record_id=$2 WHERE id=$1", [app.id, dnsId]);
     await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -141,12 +140,19 @@ const server = createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/health") {
       response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ status: "ok", workerId })); return;
     }
+    const backup = /^\/backup\/([a-f0-9]{24})$/.exec(request.url || "");
+    if (request.method === "POST" && backup) {
+      const owned = await deployment(backup[1]);
+      if (!owned || owned.worker_id !== workerId || owned.state !== "RUNNING") { response.writeHead(404).end(); return; }
+      await withAppLock(owned.id, () => backupApp(owned.id));
+      response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ ok: true })); return;
+    }
     const match = /^\/runtime\/([a-f0-9]{24})$/.exec(request.url || "");
     if (request.method !== "POST" || !match) { response.writeHead(404).end(); return; }
     const app = await deployment(match[1]);
     if (!app || app.worker_id !== workerId || !app.port || app.state !== "RUNNING" || app.expires_at.getTime() <= Date.now()) { response.writeHead(410).end(); return; }
     const chunks: Buffer[] = []; let size = 0;
-    for await (const chunk of request) { size += chunk.length; if (size > 16384) { response.writeHead(413).end(); return; } chunks.push(chunk); }
+    for await (const chunk of request) { size += chunk.length; if (size > 16 * 1024 * 1024) { response.writeHead(413).end(); return; } chunks.push(chunk); }
     const upstream = await fetch(`http://127.0.0.1:${app.port}/api/internal/runtime`, { method: "POST", headers: { Authorization: `Bearer ${runtimeToken(app.id)}`, "Content-Type": "application/json" }, body: Buffer.concat(chunks), signal: AbortSignal.timeout(8000) });
     response.writeHead(upstream.status, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(await upstream.text());
   } catch { response.writeHead(503).end(JSON.stringify({ code: "runtime_unavailable" })); }

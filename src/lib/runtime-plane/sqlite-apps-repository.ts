@@ -2,6 +2,7 @@ import "server-only";
 import { DatabaseSync } from "node:sqlite";
 import { MemoryAppsRepository, type AppPersistence, type StoredApp } from "@/lib/db/memory-apps-repository";
 import { initialRuntime } from "@/lib/blocks/block-definition-types";
+import type { AppRecord } from "@/lib/db/apps-repository-types";
 import { RuntimeSeedSchema } from "../../../platform/contracts";
 
 export class SQLiteAppPersistence implements AppPersistence {
@@ -24,8 +25,8 @@ export function createRuntimeRepository(path: string, bootstrap: unknown) {
   const seed = RuntimeSeedSchema.parse(bootstrap);
   const storage = new SQLiteAppPersistence(path, seed.id);
   if (!storage.load().length) storage.save({ app: {
-    ...seed, status: "active", runtime: initialRuntime(), stateVersion: 1,
-    parentId: null, movedTo: null, endedAt: null, announcement: null,
+    ...seed, spec: seed.spec as unknown as AppRecord["spec"], status: "active", runtime: initialRuntime(), stateVersion: 1,
+    parentId: seed.parentId ?? null, movedTo: null, endedAt: null, announcement: null,
   }, responses: [] });
   return new MemoryAppsRepository(Date.now, { apps: 1, responses: 1000 }, storage);
 }

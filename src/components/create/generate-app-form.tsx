@@ -8,7 +8,7 @@ import { GenerationProgress } from "./generation-progress";
 export function GenerateAppForm() {
   const router = useRouter();
   const [event, setEvent] = useState<GenerateEvent | null>(null);
-  return <section className="mini-app" aria-label="Tạo ứng dụng bằng OpenAI"><h2>Mô tả nhu cầu, tạo ứng dụng</h2><p>Hiện hỗ trợ bình chọn một lựa chọn, quiz do host điều khiển và vòng quay bốc thăm.</p><PromptComposer onGenerate={async (input) => {
+  return <section className="mini-app" aria-label="Tạo ứng dụng bằng OpenAI"><h2 className="heading-5">Hôm nay bạn cần gì?</h2><p className="body-6">Mô tả bình chọn, quiz hoặc vòng quay bạn muốn tạo.</p><PromptComposer onGenerate={async (input) => {
     setEvent({ stage: "thinking" });
     try {
       const result = await createGeneratedApp(input);

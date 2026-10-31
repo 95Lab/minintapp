@@ -1,6 +1,6 @@
 # Checklist tương đương chức năng
 
-Theo dõi hành vi đã có và phần còn thiếu, không quy đổi số file thành phần trăm hoàn thành. Bản hiện tại chạy một Node process, dữ liệu memory, không có Supabase thật. Các mục dưới là trạng thái implementation mới; chưa phải chứng nhận tương đương toàn bộ sản phẩm.
+Theo dõi hành vi đã có và phần còn thiếu, không quy đổi số file thành phần trăm hoàn thành. Mặc định chạy memory một Node process; có thể bật Supabase + Realtime theo `supabase.md`. Kiểm thử tích hợp project thật cần cấu hình riêng. Các mục dưới là trạng thái implementation mới; chưa phải chứng nhận tương đương toàn bộ sản phẩm.
 
 | Nhóm | Trạng thái hiện tại | Bằng chứng / giới hạn |
 |---|---|---|
@@ -12,9 +12,9 @@ Theo dõi hành vi đã có và phần còn thiếu, không quy đổi số file
 | Lifecycle | Đóng, mở lại, hết hạn, kết thúc xoá answers và runtime | Unit memory; chưa gia hạn, export, cleanup nền |
 | Schema/UI chung | Có compose/quiz/wheel cơ bản, component và preview | Chưa có preset expansion và schema compose đầy đủ |
 | OpenAI | Đã nối trang chủ → generate → validate/repair → lưu app → host | SDK/route/UI mock tests; chưa gọi OpenAI thật; chỉ sinh block runnable |
-| Đồng bộ | Polling 1,5 giây, khôi phục câu trả lời qua token local | Chưa broadcast/Supabase Realtime |
-| Lưu trữ | Memory đơn tiến trình và snapshot atomic | Restart mất dữ liệu, chưa migration/Supabase |
-| Compose nâng cao | Chưa có engine | Query/expression, nhiều dòng, steps, roster, aggregation đầy đủ còn thiếu |
+| Đồng bộ | Supabase Broadcast invalidation, refresh sau reconnect; memory dùng polling | Unit state-sync, E2E SDK/WebSocket giả lập; mất kết nối dùng polling dự phòng |
+| Lưu trữ | Supabase snapshot JSONB + RPC atomic; memory cho offline | Migration chạy trên PostgreSQL nhúng; Supabase mode lưu qua restart và chia sẻ nhiều process |
+| Compose engine | Form nhiều trường, thống kê, nhiều dòng, steps, expression/query | Unit compose-engine và E2E compose-engine; roster và các view chuyên biệt chưa có |
 | Mở rộng | Có vị trí component, chưa có backend | Upload, map, chat, payments, live/custom chưa khả dụng |
 | Remix | Form UI và contract ban đầu | Chưa pipeline theo dữ liệu, route hoặc chuyển participant |
 | Bảo mật mở rộng | Token hash, giới hạn payload và giới hạn memory | Chưa rate limit theo IP, moderation, phishing scan, CSP/sandbox đầy đủ |

@@ -22,6 +22,12 @@ it("never deletes DNS records belonging to another app", async () => {
   await expect(new CloudflareDNS("zone", "secret", "ingress.example.com", request, true).remove("dns1", "app1")).rejects.toThrow("ownership");
   expect(request).toHaveBeenCalledTimes(1);
 });
+it("does not write DNS without explicit approval", async () => {
+  const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ success: true, result: [] }));
+  await expect(new CloudflareDNS("zone", "secret", "ingress.example.com", request).ensure("app.example.com", "app1")).rejects.toThrow("approval");
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(request.mock.calls[0][1]?.method).toBeUndefined();
+});
 it("serializes provisioning and cleanup for the same app while letting other apps run", async () => {
   const events: string[] = []; let release!: () => void;
   const first = withAppLock("app", async () => { events.push("first"); await new Promise<void>((resolve) => { release = resolve; }); });
