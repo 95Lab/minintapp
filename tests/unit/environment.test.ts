@@ -23,3 +23,8 @@ it("requires complete Supabase configuration and rejects a secret in the public 
   const bad = run({ ...base, NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_secret_private" });
   expect(bad.status).toBe(1); expect(bad.stderr).not.toContain("sb_secret_private");
 });
+it("allows auth-only Supabase configuration while application data uses PostgreSQL", () => {
+ const auth={SUPABASE_URL:"https://test.supabase.co",NEXT_PUBLIC_SUPABASE_URL:"https://test.supabase.co",NEXT_PUBLIC_SUPABASE_ANON_KEY:"sb_publishable_test",APP_STORAGE:"memory"};
+ expect(run(auth).status).toBe(0);
+ expect(run({...auth,NEXT_PUBLIC_SUPABASE_ANON_KEY:"sb_secret_private"}).status).toBe(1);
+});

@@ -7,6 +7,7 @@ import {POST as action} from "@/app/api/engine/apps/[id]/block-action/route";
 import {POST as remix} from "@/app/api/engine/apps/[id]/remix/route";
 import {GET as exportCsv} from "@/app/api/engine/apps/[id]/export/route";
 import {POST as report} from "@/app/api/engine/apps/[id]/report/route";
+import { sealPkce } from "@/engine/auth/pkce-cookie";
 import {POST as session} from "@/app/api/engine/auth/session/route";
 import {POST as claim} from "@/app/api/engine/account/claim/route";
 import {GET as account} from "@/app/api/engine/account/route";
@@ -18,7 +19,7 @@ import {photoUrl} from "@/engine/security/photo-url-signing";
 import {POST as uploadPhoto} from "@/app/api/engine/apps/[id]/photos/route";
 import {GET as getPhoto} from "@/app/api/engine/apps/[id]/photos/[photoId]/route";
 vi.mock("@/engine/config/runtime-config",()=>({runtimeConfig:{supabaseUrl:"",supabaseServiceRoleKey:"unit-signing-key",supabaseAnonKey:"",openaiApiKey:"",openaiModel:"test",presenterKey:"",ipHashSalt:"unit",simulateEnabled:false},storageMode:()=>"memory",accountsEnabled:()=>true}));
-vi.mock("@/engine/auth/supabase-auth-clients",()=>({sendMagicLink:vi.fn(async()=>({error:null})),userFromAccessToken:vi.fn(async()=>({userId:"11111111-1111-4111-8111-111111111111",email:"host@example.test"}))}));
+vi.mock("@/engine/auth/supabase-auth-clients",()=>({sendMagicLink:vi.fn(async()=>({error:null})),userFromAuthCode:vi.fn(async()=>({userId:"11111111-1111-4111-8111-111111111111",email:"host@example.test"}))}));
 vi.mock("@/engine/generation/generate-app-spec",()=>({GENERATION_DEADLINE_MS:18000,remixAppSpec:vi.fn(),generateAppSpec:vi.fn()}));
 vi.mock("@/engine/security/moderate-prompt-openai",()=>({moderatePrompt:vi.fn(async()=>({ok:true}))}));
 const ctx=(id:string)=>({params:Promise.resolve({id})});
@@ -62,8 +63,8 @@ describe("complete runtime API boundaries",()=>{
   expect(generation.remixAppSpec).toHaveBeenCalledWith(expect.anything(),expect.any(String),"Đổi thành quiz",expect.anything());expect(response.headers.get("set-cookie")).toContain("HttpOnly");
  });
  it("verifies an auth token, claims only controlled apps and lists the owner's rooms",async()=>{
-  const r=await room("quick-quiz");const signed=await session(req({accessToken:"verified-token".repeat(3)}));expect(signed.status).toBe(200);
-  const cookie=`${r.headers.cookie}; ${signed.headers.get("set-cookie")!.split(";")[0]}`;
+  const r=await room("quick-quiz");const signed=await session(req({code:"verified-code".repeat(3)}, {cookie:`minint_pkce=${sealPkce({verifier:"test"})}`}));expect(signed.status).toBe(200);
+  const cookie=`${r.headers.cookie}; ${signed.headers.get("set-cookie")!.match(/minint_session=[^; ,]+/)![0]}`;
   const claimed=await claim(req({apps:[{id:r.id,hostToken:""}]},{cookie}));expect(claimed.status).toBe(200);expect((await claimed.json()).claimed).toContain(r.id);
   const list=await account(req(undefined,{cookie}));expect((await list.json()).apps.map((a:{id:string})=>a.id)).toContain(r.id);
  });

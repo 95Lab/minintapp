@@ -8,9 +8,9 @@ const DEFAULT_SALT = "minint-dev-salt";
 const processKey = randomBytes(32).toString("hex");
 
 /**
- * The Supabase service key (a real secret wherever data persists), else a configured IP_HASH_SALT, else
+ * A configured IP_HASH_SALT (stable across Auth configuration changes), else the legacy Supabase service key, else
  * a random per-process key (memory mode: nothing signed outlives the process anyway). Never the public
  * default salt.
  */
 export const signingKeyFor = (purpose: string) =>
-  `${purpose}:${runtimeConfig.supabaseServiceRoleKey || (runtimeConfig.ipHashSalt !== DEFAULT_SALT ? runtimeConfig.ipHashSalt : processKey)}`;
+  `${purpose}:${(runtimeConfig.ipHashSalt !== DEFAULT_SALT ? runtimeConfig.ipHashSalt : runtimeConfig.supabaseServiceRoleKey || processKey)}`;

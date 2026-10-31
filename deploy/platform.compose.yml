@@ -5,6 +5,10 @@ services:
     environment:
       PLATFORM_ROLE: control
       OPENAI_API_KEY: ""
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ""
       RUNTIME_IMAGE: ${MININTAPP_IMAGE:?Set immutable runtime image}
       DATABASE_URL: postgresql://minintapp:${POSTGRES_PASSWORD:?Required}@postgres:5432/minintapp
       REDIS_URL: redis://:${REDIS_PASSWORD:?Required}@redis:6379

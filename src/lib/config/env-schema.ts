@@ -44,8 +44,10 @@ export const EnvSchema = z.object({
     if (env.NEXT_PUBLIC_SUPABASE_ANON_KEY && (!publicSupabaseKey(env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || env.NEXT_PUBLIC_SUPABASE_ANON_KEY === env.SUPABASE_SERVICE_ROLE_KEY)) ctx.addIssue({ code: "custom", path: ["NEXT_PUBLIC_SUPABASE_ANON_KEY"], message: "Must be a public key, never the server key" });
   }
 
-  for (const [url, key] of [["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"], ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]] as const) {
-    if (!!env[url] !== !!env[key]) ctx.addIssue({ code: "custom", path: [url], message: `${url} and ${key} must be configured together` });
-  }
+  if (env.SUPABASE_SERVICE_ROLE_KEY && !env.SUPABASE_URL) ctx.addIssue({ code: "custom", path: ["SUPABASE_URL"], message: "Supabase URL and credentials must be configured together" });
+  if (env.SUPABASE_URL && !env.SUPABASE_SERVICE_ROLE_KEY && !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ctx.addIssue({ code: "custom", path: ["SUPABASE_URL"], message: "Supabase URL and credentials must be configured together" });
+  if (!!env.NEXT_PUBLIC_SUPABASE_URL !== !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ctx.addIssue({ code: "custom", path: ["NEXT_PUBLIC_SUPABASE_URL"], message: "Public URL and public key must be configured together" });
+  if (env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !publicSupabaseKey(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) ctx.addIssue({ code: "custom", path: ["NEXT_PUBLIC_SUPABASE_ANON_KEY"], message: "Must be a public key, never the server key" });
+  if (env.SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_URL && env.SUPABASE_URL.replace(/\/$/, "") !== env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "")) ctx.addIssue({ code: "custom", path: ["NEXT_PUBLIC_SUPABASE_URL"], message: "Must refer to the same Supabase project" });
 });
 export type AppEnv = z.output<typeof EnvSchema>;

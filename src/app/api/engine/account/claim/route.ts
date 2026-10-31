@@ -30,7 +30,11 @@ async function handlePOST(req: Request) {
     // Already mine (a repeated claim) counts as claimed; someone else's does not.
     if (app.ownerId === session.userId || (!app.ownerId && (await repo.setOwner(id, session.userId)))) claimed.push(id);
   }
-  return NextResponse.json({ ok: true, claimed });
+  if (process.env.PLATFORM_ROLE === "control") {
+    const { claimBrowserApps } = await import("@/lib/control-plane/claim-browser-apps");
+    claimed.push(...await claimBrowserApps(req, session.userId, repo));
+  }
+  return NextResponse.json({ ok: true, claimed: [...new Set(claimed)] }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export const POST=(...args:Parameters<typeof handlePOST>)=>secureRoute(args[0],()=>handlePOST(...args));

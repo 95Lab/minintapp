@@ -4,9 +4,11 @@
 // + "." + HMAC-SHA256 of that part. Read synchronously from the Cookie header of any Request.
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { secureHostCookie } from "@/lib/host/host-session";
 import { signingKeyFor } from "@/engine/security/server-signing-key";
 
 export const SESSION_COOKIE = "minint_session";
+export const sessionCookieName = (req: Request) => secureHostCookie(req) ? "__Host-minint_session" : SESSION_COOKIE;
 export const SESSION_MAX_AGE_SEC = 30 * 24 * 60 * 60;
 
 export interface HostSession {
@@ -32,7 +34,7 @@ function cookieValue(req: Request, name: string): string | null {
 
 /** The signed-in host of this request, or null (no cookie, tampered, or expired). */
 export function readSession(req: Request, now = Date.now()): HostSession | null {
-  const value = cookieValue(req, SESSION_COOKIE);
+  const value = cookieValue(req, sessionCookieName(req));
   const dot = value?.indexOf(".") ?? -1;
   if (!value || dot < 1) return null;
   const payload = value.slice(0, dot);

@@ -1,20 +1,23 @@
-// Supabase Auth calls made by the server. Supabase only proves "this person controls this email"; our
-// own session cookie (host-session.ts) carries that fact afterwards, so no Supabase token is stored
-// in the browser and no auth library is added.
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { runtimeConfig } from "@/engine/config/runtime-config";
-import { supabaseServer } from "@/engine/db/supabase-server-client";
 
-/** Asks Supabase Auth to email a magic link (implicit flow: the link returns with #access_token). */
-export async function sendMagicLink(email: string, redirectTo: string): Promise<{ error: string | null }> {
-  const anon = createClient(runtimeConfig.supabaseUrl, runtimeConfig.supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false, flowType: "implicit" } });
-  const { error } = await anon.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo, shouldCreateUser: true } });
-  return { error: error?.message ?? null };
+/** Request-scoped PKCE storage; only the pending verifier map is sealed into an HttpOnly cookie. */
+function authClient(storage: Record<string,string>) {
+  return createClient(runtimeConfig.supabaseUrl, runtimeConfig.supabaseAnonKey, { auth: {
+    persistSession: true, autoRefreshToken: false, detectSessionInUrl: false, flowType: "pkce",
+    storage: { getItem: key=>storage[key]??null, setItem: (key,value)=>{storage[key]=value;}, removeItem: key=>{delete storage[key];} },
+  }, global: { fetch: (input,init)=>fetch(input,{...init,signal:AbortSignal.timeout(10000)}) } });
 }
-
-/** Verifies an access token with Supabase Auth; null when it is invalid, expired, or has no email. */
-export async function userFromAccessToken(token: string): Promise<{ userId: string; email: string } | null> {
-  const { data, error } = await supabaseServer().auth.getUser(token);
-  return error || !data.user?.email ? null : { userId: data.user.id, email: data.user.email.toLowerCase() };
+export async function sendMagicLink(email: string, redirectTo: string) {
+  const storage: Record<string,string> = {};
+  try {
+    const { error } = await authClient(storage).auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo, shouldCreateUser: true } });
+    return { error: error ? "auth_delivery_failed" : null, storage };
+  } catch { return { error: "auth_delivery_failed", storage: {} }; }
+}
+export async function userFromAuthCode(code: string, storage: Record<string,string>, flowId?: string) {
+  const { data, error } = await authClient(storage).auth.exchangeCodeForSession(code, flowId ? {flowId} : undefined);
+  // Tokens remain in this request's memory and are never returned or persisted in browser storage.
+  return error || !data.user?.email || !data.user.email_confirmed_at ? null : { userId: data.user.id, email: data.user.email.toLowerCase() };
 }

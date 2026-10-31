@@ -9,4 +9,4 @@ export const runtimeConfig = {
   simulateEnabled: env.ENABLE_SIMULATE === "1",
 };
 export const storageMode = () => env.APP_STORAGE;
-export const accountsEnabled = () => env.APP_STORAGE === "supabase" && !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export const accountsEnabled = () => env.PLATFORM_ROLE !== "runtime" && !!env.SUPABASE_URL && !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

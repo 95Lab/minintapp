@@ -23,14 +23,13 @@ export async function fetchSession(): Promise<SessionResponse | null> {
 }
 
 export const requestMagicLink = (email: string) => call<object>("/api/engine/auth/magic-link", post({ email }));
-export const exchangeAccessToken = (accessToken: string) => call<object>("/api/engine/auth/session", post({ accessToken }));
+export const exchangeAuthCode = (code: string, flowId?: string) => call<object>("/api/engine/auth/session", post({ code, flowId }));
 export const signOut = () => call<object>("/api/engine/auth/session", { method: "DELETE" });
 export const fetchAccountApps = () => call<AccountAppsResponse>("/api/engine/account");
 
 /** "Save to my account": claims every app whose host token this browser holds. Returns how many are now owned. */
 export async function claimLocalApps(): Promise<number> {
   const apps = allHostTokens().slice(0, 50);
-  if (!apps.length) return 0;
   const r = await call<{ claimed: string[] }>("/api/engine/account/claim", post({ apps }));
   return r.ok ? r.claimed.length : 0;
 }

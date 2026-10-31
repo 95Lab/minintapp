@@ -37,6 +37,7 @@ const MESSAGES = {
   accounts_disabled: { vi: "Tính năng tài khoản chưa bật ở máy chủ này.", en: "Accounts are not enabled on this server." },
   email_invalid: { vi: "Email chưa đúng, kiểm tra lại nhé.", en: "That email doesn't look right." },
   auth_rate_limited: { vi: "Bạn yêu cầu link đăng nhập hơi nhiều, thử lại sau {minutes} phút.", en: "Too many sign-in requests; try again in {minutes} min." },
+  auth_delivery_failed: { vi: "Chưa gửi được email đăng nhập. Vui lòng thử lại sau.", en: "Could not send the sign-in email. Please try again later." },
   auth_link_invalid: { vi: "Link đăng nhập đã hết hạn hoặc không hợp lệ. Hãy yêu cầu link mới.", en: "This sign-in link expired or is invalid. Request a new one." },
   sign_in_required: { vi: "Hãy đăng nhập trước.", en: "Please sign in first." },
   // answers

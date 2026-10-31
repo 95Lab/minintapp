@@ -1,4 +1,5 @@
 import "server-only";
+import { readSession } from "@/engine/auth/host-session";
 import { randomBytes, createHash, createHmac } from "node:crypto";
 import { AppError } from "@/lib/api/app-error-codes";
 import { newToken, hashToken } from "@/lib/security/token-hashing";
@@ -53,7 +54,8 @@ export function tenantIdentity(request: Request) {
 export async function createManagedApp(request: Request, input: GenerateRequest | Deployment["input"]) {
   const tenant = tenantIdentity(request);
   const requestKey = request.headers.get("idempotency-key") || randomBytes(16).toString("hex");
-  const result = await submitDeployment(input, "ownerId" in input && input.ownerId ? input.ownerId : tenant.id, { requestKey, ownerSecret: tenant.token });
+  const ownerId = readSession(request)?.userId || ("ownerId" in input ? input.ownerId : undefined);
+  const result = await submitDeployment({ ...input, ...(ownerId ? { ownerId } : {}) }, ownerId || tenant.id, { requestKey, ownerSecret: tenant.token });
   const deployed = (await deployment(result.id))!;
   return { ...result, deployed, tenant };
 }

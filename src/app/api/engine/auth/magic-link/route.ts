@@ -2,6 +2,9 @@ import {secureRoute} from "@/engine/api/secure-route";
 // POST /api/auth/magic-link {email} — emails a sign-in link. The answer is always {ok:true} for a valid
 // address, whether or not the account exists (no way to probe who has an account); sending is rate
 // limited per network because every call costs a real email.
+import { readRuntimeConfig } from "@/lib/config/runtime-config";
+import { secureHostCookie } from "@/lib/host/host-session";
+import { sealPkce, pkceCookieName, PKCE_MAX_AGE } from "@/engine/auth/pkce-cookie";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { accountsEnabled } from "@/engine/config/runtime-config";
@@ -22,11 +25,16 @@ async function handlePOST(req: Request) {
   if (!limit.ok) return jsonError(429, "auth_rate_limited", { minutes: Math.ceil((limit.retryAfterSec ?? 60) / 60) });
 
   // The browser sends its own origin; Supabase refuses redirect URLs that are not on its allow-list.
-  const origin = req.headers.get("origin") ?? new URL(req.url).origin;
-  const { error } = await sendMagicLink(body.email, `${origin}/auth/callback`);
+  const origin = readRuntimeConfig().APP_ORIGIN || req.headers.get("origin") || new URL(req.url).origin;
+  const { error, storage } = await sendMagicLink(body.email, `${origin}/auth/callback`);
   // Failures (provider email limits, SMTP down) are logged, never shown: the reply must not differ per address.
-  if (error) await logSecurityEvent("magic_link_failed", { ipHash, detail: { message: error } });
-  return NextResponse.json({ ok: true });
+  if (error) {
+    await logSecurityEvent("magic_link_failed", { ipHash, detail: { code: "auth_delivery_failed" } });
+    return jsonError(503, "auth_delivery_failed");
+  }
+  const response = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+  response.cookies.set(pkceCookieName(req), sealPkce(storage), { httpOnly: true, secure: secureHostCookie(req), sameSite: "lax", path: "/", maxAge: PKCE_MAX_AGE });
+  return response;
 }
 
 export const POST=(...args:Parameters<typeof handlePOST>)=>secureRoute(args[0],()=>handlePOST(...args));
