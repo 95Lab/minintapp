@@ -85,7 +85,12 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
     phase = "gateway-health";
     await health(`${process.env.LOCAL_GATEWAY_URL || "http://127.0.0.1:18081"}/api/health`, app.id, { Host: app.hostname });
     phase = "public-health";
-    await health(`https://${app.hostname}/api/health`, app.id);
+    // Cloudflare needs a moment to serve a new record; retrying the whole job would re-provision the app.
+    let reachable = false;
+    for (let attempt = 0; attempt < 30 && !reachable; attempt++) {
+      try { await health(`https://${app.hostname}/api/health`, app.id, undefined, process.env.INGRESS_HOSTNAME); reachable = true; } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); }
+    }
+    if (!reachable) throw new Error("Public health timeout");
     await updateState(app.id, "RUNNING");
   } catch (error) {
     console.error(JSON.stringify({ event: "deployment_phase_failed", id: app.id, phase }));

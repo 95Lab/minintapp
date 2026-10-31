@@ -3,7 +3,7 @@ import { useLocale } from "@/lib/i18n/locale-provider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BrandTopBar } from "@/engine-ui/brand-top-bar";
-import { fetchAccountApps } from "@/engine/auth/account-client";
+import { fetchAccountApps, fetchSession } from "@/engine/auth/account-client";
 import { postHost } from "@/engine/api/api-client";
 import { errorText } from "@/engine/api/app-error-codes";
 import type { AccountAppsResponse, LifecycleRequest } from "@/engine/api/api-contract-types";
@@ -23,7 +23,8 @@ export function MyApps() {
   try{
    const res=await fetchAccountApps();
    if(res.ok){setData(res);setSelected(old=>new Set([...old].filter(id=>res.apps.some(a=>a.id===id))));}
-   else if(res.code==="sign_in_required")window.location.replace("/login");
+   // Without accounts nobody can sign in; /dashboard lists this browser's apps instead.
+   else if(res.code==="sign_in_required")window.location.replace((await fetchSession())?.accountsEnabled===false?"/dashboard":"/login");
    else setMessage(errorText(res.code,locale,res.params));
   }catch{setMessage(errorText("network",locale));}finally{setLoading(false);}
  },[locale]);

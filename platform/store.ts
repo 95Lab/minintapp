@@ -38,8 +38,8 @@ export async function reserveWorker(id: string): Promise<string> {
       SELECT w.id FROM workers w
       WHERE heartbeat_at > now() - interval '30 seconds'
         AND $1 = ANY(w.available_images)
-        AND (SELECT count(*) FROM deployments d WHERE d.worker_id=w.id AND d.state IN ('QUEUED','GENERATING','BUILDING','DEPLOYING','RUNNING','SUSPENDED','FAILED')) < capacity
-      ORDER BY (SELECT count(*) FROM deployments d WHERE d.worker_id=w.id AND d.state NOT IN ('EXPIRED','DELETED')) ASC, w.id
+        AND (SELECT count(*) FROM deployments d WHERE d.worker_id=w.id AND d.state IN ('QUEUED','GENERATING','BUILDING','DEPLOYING','RUNNING','SUSPENDED')) < capacity
+      ORDER BY (SELECT count(*) FROM deployments d WHERE d.worker_id=w.id AND d.state NOT IN ('EXPIRED','DELETED','FAILED')) ASC, w.id
       LIMIT 1`, [current.image]);
     if (!result.rows[0]) throw new Error("No worker capacity");
     const worker = result.rows[0].id;

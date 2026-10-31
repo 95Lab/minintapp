@@ -32,9 +32,10 @@ export async function submitDeployment(input: Deployment["input"], ownerId: stri
     }
     const recent = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE created_at>now()-interval '1 hour'");
     if (Number(recent.rows[0].count) >= Number(process.env.MAX_CREATIONS_PER_HOUR || 30)) throw new AppError("rate_limited");
-    const count = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE state NOT IN ('EXPIRED','DELETED')");
+    // Failed deployments have no runtime; counting them would let one bad deploy block every visitor until it expires.
+    const count = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE state NOT IN ('EXPIRED','DELETED','FAILED')");
     if (Number(count.rows[0].count) >= Number(process.env.MAX_ACTIVE_APPS || 3)) throw new AppError("rate_limited");
-    const owned = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE owner_id=$1 AND state NOT IN ('EXPIRED','DELETED')", [ownerId]);
+    const owned = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE owner_id=$1 AND state NOT IN ('EXPIRED','DELETED','FAILED')", [ownerId]);
     if (Number(owned.rows[0].count) >= 2) throw new AppError("rate_limited");
     await client.query(`INSERT INTO deployments(id,owner_id,state,input,host_token_hash,hostname,image,expires_at,request_key)
       VALUES($1,$2,'QUEUED',$3,$4,$5,$6,$7,$8)`, [id, ownerId, input, hashToken(hostToken), `${id}.${domain}`, image, new Date(Date.now() + lifetimeMs), options?.requestKey ?? null]);

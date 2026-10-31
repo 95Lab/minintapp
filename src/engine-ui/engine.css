@@ -69,6 +69,8 @@ h1, h2, h3 { margin: 0; line-height: 1.15; text-wrap: balance; letter-spacing: -
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: calc(12px + env(safe-area-inset-top, 0px)) clamp(16px, 4vw, 32px) 12px;
 }
+.topbar .host-meta { min-width: 0; }
+.topbar .pill { white-space: normal; }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; text-decoration: none; }
 .brand-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--ink); color: var(--bolt); display: grid; place-items: center; }
 .pill {

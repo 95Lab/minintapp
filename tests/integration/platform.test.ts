@@ -62,6 +62,12 @@ it("enforces tenant and global quotas transactionally", async () => {
   await create("other");
   await expect(create("third")).rejects.toThrow("rate_limited");
 });
+it("releases tenant and global quota when a deployment fails", async () => {
+  const [failed] = await Promise.all([create(), create(), create("other")]);
+  await expect(create()).rejects.toThrow("rate_limited");
+  await pool.query("UPDATE deployments SET state='FAILED' WHERE id=$1", [failed.id]);
+  await expect(create()).resolves.toBeTruthy();
+});
 it("replays the same creation request without allocating a second app or host token", async () => {
   const input = { spec: composeSpec(), prompt: "vote", lifetime: "1h" as const };
   const options = { requestKey: "retry-1", ownerSecret: "test-owner-secret" };
