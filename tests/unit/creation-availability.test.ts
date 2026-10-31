@@ -15,13 +15,13 @@ it("reports browser quota without caching or exposing identity", async () => {
   const response = await GET(request());
   expect(response.headers.get("cache-control")).toBe("no-store");
   const body = await response.json();
-  expect(body).toEqual({ used: 2, limit: 2 });
-  expect(creationBlocked(CreationAvailabilitySchema.parse(body))).toBe(true);
+  expect(body).toEqual({ used: 2, limit: 50 });
+  expect(creationBlocked(CreationAvailabilitySchema.parse(body))).toBe(false);
   expect(count).toHaveBeenCalledWith("browser-owner");
 });
 it("checks the signed-in creation owner rather than combining browser and account apps", async () => {
   session.mockReturnValue({ userId: "account-owner" }); count.mockResolvedValue(1);
-  expect(await (await GET(request())).json()).toEqual({ used: 1, limit: 2 });
+  expect(await (await GET(request())).json()).toEqual({ used: 1, limit: 50 });
   expect(count).toHaveBeenCalledWith("account-owner");
 });
 it("leaves standalone creation unrestricted without querying the platform database", async () => {
@@ -34,4 +34,11 @@ it("does not pretend a database error means free capacity", async () => {
   const response = await GET(request());
   expect(response.status).toBe(500);
   expect(await response.text()).not.toContain("private database detail");
+});
+
+it.each([49, 50, 51])("checks the 50-app boundary at %i apps", async used => {
+  count.mockResolvedValue(used);
+  const body = await (await GET(request())).json();
+  expect(body).toEqual({ used, limit: 50 });
+  expect(creationBlocked(CreationAvailabilitySchema.parse(body))).toBe(used >= 50);
 });

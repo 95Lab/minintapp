@@ -34,7 +34,7 @@ Thiết kế gốc nằm trong [architecture-design.md](../architecture-design.m
 - Container non-root, `runsc`, filesystem chỉ đọc, `/tmp` giới hạn, 0,5 CPU/512 MiB, giới hạn PID, log và snapshot 16 MiB. Một app chạy một replica.
 - Mỗi app có bridge riêng, tắt IPv6 và DNS ra ngoài. Kiểm tra subnet với Docker và mọi route IPv4; chọn cổng loopback chưa được socket hoặc container nào đặt trước. Cổng được giữ cố định qua restart.
 - Rule INPUT và DOCKER-USER chỉ khớp bridge của app, chỉ cho phép kết nối PostgreSQL đến IP/cổng private đã cấu hình, chặn các kết nối NEW khác; không đổi chính sách firewall của app cũ. Không có fallback sang runc nếu runsc không khả dụng.
-- Trước cấp runtime mới, giữ ít nhất 1,5 GiB RAM khả dụng và 10 GiB đĩa trên host. Capacity mặc định 3 app/VM; quota global mặc định 3 và mỗi tenant 2 app. Các giới hạn cần đo lại theo tải thật.
+- Trước cấp runtime mới, giữ ít nhất 1,5 GiB RAM khả dụng và 10 GiB đĩa trên host. Capacity mặc định 3 app/VM; quota global mặc định 100 và mỗi tenant 50 app. Các giới hạn cần đo lại theo tải thật.
 - Mỗi app có database `app_<id>` và role cùng tên chỉ được CONNECT database đó, USAGE schema, SELECT/UPDATE snapshot của app. Admin sở hữu database/table; app không được DDL, đổi role, truy cập metadata hay database app khác. PostgreSQL row lock và transaction bảo vệ ghi đồng thời; CAS giữ `stateVersion` và bất biến app ID/host credential. Không fallback sang memory/SQLite khi DB lỗi.
 - Backup snapshot JSONB nhất quán mỗi 5 phút vào bucket private. Hết hạn dừng runtime/xóa route và DNS, giữ database 24 giờ rồi xóa database, role và artifact. Volume SQLite cũ được giữ riêng sau migration để rollback có kiểm soát. Xóa chủ động bỏ thời gian lưu giữ. Rollback image không khôi phục dữ liệu đã xóa.
 

@@ -96,7 +96,7 @@ Mutation kiểm tra cùng origin. Host dùng `x-host-token` hoặc cookie HttpOn
 
 ## Giới hạn tạo app ở control plane
 
-Các giới hạn không dùng chung `rate_limited`: `creation_hourly_limit` (429) là ngân sách tạo app toàn hệ thống trong giờ; `app_capacity_full` (503) là hết chỗ chạy app; `owner_app_limit` (409) là chủ sở hữu đã có 2 app hoạt động. Mặc định toàn hệ thống có 100 app hoạt động và 30 lần tạo/giờ (`MAX_ACTIVE_APPS`, `MAX_CREATIONS_PER_HOUR`). App kết thúc/hết hạn chỉ nhả chỗ sau khi vòng dọn dẹp cập nhật trạng thái deployment. Các giới hạn vẫn được kiểm tra trong transaction và giữ nguyên mức bảo vệ tài nguyên.
+Các giới hạn không dùng chung `rate_limited`: `creation_hourly_limit` (429) là ngân sách tạo app toàn hệ thống trong giờ; `app_capacity_full` (503) là hết chỗ chạy app; `owner_app_limit` (409) là chủ sở hữu đã có 50 app hoạt động. Mặc định toàn hệ thống có 100 app hoạt động và 30 lần tạo/giờ (`MAX_ACTIVE_APPS`, `MAX_CREATIONS_PER_HOUR`). App kết thúc/hết hạn chỉ nhả chỗ sau khi vòng dọn dẹp cập nhật trạng thái deployment. Các giới hạn vẫn được kiểm tra trong transaction và giữ nguyên mức bảo vệ tài nguyên.
 
 ## Quản lý phiên bản và log của sandbox
 
