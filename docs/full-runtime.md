@@ -30,3 +30,9 @@ Custom block chạy iframe sandbox chỉ cho script, CSP không cho kết nối 
 Chỉ OpenAI Responses với Structured Outputs, `store:false`, kiểm tra Zod, sửa output có giới hạn và deadline. Homepage nhận JSON để đặt cookie ngay; thư viện mẫu hỗ trợ NDJSON tiến độ, sau đó đổi token lấy cookie cùng origin. Remix truyền spec và kết quả đã tổng hợp vào OpenAI. Thiếu key trả lỗi cấu hình, không chuyển sang sinh dữ liệu giả.
 
 Chạy `npm run env:check`, `npm run check`, `npm run test:e2e`; chạy `npm run supabase:test` riêng khi đã cấu hình project thật. E2E dùng memory và giả lập endpoint AI/WebSocket, không phát sinh phí AI hoặc email. Muốn xác nhận dịch vụ bên ngoài cần thử một lần generate/remix thật và magic link trên domain triển khai; không dùng kết quả mock để khẳng định các dịch vụ đó hoạt động.
+
+## Dashboard người tạo app
+
+`/my-apps` hiển thị tổng số app hiện có, app đang chạy, đã đóng và hết hạn trong 7 ngày. Có tìm theo tên/mã (không dấu), lọc trạng thái/hạn sử dụng, sắp xếp theo ngày tạo, hạn sử dụng hoặc tên. Các số tổng quan tính trên danh sách tài khoản API trả về, không thay đổi theo bộ lọc; không tính phòng đã kết thúc/hết hạn mà repository loại khỏi danh sách.
+
+Có thể chọn các kết quả đang hiển thị để gia hạn 7 ngày hoặc kết thúc hàng loạt. Đổi bộ lọc sẽ bỏ chọn để tránh tác động app bị ẩn. Kết thúc yêu cầu xác nhận xóa câu trả lời; các request xử lý lần lượt và API kiểm tra quyền từng phòng. Khi thất bại một phần, dashboard báo số thành công/thất bại, giữ lại lựa chọn lỗi để thử lại. App đạt hạn tối đa không được chọn vào request gia hạn. Đây là thống kê vòng đời app, chưa phải analytics lượt truy cập/người tham gia.
