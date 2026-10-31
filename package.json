@@ -14,9 +14,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run runtime:poll:build && playwright test",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run typecheck && npm test && npm run build && npm run runtime:poll:build",
     "start:standalone": "node scripts/start-standalone.mjs",
     "smoke:deploy": "node scripts/deploy-smoke.mjs",
     "test:platform": "vitest run --config vitest.platform.config.ts",
@@ -26,7 +26,10 @@
     "build:worker": "node scripts/build-worker.mjs",
     "supabase:check": "node --env-file=.env.local scripts/check-supabase.mjs",
     "supabase:test": "node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.supabase.config.ts",
-    "supabase:cleanup": "node --env-file=.env.local scripts/cleanup-supabase.mjs"
+    "supabase:cleanup": "node --env-file=.env.local scripts/cleanup-supabase.mjs",
+    "runtime:poll:build": "node scripts/build-poll-runtime.mjs",
+    "runtime:poll:start": "node --conditions=react-server .runtime-build/runtime/poll/main.js",
+    "runtime:poll:demo": "npm run runtime:poll:build && node scripts/demo-poll-runtime.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
