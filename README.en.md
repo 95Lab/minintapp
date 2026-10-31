@@ -22,7 +22,7 @@ Example:
 
 Users receive a preview, refine it through conversation, and publish to a dedicated HTTPS subdomain for sharing through a link or QR code. Apps can serve temporary needs, remain available long term, or become marketplace products.
 
-**Status:** The repository now includes a Next.js application, interactive engine, and Control/Runtime Plane implementation with PostgreSQL, queues, gVisor sandboxes, dedicated SQLite storage, and DNS provisioning. See the [runtime architecture](docs/architecture-runtime.en.md) for implemented behavior and remaining limits. Marketplace and payments remain on the roadmap.
+**Status:** The repository now includes a Next.js application, interactive engine, and Control/Runtime Plane implementation with PostgreSQL, queues, gVisor sandboxes, dedicated PostgreSQL databases and roles, and DNS provisioning. See the [runtime architecture](docs/architecture-runtime.en.md) for implemented behavior and remaining limits. Marketplace and payments remain on the roadmap.
 
 ## 2. The all-in-one experience
 
@@ -54,7 +54,7 @@ The demo colocates components on **one VM with N sandboxes**. The Worker Agent i
 
 ## 4. MVP and demo scenario
 
-Seven-hour scope: one full-stack template, prompt → preview → edit → publish, dedicated SQLite storage per app, real subdomains through the Cloudflare API, start/stop, and TTL. The demo marketplace provides sample categories and free instance creation.
+Seven-hour scope: one full-stack template, prompt → preview → edit → publish, dedicated PostgreSQL databases and roles per app, real subdomains through the Cloudflare API, start/stop, and TTL. The demo marketplace provides sample categories and free instance creation.
 
 1. Generate a workshop voting app from a prompt and receive an HTTPS subdomain.
 2. Publish a free template on the marketplace.

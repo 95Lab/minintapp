@@ -136,7 +136,7 @@ The Worker Agent is privileged and accepts only authenticated Control Plane requ
 
 ### MVP data storage
 
-Use SQLite on a dedicated volume for temporary apps with **one replica per app**. Moving an app between workers requires stopping it, taking a snapshot, and transferring its volume before restarting. Backups must preserve SQLite consistency.
+Give each app a dedicated PostgreSQL database and login role, with no access to metadata or other app databases. Keep **one replica per app** and fence the old runtime before moving a writer to another worker. Back up consistent JSONB snapshots to object storage; restoring data and rolling back an image are separate operations.
 
 If an app needs multiple replicas, move to PostgreSQL with a dedicated database/role per app or a data service with access controls. Never expose shared database administrator credentials to AI-generated code.
 
@@ -184,7 +184,7 @@ Each app still has one replica at this stage. After a worker failure, confirm th
 ## 8. Seven-hour hackathon scope
 
 - One validated full-stack template.
-- One replica per app, SQLite, and a dedicated volume.
+- One replica per app, a dedicated PostgreSQL database and role.
 - Real subdomain creation through the Cloudflare API.
 - Separate gVisor sandboxes for each app and build.
 - Start, stop, status, logs, and TTL management.

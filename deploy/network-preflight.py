@@ -2,6 +2,7 @@
 import ipaddress
 import json
 import subprocess
+from pathlib import Path
 
 
 def output(*args):
@@ -33,3 +34,7 @@ for route in routes:
     existing = ipaddress.ip_network(destination, strict=False)
     assert not desired.overlaps(existing), f"Route conflict: {destination} on {route.get('dev')}"
 print(f"Subnet validated: {desired}")
+
+if Path(".platform-enabled").exists():
+    settings = dict(line.split("=", 1) for line in Path(".env").read_text().splitlines() if "=" in line and not line.startswith("#"))
+    assert settings.get("POSTGRES_SANDBOX_BIND_IP") == "172.30.240.1", "PostgreSQL must bind only the owned private bridge gateway"

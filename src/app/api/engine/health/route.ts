@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   let configured = !!runtimeConfig.openaiApiKey;
   let model: string | null = runtimeConfig.openaiModel;
-  let storage: string = process.env.PLATFORM_ROLE === "runtime" ? "sqlite" : storageMode();
+  let storage: string = process.env.PLATFORM_ROLE === "runtime" ? "postgresql" : storageMode();
   let storageOk = true;
   if (process.env.PLATFORM_ROLE === "control") {
     storage = "postgresql";

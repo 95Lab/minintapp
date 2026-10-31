@@ -16,8 +16,8 @@ The original proposal is [architecture-design.en.md](../architecture-design.en.m
 | Sandbox | `platform/docker-runtime.ts` | gVisor, dedicated networks/volumes/ports, quotas, firewall |
 | Gateway | `platform/gateway*.ts` | Traefik file provider, hostname routing, multiple-worker synchronization |
 | DNS | `platform/cloudflare.ts` | Ownership-tagged records; writes disabled by default |
-| App data | `src/lib/runtime-plane/` | One SQLite database on a dedicated volume per app |
-| Artifacts / backups | `platform/artifacts.ts`, `platform/backup.ts` | Manifests and consistent SQLite snapshots on S3-compatible storage |
+| App data | `src/lib/runtime-plane/` | One PostgreSQL database and role per app |
+| Artifacts / backups | `platform/artifacts.ts`, `platform/backup.ts` | Manifests and consistent JSONB snapshots on S3-compatible storage |
 
 ## App creation flow
 
@@ -26,29 +26,29 @@ The original proposal is [architecture-design.en.md](../architecture-design.en.m
 3. The dispatcher delivers the outbox to BullMQ with deterministic job IDs. A crash after enqueue does not duplicate jobs.
 4. The Scheduler reserves capacity under a transaction lock, selecting only workers with fresh heartbeats, spare capacity, and the exact cached image digest.
 5. The Builder generates/validates AppSpec. The artifact is an **immutable template image plus an AppSpec manifest**; it does not run npm builds for arbitrary generated backend code. `BUILDING` packages the manifest. A temporary build-sandbox pipeline for untrusted code is a separate extension and is not enabled.
-6. The Agent creates the sandbox and SQLite volume, checks health, publishes routing and approved DNS, and marks `RUNNING` only after internal gateway and public HTTPS checks identify the correct app.
+6. The Agent creates the sandbox and dedicated PostgreSQL database/role, checks health, publishes routing and approved DNS, and marks `RUNNING` only after internal gateway and public HTTPS checks identify the correct app.
 
 ## Isolation and data
 
 - Runtimes receive only their own seed and capability, never OpenAI, Cloudflare, S3, shared database credentials, or the Docker socket.
-- Containers run non-root under `runsc`, with read-only filesystems, bounded `/tmp`, 0.5 CPU/512 MiB, and PID/log/SQLite page limits. One replica per app.
+- Containers run non-root under `runsc`, with read-only filesystems, bounded `/tmp`, 0.5 CPU/512 MiB, and PID/log limits and a 16 MiB snapshot limit. One replica per app.
 - Each app has its own bridge, with IPv6 and external DNS disabled. Subnets are checked against Docker and all IPv4 routes; loopback ports are checked against listening sockets and container reservations and remain fixed across restarts.
 - INPUT and DOCKER-USER rules match only that app's bridge, blocking NEW connections to the host/other networks without changing existing apps' firewall policies. Missing runsc never falls back to runc.
 - Provisioning preserves at least 1.5 GiB available host RAM and 10 GiB disk. Defaults: three apps per VM, three globally, two per tenant. Validate these limits under real load.
-- SQLite uses WAL and synchronous FULL; memory changes commit only after storage succeeds. The engine uses `stateVersion` compare-and-swap with conflict retries, preserving app identity and host credentials.
-- Consistent `VACUUM INTO` backups are uploaded privately every five minutes. Expiration removes runtime/routes/DNS, retains volumes for 24 hours, then deletes volumes and artifacts. Explicit deletion bypasses retention. Image rollback cannot restore deleted data.
+- Each app has an `app_<id>` database and login role with CONNECT only to that database, schema USAGE, and SELECT/UPDATE on its snapshot. The admin owns databases/tables; apps cannot perform DDL, switch roles, or access metadata/other app databases. PostgreSQL row locks and transactions serialize writes; CAS preserves `stateVersion` and immutable app/host identity. Database failures never fall back to memory/SQLite.
+- Consistent JSONB snapshots are uploaded privately every five minutes. Expiration removes runtime/routes/DNS, retains the database for 24 hours, then deletes the database, role, and artifacts. Legacy SQLite volumes are retained separately after migration for controlled rollback. Explicit deletion bypasses retention. Image rollback cannot restore deleted data.
 
 ## Credentials and DNS
 
-The Worker reads `~/.config/ai-secrets/api.env` directly, defaulting to `/root/.config/ai-secrets/api.env` on the VM. No API-key copy files are created. The Control Plane receives only necessary internal credentials through environment injection; sandboxes receive no platform keys.
+systemd loads `/root/.config/ai-secrets/api.env` through `EnvironmentFile`; the Worker uses only `process.env` and does not read secrets files itself. Compose injects only the credentials needed by each service. No API-key copy files are created. The Control Plane receives only necessary internal credentials through environment injection; sandboxes receive no platform keys.
 
-Internal secrets `MININTAPP_POSTGRES_PASSWORD`, `MININTAPP_REDIS_PASSWORD`, `MININTAPP_WORKER_TOKEN`, `MININTAPP_SIGNING_SECRET`, `MININTAPP_S3_ACCESS_KEY_ID`, and `MININTAPP_S3_SECRET_ACCESS_KEY` live in the same central file, never Git or logs. Rotating the worker token requires rolling out existing runtime capabilities, not merely restarting the agent.
+Internal secrets `DATABASE_URL`, `REDIS_URL`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `WORKER_TOKEN`, `IP_HASH_SALT`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY` live in the same central file, never Git or logs. Rotating the worker token requires rolling out existing runtime capabilities, not merely restarting the agent.
 
 `DNS_AUTOMATION_APPROVED` defaults to false. The owner approved the demo ingress A record, 24-hex app CNAMEs under `minintapp.io.vn`, and temporary ACME TXT records for wildcard issuance/renewal. Other records must remain unchanged. `deploy/acme-cloudflare.py` touches only TXT records matching its validation content and ownership marker.
 
 ## Deployment and multiple VMs
 
-`deploy/platform.compose.yml` overlays the existing web Compose configuration. PostgreSQL, Redis, and MinIO have dedicated volumes and loopback bindings. Existing Nginx retains 80/443 and forwards app hostnames to Traefik on loopback 18081. The Agent binds a bridge/private IP on 19090 and requires a bearer token.
+`deploy/platform.compose.yml` overlays the existing web Compose configuration. PostgreSQL, Redis, and MinIO have dedicated volumes. Redis/MinIO bind loopback only; PostgreSQL also binds the private platform bridge gateway for sandboxes, never the public IP. Existing Nginx retains 80/443 and forwards app hostnames to Traefik on loopback 18081. The Agent binds a bridge/private IP on 19090 and requires a bearer token.
 
 CI builds and tests images on GitHub. Images contain the Worker bundle and schema; the SSH gate accepts only this repository's digests. With `.platform-enabled`, deployment updates Worker and web, checks health, and promotes or attempts rollback of both. Database, queue, object storage, and app sandboxes are not force-recreated on each commit.
 
@@ -76,6 +76,14 @@ References: [gVisor installation](https://gvisor.dev/docs/user_guide/install/), 
 
 ## Activated demo (2026-10-31)
 
-The platform profile is enabled on the demo VM; the Worker reads the OpenAI key directly from the central secrets file. The Control Plane does not hold the AI key. Live checks verified OpenAI generation, two gVisor sandboxes with separate HTTPS subdomains, and SQLite votes surviving restart and suspend/resume while the other app remained available. This validates one VM, not multi-VM HA.
+The platform profile is enabled on the demo VM; the Worker receives the OpenAI key through systemd environment injection. The Control Plane does not hold the AI key. Live checks verified OpenAI generation, two gVisor sandboxes with separate HTTPS subdomains, and votes surviving restart and suspend/resume while the other app remained available. This validates one VM, not multi-VM HA.
 
 Gateway probes use an HTTP request that preserves `Host` to check the intended app. AI expression schemas use a finite `$defs`/`$ref` chain, preserving expression depth while avoiding excessive inline nesting in Structured Outputs. Integration status reads AI configuration from allowlisted Workers rather than the web key. Template creation quota errors return JSON following the API contract.
+
+## PostgreSQL migration
+
+`deploy/migrate-environment.mjs <file>` normalizes legacy internal variable names in place, creates standard URLs, and preserves API keys. The file remains 0600; keys are not copied into the repository/deployment directory. Certbot receives its environment through `deploy/certbot-environment.conf`.
+
+Stop only the dedicated Worker before running `migrate-runtime-postgres.mjs <app-id> <image-digest>`. The script verifies ownership, stops the source runtime, reads a consistent SQLite snapshot from its read-only volume, backs it up privately, imports PostgreSQL, and compares the entire snapshot. It promotes the image after health checks and restores the legacy container on failure. Source volumes are retained. Migrate apps sequentially, then start the Worker. Never run this script against a database cluster shared with unrelated services.
+
+Database roles isolate data privileges, not PostgreSQL physical resources. Default connection limits/timeouts do not provide hard CPU/IO quotas for untrusted SQL. The independent `runtime/poll/` prototype remains a SQLite experiment outside the scheduler; platform-provisioned sandboxes use PostgreSQL.

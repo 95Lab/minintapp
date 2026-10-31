@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Approved TXT scope only. Reads credentials in place; never writes credential copies."""
+"""Approved TXT scope only. Credentials are injected by the certbot service EnvironmentFile."""
 import json
 import os
-from pathlib import Path
 import re
-import shlex
 import sys
 import time
 import urllib.parse
@@ -19,14 +17,7 @@ def main():
     value = os.environ.get("CERTBOT_VALIDATION", "")
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", value):
         raise RuntimeError("Invalid validation")
-    values = {}
-    for line in (Path.home() / ".config/ai-secrets/api.env").read_text().splitlines():
-        line = line.strip().removeprefix("export ")
-        if "=" in line and not line.startswith("#"):
-            key, raw = line.split("=", 1)
-            parts = shlex.split(raw, comments=True)
-            if parts:
-                values[key.strip()] = parts[0]
+    values = os.environ
     base = "https://api.cloudflare.com/client/v4/zones/" + values["CLOUDFLARE_ZONE_ID"] + "/dns_records"
 
     def api(path="", method="GET", body=None):

@@ -98,7 +98,7 @@ jobs:
         run: |
           docker run --detach --name minintapp-test --publish 127.0.0.1:3200:3000 minintapp:test
           SMOKE_BASE_URL=http://127.0.0.1:3200 node scripts/deploy-smoke.mjs
-      - name: Test independent SQLite runtimes
+      - name: Test independent PostgreSQL runtimes
         env:
           LOCAL_RUNTIME_IMAGE: minintapp:test
         run: npx tsx platform/runtime-smoke.ts

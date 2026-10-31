@@ -22,7 +22,7 @@ Ví dụ:
 
 Người dùng nhận bản xem trước, chỉnh sửa bằng hội thoại rồi publish lên subdomain HTTPS riêng để chia sẻ qua link hoặc QR. App có thể dùng tạm thời, giữ lại lâu dài hoặc phát triển thành sản phẩm trên marketplace.
 
-**Trạng thái:** Repo đã có ứng dụng Next.js, engine tương tác và triển khai Control Plane/Runtime Plane với PostgreSQL, queue, sandbox gVisor, SQLite riêng và provisioning DNS. Xem [kiến trúc runtime](docs/architecture-runtime.md) để phân biệt phần đã có và giới hạn còn lại. Marketplace và thanh toán vẫn thuộc lộ trình sản phẩm.
+**Trạng thái:** Repo đã có ứng dụng Next.js, engine tương tác và triển khai Control Plane/Runtime Plane với PostgreSQL, queue, sandbox gVisor, database PostgreSQL và role riêng và provisioning DNS. Xem [kiến trúc runtime](docs/architecture-runtime.md) để phân biệt phần đã có và giới hạn còn lại. Marketplace và thanh toán vẫn thuộc lộ trình sản phẩm.
 
 ## 2. Trải nghiệm all-in-one
 
@@ -54,7 +54,7 @@ Bản demo gom các thành phần lên **1 VM với N sandbox**. Giao diện Wor
 
 ## 4. MVP và kịch bản demo
 
-Phạm vi 7 giờ: một template full-stack, prompt → preview → chỉnh sửa → publish, SQLite riêng cho mỗi app, subdomain thật qua Cloudflare API, start/stop và TTL. Marketplace demo hỗ trợ danh mục mẫu và tạo bản riêng miễn phí.
+Phạm vi 7 giờ: một template full-stack, prompt → preview → chỉnh sửa → publish, database PostgreSQL và role riêng cho mỗi app, subdomain thật qua Cloudflare API, start/stop và TTL. Marketplace demo hỗ trợ danh mục mẫu và tạo bản riêng miễn phí.
 
 1. Tạo app bình chọn workshop bằng prompt và nhận subdomain HTTPS.
 2. Đăng bản mẫu miễn phí lên marketplace.
