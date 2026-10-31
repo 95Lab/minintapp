@@ -17,6 +17,7 @@ import { composeSpec } from "@/lib/app-spec/app-spec-examples";
 import { POST as createRoute } from "@/app/api/apps/from-template/route";
 import { GET as deploymentRoute } from "@/app/api/apps/[id]/deployment/route";
 import { GET as listRoute } from "@/app/api/my-apps/route";
+import { createSessionValue, SESSION_COOKIE } from "@/engine/auth/host-session";
 const connection = redisConnection(process.env.PLATFORM_TEST_REDIS_URL || "redis://127.0.0.1:16389/15");
 const queue = new Queue("minintapp-integration", { connection });
 beforeAll(async () => {
@@ -94,10 +95,19 @@ it("returns 202 with scoped host cookies and exposes deployment state only to it
   const statusBody = await state.json();
   expect(statusBody.state).toBe("QUEUED");
   const tenantCookie = /minint_tenant=([a-f0-9]{64})/.exec(cookies)![0];
-  const owned = await listRoute(new Request("http://local", { headers: { cookie: tenantCookie } }));
+  const sessionCookie = `${SESSION_COOKIE}=${createSessionValue({ userId: "11111111-1111-4111-8111-111111111111", email: "owner@example.test" })}`;
+  const owned = await listRoute(new Request("http://local", { headers: { cookie: `${tenantCookie}; ${sessionCookie}` } }));
+  expect(owned.status).toBe(200);
   expect((await owned.json()).apps).toHaveLength(1);
-  const stranger = await listRoute(new Request("http://local"));
+  const strangerCookie = `${SESSION_COOKIE}=${createSessionValue({ userId: "22222222-2222-4222-8222-222222222222", email: "stranger@example.test" })}`;
+  const stranger = await listRoute(new Request("http://local", { headers: { cookie: strangerCookie } }));
+  expect(stranger.status).toBe(200);
   expect((await stranger.json()).apps).toHaveLength(0);
+  for (const cookie of ["", tenantCookie]) {
+    const anonymous = await listRoute(new Request("http://local", { headers: { cookie } }));
+    expect(anonymous.status).toBe(401);
+    expect(await anonymous.json()).toEqual({ code: "sign_in_required" });
+  }
   expect(JSON.stringify(statusBody).includes("host_token_hash")).toBe(false);
 });
 
