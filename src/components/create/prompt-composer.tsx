@@ -1,0 +1,7 @@
+"use client";
+import { useState } from "react";
+import type { GenerateRequest, Lifetime } from "@/lib/api/api-contract-types";
+export function PromptComposer({ onGenerate, disabled = false }: { onGenerate?: (request: GenerateRequest) => Promise<void>; disabled?: boolean }) {
+  const [prompt, setPrompt] = useState(""); const [lifetime, setLifetime] = useState<Lifetime>("1h"); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  return <form className="mini-card" onSubmit={async (e) => { e.preventDefault(); if (!onGenerate || !prompt.trim() || busy || disabled) return; setBusy(true); setError(""); try { await onGenerate({ prompt: prompt.trim(), lifetime }); } catch { setError("Không thể tạo ứng dụng. Vui lòng thử lại."); } finally { setBusy(false); } }}><label className="mini-field">Bạn cần mini-app gì?<textarea required maxLength={500} rows={4} value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={busy || disabled} /></label><label className="mini-field">Thời gian sử dụng<select value={lifetime} onChange={(e) => setLifetime(e.target.value as Lifetime)} disabled={busy || disabled}><option value="1h">1 giờ</option><option value="24h">24 giờ</option><option value="7d">7 ngày</option></select></label><button disabled={!onGenerate || busy || disabled || !prompt.trim()}>{busy ? "Đang tạo…" : "Tạo ứng dụng"}</button>{!onGenerate && <p>Chức năng tạo ứng dụng chưa kết nối API.</p>}{error && <p role="alert">{error}</p>}</form>;
+}

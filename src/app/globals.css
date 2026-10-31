@@ -7,3 +7,43 @@ p { line-height: 1.7; }
 section { margin-top: 48px; padding: 24px; background: white; border: 1px solid #cbd8ce; border-radius: 16px; }
 a { color: #146344; text-underline-offset: 4px; }
 a:focus-visible { outline: 3px solid #146344; outline-offset: 4px; }
+
+/* Reusable component primitives; kept scoped to avoid changing existing pages. */
+.mini-app { display: grid; gap: 20px; }
+.mini-app h1 { font-size: 2rem; margin: 12px 0; }
+.mini-card { background: white; border: 1px solid #cbd8ce; border-radius: 16px; padding: 24px; margin: 0; min-width: 0; }
+.mini-card h2, .mini-card h3 { margin-top: 0; }
+.mini-card form, form.mini-card, .mini-stack { display: grid; gap: 16px; }
+.mini-field { display: grid; gap: 8px; margin: 16px 0; }
+.mini-app input:not([type=radio]):not([type=checkbox]), .mini-field input, .mini-field select, .mini-field textarea { border: 1px solid #8fa997; border-radius: 8px; padding: 12px; font: inherit; width: 100%; box-sizing: border-box; background: white; color: inherit; }
+.component-preview button { padding: 11px 16px; border: 1px solid #2c6045; border-radius: 8px; background: #edf5ec; color: #18382d; font: inherit; cursor: pointer; }
+.component-preview button:disabled { opacity: .55; cursor: not-allowed; }
+.component-preview button[aria-selected=true], .component-preview button[aria-pressed=true] { background: #18382d; color: white; }
+.component-preview :focus-visible { outline: 3px solid #ca8b19; outline-offset: 3px; }
+.mini-option { display: flex; align-items: center; gap: 8px; padding: 12px 4px; }
+.mini-option input { width: 20px; height: 20px; }
+.mini-card fieldset { border: 1px solid #cbd8ce; border-radius: 8px; }
+.mini-actions, .mini-tabs, .mini-topbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.mini-tabs { margin: 16px 0; }
+.mini-topbar { justify-content: space-between; padding-bottom: 24px; margin-bottom: 32px; border-bottom: 1px solid #cbd8ce; }
+.mini-badge { display: inline-block; padding: 6px 12px; border-radius: 99px; background: #e7ede7; font-size: .85rem; }
+.mini-notice { background: #f5f3e9; padding: 16px; border-radius: 8px; }
+.mini-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; }
+.mini-grid button { display: grid; gap: 8px; text-align: left; }
+.mini-grid span { font-size: .85rem; }
+.mini-bars { padding: 0; list-style: none; }
+.mini-bars li { display: grid; gap: 4px; margin: 12px 0; }
+.mini-bars meter { width: 100%; }
+.mini-cloud { display: flex; gap: 16px; list-style: none; flex-wrap: wrap; }
+.mini-wheel { padding: 16px; border: 2px dashed #8fa997; border-radius: 16px; }
+.mini-card table { width: 100%; border-collapse: collapse; }
+.mini-card th, .mini-card td { text-align: left; padding: 8px; border-bottom: 1px solid #cbd8ce; overflow-wrap: anywhere; }
+.component-preview { max-width: 1120px; padding-top: 32px; }
+.component-preview > h1 { font-size: clamp(2rem,6vw,3.5rem); }
+.mini-preview-grid { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); gap: 24px; margin-top: 24px; align-items: start; }
+.mini-preview-grid > div { display: grid; gap: 24px; }
+.mini-preview-grid aside a { overflow-wrap: anywhere; }
+.mini-preview-grid img { max-width: 100%; height: auto; }
+.component-preview summary { cursor: pointer; padding: 8px; }
+.component-preview details[open] > .mini-card { margin-top: 16px; }
+@media (max-width: 720px) { .mini-preview-grid { grid-template-columns: 1fr; } .mini-card { padding: 16px; } }

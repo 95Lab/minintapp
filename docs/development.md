@@ -18,6 +18,8 @@ Mở http://localhost:3000. `env:local` tạo `.env.local` từ mẫu và không
 Chỉ dùng OpenAI cho AI. Thêm `OPENAI_API_KEY` vào `.env.local`, chọn `OPENAI_MODEL` (mặc định `gpt-5-mini`) và chạy `npm run env:check`. Nếu model không hỗ trợ reasoning, đặt `OPENAI_REASONING_EFFORT=`. Thiếu key thì gọi generation sẽ báo `ai_not_configured`; không tự chuyển sang mock. Các biến Gemini/Groq/LM Studio không còn trong mẫu và không được dùng. `.env.local` cũ vẫn được giữ nguyên; có thể tự bỏ các dòng provider cũ. Nếu có `LLM_PROVIDER`, chỉ chấp nhận giá trị rỗng hoặc `openai`.
 
 `generateAppSpec({ prompt, lifetime })` là hàm server dùng Responses API + Structured Outputs, xác minh lại nghiệp vụ bằng Zod, không lưu dữ liệu và không mở endpoint HTTP mới. Không có route `/api/generate`, repository memory, Supabase adapter hay migration ở bước này. Health chỉ phản ánh tiến trình web. Build và kiểm thử không cần API key.
+Thư viện UI: mở `/preview`; xem [kiến trúc component](components.md) để nối callback và phân biệt tính năng hiện có với các điểm mở rộng.
+
 ## Kiểm tra trước khi review
 
 ```sh
