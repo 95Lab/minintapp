@@ -235,7 +235,7 @@ const english = {
 "{count} người tham gia": "{count} participants",
 "{count} câu trả lời": "{count} responses",
 "{count} lựa chọn còn lại": "{count} options remaining",
-"{inputs} trường nhập · {views} chế độ xem": "{inputs} inputs · {views} views",
+"{inputs} trường nhập · {views} chế độ xem": "Inputs: {inputs} · Views: {views}",
 "{points} điểm · Thời lượng gợi ý: {seconds} giây. Host công bố đáp án để kết thúc câu hỏi.": "{points} points · Suggested duration: {seconds} seconds. The host reveals the answer to end the question.",
 "Kết quả: {winner}": "Winner: {winner}",
 "Chờ host quay số": "Waiting for the host to spin",

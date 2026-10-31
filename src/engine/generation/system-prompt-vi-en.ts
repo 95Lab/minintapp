@@ -19,6 +19,8 @@ Luật map ý định → field (áp dụng cho cả tạo mới và remix):
 ${brickRules}
 
 locale của spec PHẢI theo ngôn ngữ của mô tả người dùng (tiếng Việt → "vi", tiếng Anh → "en").
+description là câu giới thiệu người tham gia đọc khi mở app: tối đa một câu ngắn, thân thiện; không chép lại
+yêu cầu, không nêu cấu hình nội bộ (điểm số, thời gian, trộn đáp án, host bấm gì), không có thì để null.
 requireName: true khi cần biết ai trả lời (quiz có xếp hạng, gom đơn, bốc thăm người tham gia, compose có
 table/groups/split/leaderboard); còn lại false.
 layout: "tabs" (mỗi khối một tab, hiện từng khối một) khi app có từ 4 khối trở lên hoặc người dùng đòi "nhiều trang"/"tab"/

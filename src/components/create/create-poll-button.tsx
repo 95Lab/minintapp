@@ -1,7 +1,7 @@
 "use client";
 import { translate } from "@/lib/i18n/messages";
 import { useLocale } from "@/lib/i18n/locale-provider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiClientError, createFromTemplate } from "@/lib/api/api-client";
 export function CreatePollButton({ templateId = "poll-drinks", label }: { templateId?: string; label?: string }) {
@@ -10,6 +10,8 @@ export function CreatePollButton({ templateId = "poll-drinks", label }: { templa
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // The message came from the server in the previous language.
+  useEffect(() => setError(""), [locale]);
   return <div><button disabled={busy} onClick={async () => {
     if (busy) return;
     setBusy(true); setError("");
