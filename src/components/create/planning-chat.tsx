@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ApiClientError, requestJson } from "@/lib/api/api-client";
-import { planningContext, PlanningReplySchema, PlanningRequestSchema, type PlanningMessage, type PlanningReply } from "@/lib/api/planning-contract";
+import { planningContext, planningQuestionsLeft, PlanningReplySchema, PlanningRequestSchema, type PlanningMessage, type PlanningReply } from "@/lib/api/planning-contract";
 import type { GenerateRequest, Lifetime } from "@/lib/api/api-contract-types";
 import styles from "./planning-chat.module.css";
 
@@ -38,7 +38,8 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
   async function send(content: string, useDefaults = false) {
     if (inFlight.current || !content.trim()) return;
     const next: PlanningMessage[] = [...messages, { role: "user", content: content.trim() }];
-    const input = PlanningRequestSchema.safeParse({ messages: planningContext(next), currentBrief: brief, locale, lifetime, useDefaults });
+    // The context below may drop old turns, so the full log decides when the question budget is spent.
+    const input = PlanningRequestSchema.safeParse({ messages: planningContext(next), currentBrief: brief, locale, lifetime, useDefaults: useDefaults || planningQuestionsLeft(next) === 0 });
     if (!input.success) {
       setPlan(null);
       setError(text("Tin nhắn chưa hợp lệ. Hãy nhập từ 1 đến 1.200 ký tự rồi gửi lại.", "Invalid message. Enter 1–1,200 characters and try again."));

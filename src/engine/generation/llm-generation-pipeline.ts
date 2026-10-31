@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { AppSpecSchema, type Locale } from "@/engine/app-spec/app-spec-schema";
 import type { GenerationMeta, LlmOutput } from "./llm-output-types";
-import { createDeadlineTracker, REPAIR_MIN_REMAINING_MS } from "./generation-deadline";
+import { ATTEMPT_TIMEOUT_MS, createDeadlineTracker, REPAIR_MIN_REMAINING_MS } from "./generation-deadline";
 import { flatSpecToAppSpec } from "./llm-flat-spec-conversion";
 import { fillOmittedNulls } from "./fill-omitted-nulls";
 import { repairHarmlessSlips } from "./harmless-output-repairs";
@@ -40,16 +40,20 @@ function friendlyOutput(locale: Locale, kind: FriendlyKind): LlmOutput {
 
 type AttemptResult = ({ kind: "final"; output: LlmOutput } | { kind: "invalid"; reason: string }) & { outputChars?: number; raw?: string };
 
+/** A call cut by its own timeout: the model gave no answer to correct, so the retry repeats the plain request. */
+const ATTEMPT_TIMED_OUT = "attempt timed out";
+
 /**
  * One model call → parsed + validated LlmOutput, or a reason to repair. Never throws.
  * `enforceLocale`: an app in the other language than the prompt (small local models do this) is sent back for repair.
  */
-async function attemptOnce(provider: LlmProvider, instructions: string, input: string, signal: AbortSignal, locale: Locale, enforceLocale = false): Promise<AttemptResult> {
+async function attemptOnce(provider: LlmProvider, instructions: string, input: string, signal: AbortSignal, locale: Locale, attemptTimeoutMs: number, enforceLocale = false): Promise<AttemptResult> {
   let raw: unknown;
   try {
-    raw = await provider.callStructured({ instructions, input, jsonSchema: LLM_OUTPUT_JSON_SCHEMA, schemaName: "minint_app", signal });
+    raw = await provider.callStructured({ instructions, input, jsonSchema: LLM_OUTPUT_JSON_SCHEMA, schemaName: "minint_app", signal: AbortSignal.any([signal, AbortSignal.timeout(attemptTimeoutMs)]) });
   } catch (err) {
     const kind = err instanceof LlmCallError ? err.kind : "network";
+    if (kind === "aborted" && !signal.aborted) return { kind: "invalid", reason: ATTEMPT_TIMED_OUT };
     if (kind === "invalid_json") {
       // A provider that checks the schema itself (Groq) says where the answer went wrong: pass that on to the repair.
       const detail = err instanceof LlmCallError && err.cause instanceof Error ? /jsonschema:.*/.exec(err.cause.message)?.[0] : undefined;
@@ -101,6 +105,8 @@ export interface RunGenerationOptions {
   instructionsAddendum?: string;
   /** New apps: the app must be written in the prompt's language (checked on the first attempt only). */
   enforceLocale?: boolean;
+  /** Tests only: overrides the cap on a single model call. */
+  attemptTimeoutMs?: number;
 }
 
 /** Hash of everything that shapes the model's answer besides the user's words. */
@@ -125,7 +131,8 @@ export async function runLlmGeneration(provider: LlmProvider, input: string, opt
   const done = (output: LlmOutput, attempts: number, last: AttemptResult | null): LlmOutput => ({ ...output, generation: meta(attempts, last) });
 
   const prompt = opts.enforceLocale ? withLanguageHint(input, opts.locale) : input;
-  const first = await attemptOnce(provider, instructions, prompt, opts.signal, opts.locale, opts.enforceLocale);
+  const attemptTimeoutMs = opts.attemptTimeoutMs ?? ATTEMPT_TIMEOUT_MS;
+  const first = await attemptOnce(provider, instructions, prompt, opts.signal, opts.locale, attemptTimeoutMs, opts.enforceLocale);
   if (first.kind === "final") return done(first.output, 1, first);
 
   if (opts.signal.aborted) return done(friendlyOutput(opts.locale, "timeout"), 1, first);
@@ -133,7 +140,8 @@ export async function runLlmGeneration(provider: LlmProvider, input: string, opt
 
   // Why the model's answer was sent back: the first thing to read when an app type keeps failing.
   console.warn("[generate] repair required");
-  const second = await attemptOnce(provider, instructions, buildRepairInput(prompt, first.reason), opts.signal, opts.locale);
+  const retryInput = first.reason === ATTEMPT_TIMED_OUT ? prompt : buildRepairInput(prompt, first.reason);
+  const second = await attemptOnce(provider, instructions, retryInput, opts.signal, opts.locale, attemptTimeoutMs);
   // The model's own answer (trimmed): shows what it misunderstood when even the repair fails.
   if (second.kind === "invalid") console.warn("[generate] repair validation failed");
   return done(second.kind === "final" ? second.output : friendlyOutput(opts.locale, "invalid"), 2, second);
