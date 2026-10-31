@@ -34,6 +34,8 @@ export async function readAppState(request: Request, id: string): Promise<AppSta
     return isHost || view?.visibleTo === "everyone" || (view?.visibleTo === "after_submit" && myRows.some((r) => r.blockId === result.blockId)) || (view?.visibleTo === "after_close" && app.status === "closed");
   });
   return {
+    storage: process.env.PLATFORM_ROLE === "control" || process.env.PLATFORM_ROLE === "runtime" ? "sqlite" : "memory",
+    ...(process.env.PLATFORM_ROLE === "control" && process.env.APPS_DOMAIN ? { shareUrl: `https://${id}.${process.env.APPS_DOMAIN}/a/${id}` } : {}),
     id, status: app.status, expiresAt: new Date(app.expiresAt).toISOString(), stateVersion: app.stateVersion,
     spec: stripPrivateFields(app.spec, app.runtime), runtime: app.runtime, isHost,
     participantCount: new Set(rows.map((r) => r.participantHash)).size, results,

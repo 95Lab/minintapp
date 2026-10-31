@@ -1,0 +1,27 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, expect, it } from "vitest";
+import { createRuntimeRepository, SQLiteAppPersistence } from "@/lib/runtime-plane/sqlite-apps-repository";
+import { composeSpec } from "@/lib/app-spec/app-spec-examples";
+import { hashToken } from "@/lib/security/token-hashing";
+const dirs: string[] = [];
+afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+it("keeps app data and lifecycle across runtime restarts and refuses another app ID", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "minintapp-sqlite-")); dirs.push(dir);
+  const path = join(dir, "app.sqlite"), id = "a".repeat(24), token = "host-token";
+  const seed = { id, spec: composeSpec(), prompt: "vote", hostTokenHash: hashToken(token), ownerId: null, createdAt: Date.now(), expiresAt: Date.now() + 60000 };
+  const first = createRuntimeRepository(path, seed);
+  const spec = seed.spec.blocks[0]; if (spec.type !== "compose") throw new Error();
+  const input = spec.inputs[0]; if (input.kind !== "choice") throw new Error();
+  await first.submitResponse(id, { blockId: spec.id, itemId: "", participantHash: "b".repeat(64), displayName: null, payload: { kind: "compose", values: { [input.id]: input.options![0].id } } });
+  await first.transition(id, token, "close");
+  const restarted = createRuntimeRepository(path, seed);
+  expect((await restarted.snapshot(id))?.responses).toHaveLength(1);
+  expect((await restarted.findApp(id))?.status).toBe("closed");
+  expect(await restarted.findApp("c".repeat(24))).toBeNull();
+  const storage = new SQLiteAppPersistence(path, id);
+  const snapshot = storage.load()[0];
+  expect(() => storage.save({ ...snapshot, app: { ...snapshot.app, id: "d".repeat(24) } })).toThrow("boundary");
+  storage.db.close();
+});

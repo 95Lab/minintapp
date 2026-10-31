@@ -1,0 +1,11 @@
+entryPoints:
+  apps:
+    address: "127.0.0.1:18081"
+providers:
+  file:
+    directory: /opt/minintapp/routes
+    watch: true
+api:
+  dashboard: false
+log:
+  level: WARN

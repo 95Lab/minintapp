@@ -32,8 +32,32 @@ jobs:
           name: playwright-results
           path: test-results/
           retention-days: 7
+  platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: minintapp
+          POSTGRES_PASSWORD: local-integration-only
+          POSTGRES_DB: minintapp_test
+        ports: ["15439:5432"]
+        options: --health-cmd "pg_isready -U minintapp -d minintapp_test" --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["16389:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run test:platform
   image:
-    needs: check
+    needs: [check, platform]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -72,6 +96,10 @@ jobs:
         run: |
           docker run --detach --name minintapp-test --publish 127.0.0.1:3200:3000 minintapp:test
           SMOKE_BASE_URL=http://127.0.0.1:3200 node scripts/deploy-smoke.mjs
+      - name: Test independent SQLite runtimes
+        env:
+          LOCAL_RUNTIME_IMAGE: minintapp:test
+        run: npx tsx platform/runtime-smoke.ts
       - name: Container diagnostics
         if: failure()
         run: docker logs minintapp-test || true

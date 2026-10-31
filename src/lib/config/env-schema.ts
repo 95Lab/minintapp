@@ -6,6 +6,10 @@ const httpUrl = optionalText.refine((value) => {
   try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; }
 }, "Must be an HTTP(S) URL");
 export const EnvSchema = z.object({
+  PLATFORM_ROLE: z.enum(["standalone", "control", "runtime"]).default("standalone"),
+  DATABASE_URL: optionalText, REDIS_URL: optionalText, WORKER_TOKEN: optionalText,
+  WORKER_AGENT_URLS: optionalText, RUNTIME_IMAGE: optionalText, APPS_DOMAIN: optionalText,
+  RUNTIME_APP_ID: optionalText, RUNTIME_TOKEN: optionalText, RUNTIME_SEED: optionalText,
   APP_ORIGIN: httpUrl.refine((value) => {
     if (!value) return true;
     try { return new URL(value).origin === value; } catch { return false; }
@@ -23,6 +27,10 @@ export const EnvSchema = z.object({
   // Recognize an old setting only to reject providers that are no longer supported.
   LLM_PROVIDER: z.enum(["", "openai"]).optional(),
 }).superRefine((env, ctx) => {
+  const required = env.PLATFORM_ROLE === "control"
+    ? ["DATABASE_URL", "REDIS_URL", "WORKER_TOKEN", "WORKER_AGENT_URLS", "RUNTIME_IMAGE", "APPS_DOMAIN"] as const
+    : env.PLATFORM_ROLE === "runtime" ? ["RUNTIME_APP_ID", "RUNTIME_TOKEN", "RUNTIME_SEED"] as const : [];
+  for (const key of required) if (!env[key]) ctx.addIssue({ code: "custom", path: [key], message: "Required for selected platform role" });
   for (const [url, key] of [["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"], ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]] as const) {
     if (!!env[url] !== !!env[key]) ctx.addIssue({ code: "custom", path: [url], message: `${url} and ${key} must be configured together` });
   }

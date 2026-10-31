@@ -5,6 +5,7 @@ import type { GenerationMeta } from "@/lib/generation/llm-output-types";
 export type { ResponsePayload } from "@/lib/blocks/block-registry";
 export type { PublicAppSpec } from "@/lib/app-spec/strip-private-fields";
 export type { AppRuntime } from "@/lib/blocks/block-definition-types";
+export type MyAppsResponse = z.output<typeof import("../../../platform/contracts").MyAppsResponseSchema>;
 export type AppStatus = "active" | "closed" | "ended" | "blocked";
 export type Lifetime = GenerateRequest["lifetime"];
 export const LIFETIME_MS = { "1h": 3_600_000, "24h": 86_400_000, "7d": 604_800_000 } satisfies Record<Lifetime, number>;
@@ -24,6 +25,8 @@ export type TemplateCreateResponse = { ok: true; id: string; hostToken: string }
 export type RemixResponse = { ok: true; newId: string; hostToken: string } | ApiErrorResponse;
 
 export interface AppStateResponse {
+  shareUrl?: string;
+  storage?: "memory" | "sqlite";
   id: string; status: AppStatus; expiresAt: string; stateVersion: number;
   spec: import("@/lib/app-spec/strip-private-fields").PublicAppSpec;
   runtime: import("@/lib/blocks/block-definition-types").AppRuntime;
