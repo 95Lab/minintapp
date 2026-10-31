@@ -32,6 +32,7 @@ export function SiteHeader({ home = false, children }: { home?: boolean; childre
       <Link onClick={close} href={destination("/templates")}>{text("Khám phá tất cả mẫu","Explore all templates")}</Link>
       {session?.user && <Link onClick={close} href={destination("/dashboard")}>{text("Ứng dụng của tôi","My apps")}</Link>}
       <Link onClick={close} href={home ? "#how-it-works" : destination("/#how-it-works")}>{text("Cách hoạt động","How it works")}</Link>
+      <Link onClick={close} href={destination("/preview")}>{text("Thư viện component","Component library")}</Link>
       <LanguageSwitcher />
       <Link onClick={close} className={styles.create} href={home ? "#create" : destination("/#create")}>{text("Tạo ứng dụng","Create an app")} <span aria-hidden="true">↗</span></Link>
     </nav>

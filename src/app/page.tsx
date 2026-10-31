@@ -1,6 +1,7 @@
 import { translate } from "@/lib/i18n/messages";
 import { getLocale } from "@/lib/i18n/server";
 import { BrandLogo } from "@/components/brand-logo";
+import { SystemStatus } from "@/components/system-status";
 import { SiteHeader } from "@/components/site-header";
 import { readRuntimeConfig } from "@/lib/config/runtime-config";
 import { GenerateAppForm } from "@/components/create/generate-app-form";
@@ -51,7 +52,7 @@ const faqs = [
       <section className="tagline-section" aria-label={tr("Thông điệp")}><p className="heading-2">{tr("Việc nhỏ có công cụ riêng.").split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}<br />{tr("Khoảnh khắc có nhau.").split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}</p><a href="#create" className="text-link button-md">{tr("Tạo ứng dụng của bạn")}<span aria-hidden="true">↗</span></a></section>
       <section className="faq-section" aria-labelledby="faq-title" data-reveal><div><p className="eyebrow caption-3">{tr("TRƯỚC KHI BẮT ĐẦU")}</p><h2 id="faq-title" className="heading-3">{tr("Bạn có thể đang thắc mắc.")}</h2></div><div className="faq-grid">{faqs.map(([q, a]) => <article key={q}><h3 className="title-3">{q}</h3><p className="body-6">{a}</p></article>)}</div></section>
     </main>
-    <footer className="home-footer"><div><BrandLogo /><p className="caption-2">{tr("Một sản phẩm từ 95LAB. Cho những nhu cầu vừa đủ.")}</p></div><div className="footer-links caption-2"><a href="/dashboard">{tr("Ứng dụng của tôi")}</a><a href="/preview">{tr("Thư viện component")}</a><a href="/api/health">{tr("Kiểm tra trạng thái hệ thống")}</a></div><p className="storage-note caption-5">{persistent ? tr("Dữ liệu được lưu bền và đồng bộ giữa các thiết bị.") : tr("Phiên dùng thử: dữ liệu được lưu tạm và có thể mất khi hệ thống khởi động lại.")}</p></footer>
+    <footer className="home-footer"><div><BrandLogo /><p className="caption-2">{tr("Một sản phẩm từ 95LAB. Cho những nhu cầu vừa đủ.")}</p></div><div className="footer-links caption-2"><a href="/dashboard">{tr("Ứng dụng của tôi")}</a><a href="/preview">{tr("Thư viện component")}</a></div><SystemStatus /><p className="storage-note caption-5">{persistent ? tr("Dữ liệu được lưu bền và đồng bộ giữa các thiết bị.") : tr("Phiên dùng thử: dữ liệu được lưu tạm và có thể mất khi hệ thống khởi động lại.")}</p></footer>
     <HomeMotion />
   </div>;
 }
