@@ -93,8 +93,8 @@ h1, h2, h3 { margin: 0; line-height: 1.15; text-wrap: balance; letter-spacing: -
 .btn:hover { background: var(--surface-2); }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.btn-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.btn-primary:hover { background: color-mix(in srgb, var(--ink) 85%, var(--bolt)); }
+.btn-primary { background: var(--bolt); color: #fff; border-color: var(--bolt); }
+.btn-primary:hover { background: #963e26; }
 .btn-bolt { background: var(--bolt); color: var(--bolt-ink); border-color: var(--bolt); }
 .btn-bolt:hover { background: color-mix(in srgb, var(--bolt) 85%, #000); }
 .btn-app { background: var(--app); color: #fff; border-color: var(--app); }

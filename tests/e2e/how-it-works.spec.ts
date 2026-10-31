@@ -48,7 +48,7 @@ for(const path of ["/","/how-it-works"])test(`guide actions have readable colors
  await page.setViewportSize({width:320,height:844});await page.goto(path);
  const guide=page.locator("#how-it-works");const create=guide.getByRole("link",{name:"Tạo ứng dụng của bạn",exact:true});
  const colors=await create.evaluate(el=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color}));
- expect(colors.background).toBe("rgb(40, 39, 34)");expect(colors.color).toBe("rgb(255, 255, 255)");
+ expect(colors.background).toBe("rgb(185, 78, 48)");expect(colors.color).toBe("rgb(255, 255, 255)");
  const demo=guide.getByRole("link",{name:"Live Demo",exact:true});await expect(demo).toHaveAttribute("href","/how-it-works#live-demo");
  expect((await demo.boundingBox())?.height).toBeGreaterThanOrEqual(44);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

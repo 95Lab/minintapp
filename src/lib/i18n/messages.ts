@@ -1,6 +1,7 @@
 import type { Locale } from "./locale";
 
 const english = {
+  "Từ nhu cầu đến cơ hội": "From a need to an opportunity",
 "Tạo app dùng ngay cho việc bạn cần, chỉ bằng một câu mô tả. Không cần biết code.": "Create an app for the task at hand with a simple prompt. No coding needed.",
 "Bình chọn, quiz, bốc thăm hay ghi chép chi tiêu. Dùng ngay cho một buổi, một việc, rồi chia sẻ bằng đường link.": "Polls, quizzes, draws or expense notes. Use it for a moment or a task, then share it with a link.",
 "App hữu ích cho bạn, biết đâu cũng hữu ích cho người khác.": "Useful to you? It could be useful to someone else, too.",

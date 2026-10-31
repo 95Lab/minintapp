@@ -22,14 +22,14 @@
 .reply { padding: 16px 24px 24px; border-top: 1px solid #e3e2d9; margin-top: auto; display: grid; gap: 8px; }
 .reply label, .lifetime { font-size: 12px; font-weight: 600; }
 .reply textarea { resize: vertical; width: 100%; min-height: 70px; box-sizing: border-box; padding: 12px; font: inherit; font-size: 13px; border-radius: 10px; border: 1px solid #d6d9ce; background: #fff; color: inherit; }
-.reply button { justify-self: end; background: #263921; color: white; padding: 9px 16px; border: 0; border-radius: 9px; font-size: 13px; }
+.reply button { justify-self: end; background: #b94e30; color: white; padding: 9px 16px; border: 0; border-radius: 9px; font-size: 13px; }
 .summary { border-left: 1px solid #e3e2d9; padding: 24px; background: #f0f2e8; min-width: 0; }
 .summary h3 { font-size: 18px; margin: 12px 0; line-height: 1.4; }
 .brief { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; font-size: 14px; }
 .hint { font-size: 12px; line-height: 1.6; color: #687060; }
 .lifetime { display: grid; gap: 8px; margin: 24px 0 16px; }
 .lifetime select { width: 100%; background: #fff; border: 1px solid #cbd3bc; padding: 10px; border-radius: 9px; color: inherit; font: inherit; }
-.confirm { width: 100%; border: 0; border-radius: 10px; background: #263921; color: white; padding: 13px; line-height: 1.5; font-size: 13px !important; }
+.confirm { width: 100%; border: 0; border-radius: 10px; background: #b94e30; color: white; padding: 13px; line-height: 1.5; font-size: 13px !important; }
 .error { margin: 0; padding: 16px 28px; background: #fff1e9; color: #8a351a; font-size: 13px; }
 @media (max-width: 650px) { .dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 18px; } .header { padding: 20px 18px 8px; } .description { padding: 0 18px 16px; } .header h2 { font-size: 21px; } .body { grid-template-columns: minmax(0, 1fr); } .summary { border-left: 0; border-top: 1px solid #e3e2d9; padding: 20px; } .transcript { height: 30dvh; padding: 18px; } .reply { padding: 14px 18px; } .reply textarea, .lifetime select { font-size: 16px; } .suggestions { padding: 0 18px 12px; } .suggestions button { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .transcript { scroll-behavior: auto; } }
