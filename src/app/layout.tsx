@@ -9,5 +9,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
-  return <html lang={locale}><body><LocaleProvider initialLocale={locale}>{children}</LocaleProvider></body></html>;
+  let platformOrigin = "";
+  if (process.env.PLATFORM_ROLE === "runtime" && process.env.APP_ORIGIN && process.env.RUNTIME_APP_ID) {
+    const origin = new URL(process.env.APP_ORIGIN);
+    const prefix = `${process.env.RUNTIME_APP_ID}.`;
+    if (origin.hostname.startsWith(prefix)) { origin.hostname = origin.hostname.slice(prefix.length); platformOrigin = origin.origin; }
+  }
+  return <html lang={locale}><body><LocaleProvider initialLocale={locale} platformOrigin={platformOrigin}>{children}</LocaleProvider></body></html>;
 }

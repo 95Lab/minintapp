@@ -2,8 +2,8 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { LOCALE_COOKIE, type Locale } from "./locale";
-const LocaleContext = createContext<{ locale: Locale; setLocale: (locale: Locale) => void } | null>(null);
-export function LocaleProvider({ initialLocale, children }: { initialLocale: Locale; children: ReactNode }) {
+const LocaleContext = createContext<{ locale: Locale; setLocale: (locale: Locale) => void; platformOrigin: string } | null>(null);
+export function LocaleProvider({ initialLocale, children, platformOrigin = "" }: { initialLocale: Locale; children: ReactNode; platformOrigin?: string }) {
   const [locale, updateLocale] = useState(initialLocale);
   const router = useRouter();
   function setLocale(next: Locale) {
@@ -13,7 +13,7 @@ export function LocaleProvider({ initialLocale, children }: { initialLocale: Loc
     document.documentElement.lang = next;
     router.refresh();
   }
-  return <LocaleContext.Provider value={{ locale, setLocale }}>{children}</LocaleContext.Provider>;
+  return <LocaleContext.Provider value={{ locale, setLocale, platformOrigin }}>{children}</LocaleContext.Provider>;
 }
 export function useLocale() {
   const context = useContext(LocaleContext);
