@@ -14,5 +14,5 @@ export function CreatePollButton({ templateId = "poll-drinks", label = "Tạo b�
       if (!result.ok) { setError(result.message); setBusy(false); return; }
       router.push(`/a/${result.id}/host`);
     } catch (error) { setError(error instanceof ApiClientError ? error.message : "Không thể tạo ứng dụng. Vui lòng thử lại."); setBusy(false); }
-  }}>{busy ? "Đang tạo…" : label}</button>{error && <p role="alert">{error}</p>}</div>;
+  }}>{busy ? "Đang tạo…" : label}<span className="template-arrow" aria-hidden="true">↗</span></button>{error && <p role="alert">{error}</p>}</div>;
 }
