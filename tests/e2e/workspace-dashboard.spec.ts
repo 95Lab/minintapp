@@ -7,13 +7,14 @@ test.beforeEach(async ({page}) => {
 test("workspace dashboard filters deployment data and fits mobile", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route("**/api/my-apps", (route) => route.fulfill({ json: { apps: [
-    { id: "a".repeat(24), state: "RUNNING", hostname: "team.minintapp.io.vn", created_at: "2026-10-30T00:00:00Z", expires_at: "2026-11-06T00:00:00Z" },
-    { id: "b".repeat(24), state: "SUSPENDED", hostname: "quiz.minintapp.io.vn", created_at: "2026-10-30T00:00:00Z", expires_at: "2026-11-06T00:00:00Z" },
+    { id: "a".repeat(24), state: "RUNNING", title: "Bình chọn workshop", hostname: "team.minintapp.io.vn", created_at: "2026-10-30T00:00:00Z", expires_at: "2026-11-06T00:00:00Z" },
+    { id: "b".repeat(24), state: "SUSPENDED", title: "Quiz nhóm", hostname: "quiz.minintapp.io.vn", created_at: "2026-10-30T00:00:00Z", expires_at: "2026-11-06T00:00:00Z" },
   ] } }));
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "Ứng dụng của tôi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bình chọn workshop" })).toBeVisible();
   await expect(page.getByRole("article")).toHaveCount(2);
-  await page.getByRole("searchbox").fill("team");
+  await page.getByRole("searchbox").fill("workshop");
   await expect(page.getByRole("article")).toHaveCount(1);
   await expect(page.getByRole("region", { name: "Tổng quan ứng dụng" })).toContainText("02");
   await page.getByRole("searchbox").fill("");

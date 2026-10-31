@@ -33,3 +33,5 @@
 .error { margin: 0; padding: 16px 28px; background: #fff1e9; color: #8a351a; font-size: 13px; }
 @media (max-width: 650px) { .dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 18px; } .header { padding: 20px 18px 8px; } .description { padding: 0 18px 16px; } .header h2 { font-size: 21px; } .body { grid-template-columns: minmax(0, 1fr); } .summary { border-left: 0; border-top: 1px solid #e3e2d9; padding: 20px; } .transcript { height: 30dvh; padding: 18px; } .reply { padding: 14px 18px; } .reply textarea, .lifetime select { font-size: 16px; } .suggestions { padding: 0 18px 12px; } .suggestions button { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .transcript { scroll-behavior: auto; } }
+
+.defaults { margin: 0 24px 20px; padding: 10px 14px; border: 1px solid #cbd3bc; border-radius: 10px; background: #fff; color: #263921; font-size: 13px !important; }

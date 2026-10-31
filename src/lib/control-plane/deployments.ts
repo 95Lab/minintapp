@@ -1,4 +1,5 @@
 import "server-only";
+import { OWNER_APP_LIMIT } from "@/lib/api/creation-availability";
 import { readSession } from "@/engine/auth/host-session";
 import { randomBytes, createHash, createHmac } from "node:crypto";
 import { AppError } from "@/lib/api/app-error-codes";
@@ -37,7 +38,7 @@ export async function submitDeployment(input: Deployment["input"], ownerId: stri
     const count = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE state NOT IN ('EXPIRED','DELETED','FAILED')");
     if (Number(count.rows[0].count) >= Number(process.env.MAX_ACTIVE_APPS || 100)) throw new AppError("app_capacity_full");
     const owned = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE owner_id=$1 AND state NOT IN ('EXPIRED','DELETED','FAILED')", [ownerId]);
-    if (Number(owned.rows[0].count) >= 2) throw new AppError("owner_app_limit");
+    if (Number(owned.rows[0].count) >= OWNER_APP_LIMIT) throw new AppError("owner_app_limit");
     await client.query(`INSERT INTO deployments(id,owner_id,state,input,host_token_hash,hostname,image,expires_at,request_key)
       VALUES($1,$2,'QUEUED',$3,$4,$5,$6,$7,$8)`, [id, ownerId, input, hashToken(hostToken), `${id}.${domain}`, image, new Date(Date.now() + lifetimeMs), options?.requestKey ?? null]);
     await client.query("COMMIT");

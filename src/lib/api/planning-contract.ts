@@ -10,6 +10,8 @@ export const PlanningMessageSchema = z.strictObject({
 });
 export const PlanningRequestSchema = z.strictObject({
   locale: z.enum(["vi", "en"]),
+  lifetime: z.enum(["1h", "24h", "7d"]).optional(),
+  useDefaults: z.boolean().optional(),
   messages: z.array(PlanningMessageSchema).min(1).max(PLANNING_MAX_MESSAGES),
   currentBrief: z.string().trim().min(1).max(500).nullable(),
 }).superRefine((value, ctx) => {

@@ -14,6 +14,7 @@ import { responsesForVersion } from "@/engine/responses/responses-cache";
 import { findAppCached } from "@/engine/db/app-record-cache";
 import {hostTokenFrom} from "@/lib/host/host-session";
 import { readSession } from "@/engine/auth/host-session";
+import { runtimePublicUrl } from "@/lib/runtime-plane/public-url";
 
 export const HOST_TOKEN_HEADER = "x-host-token";
 export const HOST_SESSION_HEADER = "x-host-session";
@@ -72,7 +73,8 @@ export function buildAppState(app: AppRecord, responses: ResponseRecord[], req: 
   const results = computeResults(app, responses, { isHost, participantHash }, prefetched);
   const hasSettleView = (r: (typeof results)[number]) => r?.type === "compose" && r.views.some((v) => v.kind === "settle");
   return {
-    ...(process.env.PLATFORM_ROLE === "control" && process.env.APPS_DOMAIN ? { shareUrl: `https://${app.id}.${process.env.APPS_DOMAIN}/rooms/${app.id}` } : {}),
+    ...(runtimePublicUrl(app.id) ? { shareUrl: runtimePublicUrl(app.id) } : {}),
+    ...(app.movedTo && runtimePublicUrl(app.movedTo) ? { movedToUrl: runtimePublicUrl(app.movedTo) } : {}),
     id: app.id,
     status: app.status,
     movedTo: app.movedTo,

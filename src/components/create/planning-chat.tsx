@@ -1,15 +1,18 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ApiClientError, requestJson } from "@/lib/api/api-client";
 import { planningContext, PlanningReplySchema, PlanningRequestSchema, type PlanningMessage, type PlanningReply } from "@/lib/api/planning-contract";
 import type { GenerateRequest, Lifetime } from "@/lib/api/api-contract-types";
 import styles from "./planning-chat.module.css";
 
-export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate }: {
+export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate, initialLifetime = "1h", onLifetimeChange }: {
   open: boolean;
   initialPrompt: string;
   locale: "vi" | "en";
   onClose: () => void;
+  initialLifetime?: Lifetime;
+  onLifetimeChange?: (lifetime: Lifetime) => void;
   onGenerate: (request: GenerateRequest) => Promise<void>;
 }) {
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
@@ -23,16 +26,18 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate 
   const [pending, setPending] = useState("");
   const [plan, setPlan] = useState<PlanningReply | null>(null);
   const [brief, setBrief] = useState<string | null>(null);
-  const [lifetime, setLifetime] = useState<Lifetime>("1h");
+  const [lifetime, setLifetime] = useState<Lifetime>(initialLifetime);
+  useEffect(() => { setLifetime(initialLifetime); }, [initialLifetime]);
   const [thinking, setThinking] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const [quotaError, setQuotaError] = useState(false);
   const busy = thinking || generating;
 
-  async function send(content: string) {
+  async function send(content: string, useDefaults = false) {
     if (inFlight.current || !content.trim()) return;
     const next: PlanningMessage[] = [...messages, { role: "user", content: content.trim() }];
-    const input = PlanningRequestSchema.safeParse({ messages: planningContext(next), currentBrief: brief, locale });
+    const input = PlanningRequestSchema.safeParse({ messages: planningContext(next), currentBrief: brief, locale, lifetime, useDefaults });
     if (!input.success) {
       setPlan(null);
       setError(text("Tin nhắn chưa hợp lệ. Hãy nhập từ 1 đến 1.200 ký tự rồi gửi lại.", "Invalid message. Enter 1–1,200 characters and try again."));
@@ -44,7 +49,7 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate 
     setThinking(true);
     setPending(content.trim());
     setPlan(null);
-    setError("");
+    setError(""); setQuotaError(false);
     try {
       const result = PlanningReplySchema.parse(await requestJson<unknown>("/api/engine/plan", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input.data), signal: abort.signal,
@@ -55,7 +60,7 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate 
       setBrief(result.brief);
       setDraft("");
     } catch (error) {
-      if (!abort.signal.aborted) setError(error instanceof ApiClientError ? error.message : text("Chưa nhận được phản hồi. Bạn có thể gửi lại.", "Could not get a reply. You can send again."));
+      if (!abort.signal.aborted) { setQuotaError(error instanceof ApiClientError && error.code === "owner_app_limit"); setError(error instanceof ApiClientError ? error.message : text("Chưa nhận được phản hồi. Bạn có thể gửi lại.", "Could not get a reply. You can send again.")); }
     } finally {
       if (controller.current === abort) {
         setThinking(false);
@@ -101,24 +106,27 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate 
           <textarea id="planning-reply" rows={2} maxLength={1200} value={draft} disabled={busy} onChange={e => setDraft(e.target.value)} placeholder={text("Ví dụ: Cho phép chọn nhiều đáp án, ẩn kết quả đến khi tôi chốt…", "For example: allow multiple choices, hide results until I close voting…")} />
           <button type="submit" disabled={busy || !draft.trim()}>{thinking ? text("Đang trao đổi…", "Thinking…") : text("Gửi tin nhắn", "Send message")}</button>
         </form>
+        <button type="button" className={styles.defaults} disabled={busy || plan?.status === "unsupported"} onClick={() => void send(
+          [draft.trim(), text("Dùng mặc định hợp lý cho các tùy chọn còn lại và chốt bản yêu cầu. Không hỏi thêm tùy chọn phụ.", "Use sensible defaults for remaining options and finalize the brief. Do not ask about optional details.")].filter(Boolean).join("\n"), true
+        )}>{text("Dùng mặc định và chốt yêu cầu", "Use defaults and finalize brief")}</button>
       </section>
       <aside className={styles.summary} aria-label={text("Bản yêu cầu", "App brief")}>
         <p className={styles.eyebrow}>{text("APP CỦA BẠN", "YOUR APP")}</p>
         <h3>{plan?.status === "ready" ? text("Sẵn sàng để bạn chốt", "Ready for your review") : text("Đang làm rõ ý tưởng", "Shaping the idea")}</h3>
         {brief ? <p className={styles.brief}>{brief}</p> : <p className={styles.hint}>{text("Bản yêu cầu sẽ được cập nhật tại đây sau khi trao đổi.", "Your app brief will appear here as we work out the details.")}</p>}
-        <label className={styles.lifetime}>{text("Thời gian sử dụng", "App lifetime")}<select value={lifetime} onChange={e => setLifetime(e.target.value as Lifetime)} disabled={busy}><option value="1h">{text("1 giờ", "1 hour")}</option><option value="24h">{text("24 giờ", "24 hours")}</option><option value="7d">{text("7 ngày", "7 days")}</option></select></label>
+        <label className={styles.lifetime}>{text("Thời gian sử dụng", "App lifetime")}<select value={lifetime} onChange={e => { const value = e.target.value as Lifetime; setLifetime(value); onLifetimeChange?.(value); }} disabled={busy}><option value="1h">{text("1 giờ", "1 hour")}</option><option value="24h">{text("24 giờ", "24 hours")}</option><option value="7d">{text("7 ngày", "7 days")}</option></select></label>
         {draft.trim() && plan?.status === "ready" && <p className={styles.hint}>{text("Gửi nội dung đang nhập để cập nhật bản yêu cầu trước khi chốt.", "Send your pending message to update the brief before confirming.")}</p>}
         <button type="button" className={styles.confirm} disabled={busy || plan?.status !== "ready" || !brief || !!draft.trim()} onClick={async () => {
           if (inFlight.current || !brief || plan?.status !== "ready" || draft.trim()) return;
           inFlight.current = true;
-          setGenerating(true); setError("");
+          setGenerating(true); setError(""); setQuotaError(false);
           try { await onGenerate({ prompt: brief, lifetime }); }
-          catch (error) { setError(error instanceof ApiClientError ? error.message : text("Không thể tạo ứng dụng. Vui lòng thử lại.", "Could not create the app. Please try again.")); }
+          catch (error) { setQuotaError(error instanceof ApiClientError && error.code === "owner_app_limit"); setError(error instanceof ApiClientError ? error.message : text("Không thể tạo ứng dụng. Vui lòng thử lại.", "Could not create the app. Please try again.")); }
           finally { setGenerating(false); inFlight.current = false; }
         }}>{generating ? text("Đang tạo ứng dụng…", "Creating app…") : text("Chốt yêu cầu và tạo app", "Confirm brief and create app")}</button>
-        <p className={styles.hint}>{text("Chỉ bản yêu cầu đã chốt được gửi sang bước tạo app.", "Only the confirmed brief is sent to app generation.")}</p>
+        <p className={styles.hint}>{text("Bản yêu cầu và thời gian đã chọn được gửi sang bước tạo app. Thời hạn luôn theo ô Thời gian sử dụng.", "The brief and selected lifetime are sent to generation. The lifetime selector determines expiry.")}</p>
       </aside>
     </div>
-    {error && <p className={styles.error} role="alert">{error}</p>}
+    {error && <p className={styles.error} role="alert">{error}{quotaError && <> <Link href="/dashboard">{text("Mở Ứng dụng của tôi", "Open My apps")}</Link></>}</p>}
   </dialog>;
 }

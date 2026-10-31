@@ -46,8 +46,16 @@ Supabase lưu snapshot bằng RPC compare-and-swap, chỉ service role đọc/gh
 
 ## Deployment metadata
 
-Contract build/deploy độc lập với trạng thái nghiệp vụ của app ở `src/lib/deployments/`; repository ở `src/lib/db/deployments-repository-types.ts`, chọn memory/Supabase qua `deploymentsRepository()`. Type suy ra từ Zod, có version lock, idempotency và lịch sử lỗi. Migration `202610310003_deployments.sql` chỉ cấp service role. Đây mới là metadata; chưa provision sandbox/DNS hoặc tự nối vào generation. Xem [contract deployment và job](deployments.md).
+Contract build/deploy độc lập với trạng thái nghiệp vụ của app ở `src/lib/deployments/`; repository ở `src/lib/db/deployments-repository-types.ts`, chọn memory/Supabase qua `deploymentsRepository()`. Type suy ra từ Zod, có version lock, idempotency và lịch sử lỗi. Migration `202610310003_deployments.sql` chỉ cấp service role. Đây là contract prototype cũ; platform đang hoạt động dùng `platform/contracts.ts`, `platform/store.ts` và `src/lib/control-plane/` để nối generation với worker, sandbox và DNS. Xem [contract deployment và job](deployments.md).
 
 ## Template runtime bình chọn
 
 `poll-v1` có contract projection tại `src/lib/blocks/poll-runtime-schema.ts`, request/response tại `src/lib/api/poll-runtime-contract.ts`, converter từ AppSpec chuẩn hóa + deployment tại `src/lib/deployments/poll-runtime-manifest.ts`. Không dùng AppRecord làm cấu hình public. Runtime và SQLite repository độc lập ở `runtime/poll/`; không gọi database của dashboard. Converter từ chối capability chưa hỗ trợ thay vì bỏ qua. Xem [poll runtime](poll-runtime.md) để build, chạy, giới hạn và kế hoạch nối Cloudflare.
+
+## Creation UX contract
+
+`GET /api/creation-availability` trả `{ used, limit }`, không cache và không trả danh sách app hay thông tin chủ sở hữu. Control Plane đếm đúng owner đang tạo (tài khoản nếu đăng nhập, tenant cookie nếu chưa đăng nhập), cùng các trạng thái chiếm chỗ với transaction tạo app; `limit: null` ở chế độ không quản lý deployment. Preflight chỉ hướng dẫn UX, transaction tạo vẫn kiểm tra lại để chống race. API planning cũng chặn trước khi gọi worker nếu owner đã hết chỗ. Hạn mức toàn hệ thống/theo giờ vẫn được kiểm tra ở bước tạo.
+
+Dashboard nhận thêm `title` nullable/optional trong summary, lấy từ spec hiện tại hoặc spec đầu vào và chỉ fallback sang hostname khi chưa có tên. Projection không trả toàn bộ seed/input hoặc host token hash. Client cũ và app chưa tạo xong vẫn được hỗ trợ.
+
+Planning request bổ sung `lifetime` và `useDefaults` optional để giữ tương thích. Trang chủ và thư viện mẫu dùng chung chat xác nhận; nút dùng mặc định yêu cầu AI chốt các chi tiết phụ, không tự tạo app. Thời hạn nằm ở bộ chọn, được gửi riêng cho planning và generation; planner được yêu cầu không nhúng thời hạn vào brief. Đây là hướng dẫn model, không phải bằng chứng mọi phản hồi model thật luôn tuân thủ. Kết quả AI vẫn cần người dùng xem và xác nhận. Tạm dừng vẫn chiếm chỗ; “Kết thúc và xóa” dùng thao tác delete hiện có và chỉ giải phóng sau cleanup.

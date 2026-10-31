@@ -86,6 +86,8 @@ export type LifecycleRequest =
 // ---- GET /api/engine/apps/[id]/state ----
 export interface AppStateResponse {
   shareUrl?: string;
+  /** Public destination on the child runtime; contains no host credentials. */
+  movedToUrl?: string;
   sync?:import("@/lib/api/api-contract-types").AppSync;
   id: string;
   status: AppStatus;

@@ -1,6 +1,8 @@
 "use client";
 // Ready-made templates: one tap creates the app instantly (no AI call) and opens the host view,
 // where it can be remixed in words.
+import { CreationAvailabilityNotice, useCreationAvailability } from "@/components/create/creation-availability";
+import { creationBlocked } from "@/lib/api/creation-availability";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Lifetime } from "@/engine/api/api-contract-types";
@@ -26,6 +28,7 @@ const KIND_LABEL: Record<VocabularyType, { vi: string; en: string }> = {
 
 export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifetime: Lifetime }) {
   const s = t(locale);
+  const availability = useCreationAvailability();
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +37,7 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
     if (busyId) return;
     setBusyId(templateId);
     setError(null);
+    if (!await availability.refresh()) { setBusyId(null); return; }
     const res = await createFromTemplate({ templateId, locale, lifetime });
     if (res.ok) {
       setHostToken(res.id, res.hostToken);
@@ -50,16 +54,17 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
         <h2 id="templates-title" style={{ fontSize: 20 }}>{s.templatesTitle}</h2>
         <p className="muted" style={{ margin: "4px 0 0" }}>{s.templatesHint}</p>
       </div>
+      <CreationAvailabilityNotice {...availability} locale={locale} />
       <div className="template-grid">
         {APP_TEMPLATES.map((tpl) => (
-          <button key={tpl.id} type="button" className="card template-card" data-app-theme={tpl.spec[locale].theme} onClick={() => open(tpl.id)} disabled={!!busyId}>
+          <button key={tpl.id} type="button" className="card template-card" data-app-theme={tpl.spec[locale].theme} onClick={() => open(tpl.id)} disabled={!!busyId || !!availability.availability && creationBlocked(availability.availability)}>
             <span className="template-kind">{KIND_LABEL[tpl.kind as VocabularyType]?.[locale] ?? tpl.kind}</span>
             <strong>{tpl.title[locale]}</strong>
             <span className="muted" style={{ fontSize: 14 }}>{busyId === tpl.id ? s.usingTemplate : tpl.blurb[locale]}</span>
           </button>
         ))}
       </div>
-      {error && <div className="notice warn" role="alert">{error}</div>}
+      {error && <div className="notice warn" role="alert">{error} <a href="/dashboard">{locale === "vi" ? "Mở Ứng dụng của tôi" : "Open My apps"}</a></div>}
     </section>
   );
 }

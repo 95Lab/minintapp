@@ -1,15 +1,15 @@
 "use client";
-// Describe step: prompt box, hero example chips, lifetime picker, streamed generation progress.
-// On success the host token is stored and the host lands on the projector view.
-import { useState } from "react";
+// Templates and the homepage share the same brief review before generation.
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Lifetime } from "@/engine/api/api-contract-types";
-import { generateApp } from "@/engine/api/api-client";
-import { setHostToken } from "@/engine/host/host-token-store";
 import { HERO_PROMPTS, t, type UiLocale } from "@/engine/i18n/ui-strings-vi-en";
 import { BoltIcon } from "@/engine-ui/brand-top-bar";
-import { GenerationProgress, type GenStage } from "./generation-progress";
-import { errorText } from "@/engine/api/app-error-codes";
+import { PlanningChat } from "@/components/create/planning-chat";
+import { CreationAvailabilityNotice, useCreationAvailability, requireCreationAvailability } from "@/components/create/creation-availability";
+import { creationBlocked } from "@/lib/api/creation-availability";
+import { ApiClientError, requestJson, awaitProvisioned } from "@/lib/api/api-client";
+import type { GenerateRequest, GenerateResponse } from "@/lib/api/api-contract-types";
 
 const MAX = 500;
 
@@ -27,33 +27,30 @@ export function PromptComposer({
   const s = t(locale);
   const router = useRouter();
   const [prompt, setPrompt] = useState(initialPrompt);
-  const [stage, setStage] = useState<GenStage>("idle");
-  const [problem, setProblem] = useState<{ tone: "warn" | "danger"; message: string; suggestion: string | null } | null>(null);
-  const busy = stage !== "idle";
+  const availability = useCreationAvailability();
+  const [busy, setBusy] = useState(false);
+  const [idea, setIdea] = useState("");
+  const [open, setOpen] = useState(false);
+  const launchButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (!open && idea) launchButton.current?.focus(); }, [open, idea]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!prompt.trim() || busy) return;
-    setProblem(null);
-    setStage("thinking");
-    let finished = false;
-    await generateApp({ prompt: prompt.trim(), lifetime }, (ev) => {
-      if (ev.stage === "thinking" || ev.stage === "validating") setStage(ev.stage);
-      else if (ev.stage === "done") {
-        finished = true;
-        setStage("done");
-        setHostToken(ev.id, ev.hostToken);
-        void fetch("/api/engine/host-token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:ev.id,token:ev.hostToken})}).then(r=>{if(r.ok)router.push(`/rooms/${ev.id}/host`);});
-      } else if ("message" in ev) {
-        finished = true;
-        setStage("idle");
-        const tone = ev.stage === "refused" ? "danger" : "warn";
-        const fallback = ev.stage === "refused" ? "generate_refused" : ev.stage === "unsupported" ? "generate_unsupported" : "generate_failed";
-        const message = errorText(ev.code ?? fallback, locale, "params" in ev ? ev.params : undefined);
-        setProblem({ tone, message, suggestion: "suggestion" in ev ? ev.suggestion : null });
-      }
-    }).catch(() => setProblem({ tone: "warn", message: s.offline, suggestion: null }));
-    if (!finished) setStage("idle");
+    setBusy(true);
+    const allowed = await availability.refresh();
+    setBusy(false);
+    if (allowed) { setIdea(prompt.trim()); setOpen(true); }
+  }
+  async function generate(input: GenerateRequest) {
+    await requireCreationAvailability(locale);
+    await requestJson("/api/session", { method: "POST" });
+    const result = await awaitProvisioned(await requestJson<GenerateResponse>("/api/engine/generate", {
+      method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(input),
+    }, 310_000));
+    if (!result.ok) throw new ApiClientError(400, result.message);
+    if (!/^[a-f0-9]{24}$/.test(result.id)) throw new Error("Invalid app ID");
+    router.push(`/rooms/${result.id}/host`);
   }
 
   const lifetimes: Array<[Lifetime, string]> = [
@@ -63,6 +60,8 @@ export function PromptComposer({
   ];
 
   return (
+    <>
+    <CreationAvailabilityNotice {...availability} locale={locale} />
     <form className="card composer" onSubmit={submit}>
       <div className="field">
         <label htmlFor="prompt">{s.composerLabel}</label>
@@ -101,18 +100,14 @@ export function PromptComposer({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span className="muted num" style={{ fontSize: 13 }}>{s.charCount(prompt.length, MAX)}</span>
-          <button className="btn btn-bolt btn-lg" type="submit" disabled={busy || !prompt.trim()}>
-            <BoltIcon /> {busy ? s.creating : s.create}
+          <button ref={launchButton} className="btn btn-bolt btn-lg" type="submit" disabled={busy || !prompt.trim() || !!availability.availability && creationBlocked(availability.availability)}>
+            <BoltIcon /> {locale === "vi" ? "Trao đổi ý tưởng" : "Discuss your idea"}
           </button>
         </div>
       </div>
-      {busy && <GenerationProgress stage={stage} locale={locale} />}
-      {problem && (
-        <div className={`notice ${problem.tone}`} role="alert">
-          <strong>{problem.message}</strong>
-          {problem.suggestion && <div style={{ marginTop: 4 }}>{problem.suggestion}</div>}
-        </div>
-      )}
+      <p className="muted">{locale === "vi" ? "Chat cùng AI để làm rõ ý tưởng. Chốt yêu cầu rồi mới tạo app." : "Chat with AI to shape your idea. Confirm the brief before creating."}</p>
     </form>
+    {idea && <PlanningChat key={idea} open={open} initialPrompt={idea} initialLifetime={lifetime} onLifetimeChange={setLifetime} locale={locale} onClose={() => setOpen(false)} onGenerate={generate} />}
+    </>
   );
 }

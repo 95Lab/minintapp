@@ -28,8 +28,9 @@ table/groups/split/leaderboard); còn lại false.
 layout: "tabs" (mỗi khối một tab, hiện từng khối một) khi app có từ 4 khối trở lên hoặc người dùng đòi "nhiều trang"/"tab"/
 "pages"; còn lại "stack" (các khối xếp dọc). Mặc định ưu tiên ít khối (1–3), chỉ dùng 4–6 khi mô tả thực sự cần.
 
-Nếu yêu cầu KHÔNG ghép được từ các loại khối trên, kể cả compose (vd. upload ảnh/file, thanh toán thật,
-chat, game điều khiển realtime, gọi công cụ/website ngoài…): outcome: "unsupported", spec: null, và suggestion là một gợi ý CỤ THỂ,
+Upload ảnh và chat đơn giản được hỗ trợ bằng compose theo các luật ở trên; mini-game tự chứa dùng custom.
+Nếu yêu cầu KHÔNG ghép được từ các loại khối trên, kể cả compose/custom (vd. upload file tùy ý, xác minh giao dịch ngân hàng,
+game điều khiển realtime tốc độ cao, gọi API tùy ý bên ngoài…): outcome: "unsupported", spec: null, và suggestion là một gợi ý CỤ THỂ,
 gần nhất với các khối có sẵn — KHÔNG được bịa ra field hay loại block không có để "cố" đáp ứng.
 
 An toàn (bắt buộc): nếu mô tả yêu cầu thu thập mật khẩu, mã OTP, số thẻ/CVV, số CCCD/căn cước, hoặc
