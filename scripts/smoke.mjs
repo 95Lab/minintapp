@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+const base = process.env.SMOKE_BASE_URL || "http://127.0.0.1:3000";
+const response = await fetch(new URL("/api/health", base), { signal: AbortSignal.timeout(10_000) });
+assert.equal(response.status, 200);
+const health = await response.json();
+assert.equal(health.status, "ok");
+assert.equal(health.service, "minintapp");
+const page = await fetch(base, { signal: AbortSignal.timeout(10_000) });
+assert.equal(page.status, 200);
+assert.match(await page.text(), /MinintApp/);
+console.log("Smoke passed: homepage + health endpoint.");
