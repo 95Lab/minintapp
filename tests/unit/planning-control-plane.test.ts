@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
-vi.mock("../../platform/store", () => ({ pool: { query } }));
+vi.mock("../../platform/store", () => ({ pool: { query }, countOwnedDeployments: vi.fn(async () => 0) }));
 vi.mock("@/engine/security/check-rate-limit", () => ({ checkRateLimit: vi.fn(async () => ({ ok: true })) }));
 import { POST } from "@/app/api/engine/plan/route";
 const reply = { status: "clarify", message: "Mấy câu hỏi?", suggestions: [], brief: null };

@@ -10,3 +10,49 @@ for (const [code, status] of [["owner_app_limit", 409], ["app_capacity_full", 50
     await expect(page.locator(".template-grid").getByRole("button").first()).toBeEnabled();
   });
 }
+
+test("full quota blocks AI before planning and recovers after freeing a slot", async ({ page }) => {
+  let used = 2;
+  let plans = 0;
+  await page.route("**/api/creation-availability", route => route.fulfill({ json: { used, limit: 2 } }));
+  await page.route("**/api/engine/plan", route => { plans++; return route.fulfill({ json: { status: "ready", message: "Sẵn sàng", suggestions: [], brief: "Bình chọn trà hoặc cà phê" } }); });
+  await page.goto("/");
+  await page.getByLabel("Bạn cần mini-app gì?").fill("Bình chọn trà hoặc cà phê");
+  await expect(page.getByText("Đang dùng 2/2 chỗ ứng dụng.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Trao đổi ý tưởng" })).toBeDisabled();
+  await expect(page.getByRole("link", { name: "Mở Ứng dụng của tôi" })).toHaveAttribute("href", "/dashboard");
+  expect(plans).toBe(0);
+  used = 1;
+  await page.getByRole("button", { name: "Kiểm tra lại hạn mức" }).click();
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  await expect(page.getByRole("heading", { name: "Sẵn sàng để bạn chốt" })).toBeVisible();
+  expect(plans).toBe(1);
+});
+
+test("an unavailable quota check preserves the idea and can be retried", async ({ page }) => {
+  await page.route("**/api/creation-availability", route => route.fulfill({ status: 503, json: { message: "Unavailable" } }));
+  await page.goto("/");
+  await page.getByLabel("Bạn cần mini-app gì?").fill("Ý tưởng cần giữ");
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByLabel("Bạn cần mini-app gì?")).toHaveValue("Ý tưởng cần giữ");
+  await expect(page.getByRole("button", { name: "Kiểm tra lại hạn mức" })).toBeVisible();
+});
+
+test("quota changes during planning preserve the brief and offer a management link", async ({ page }) => {
+  let used = 1;
+  let creates = 0;
+  await page.route("**/api/creation-availability", route => route.fulfill({ json: { used, limit: 2 } }));
+  await page.route("**/api/engine/plan", route => route.fulfill({ json: { status: "ready", message: "Sẵn sàng", suggestions: [], brief: "Bình chọn trà hoặc cà phê" } }));
+  await page.route("**/api/engine/generate", route => { creates++; return route.fulfill({ status: 503, json: {} }); });
+  await page.goto("/");
+  await page.getByLabel("Bạn cần mini-app gì?").fill("Bình chọn trà hoặc cà phê");
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  const chat = page.getByRole("dialog");
+  await expect(chat.getByRole("button", { name: "Chốt yêu cầu và tạo app", exact: true })).toBeEnabled();
+  used = 2;
+  await chat.getByRole("button", { name: "Chốt yêu cầu và tạo app", exact: true }).click();
+  await expect(chat.getByRole("link", { name: "Mở Ứng dụng của tôi" })).toHaveAttribute("href", "/dashboard");
+  await expect(chat.getByRole("complementary")).toContainText("Bình chọn trà hoặc cà phê");
+  expect(creates).toBe(0);
+});

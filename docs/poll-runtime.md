@@ -1,5 +1,7 @@
 # Template bình chọn độc lập: poll-v1
 
+> Tài liệu này mô tả prototype cũ, không phải flow triển khai đang dùng. Platform hiện triển khai toàn bộ engine qua image runtime chung, mỗi app có container và database PostgreSQL riêng. Xem [flow app độc lập](independent-app-flow.md) và [kiến trúc runtime](architecture-runtime.md).
+
 Một Node process và một SQLite volume riêng cho một deployment. Runtime không gọi API dashboard, OpenAI, Supabase hoặc Cloudflare. Đây là template cố định; chưa chạy code tùy ý do AI sinh.
 
 ## Đã có

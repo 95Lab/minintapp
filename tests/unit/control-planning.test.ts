@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
-const { query, limit } = vi.hoisted(() => ({ query:vi.fn(),limit:vi.fn() }));
-vi.mock("../../platform/store",()=>({pool:{query}}));
+const { query, limit, countOwnedDeployments } = vi.hoisted(() => ({ query:vi.fn(),limit:vi.fn(), countOwnedDeployments: vi.fn() }));
+vi.mock("../../platform/store",()=>({pool:{query}, countOwnedDeployments}));
 vi.mock("@/engine/security/check-rate-limit",()=>({checkRateLimit:limit}));
 import { POST } from "@/app/api/engine/plan/route";
 const input={locale:"vi",messages:[{role:"user",content:"Tạo app học sinh"}],currentBrief:null};
@@ -9,6 +9,7 @@ const request=(body:unknown=input)=>new Request("http://local/api/engine/plan",{
 const image=`ghcr.io/95lab/minintapp@sha256:${"1".repeat(64)}`;
 beforeEach(()=>{
  for(const [key,value] of Object.entries({PLATFORM_ROLE:"control",APP_ORIGIN:"http://local",APP_STORAGE:"memory",DATABASE_URL:"postgresql://fixture@localhost/test",REDIS_URL:"redis://localhost",WORKER_TOKEN:"fixture-private-worker-token",WORKER_AGENT_URLS:" http://worker:19090 ",RUNTIME_IMAGE:image,APPS_DOMAIN:"apps.example.test",OPENAI_API_KEY:"",GENERATION_MAX_PER_HOUR:"1000",GENERATION_MAX_CONCURRENT:"2"}))vi.stubEnv(key,value);
+ countOwnedDeployments.mockResolvedValue(0);
  query.mockResolvedValue({rows:[{agent_url:"http://untrusted:19090"},{agent_url:"http://worker:19090"}]});limit.mockResolvedValue({ok:true});
 });
 afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();vi.clearAllMocks();});
@@ -36,4 +37,13 @@ it("checks input and public rate limits before contacting the worker",async()=>{
  const fetcher=vi.fn();vi.stubGlobal("fetch",fetcher);
  expect((await POST(request({...input,messages:[]}))).status).toBe(400);
  limit.mockResolvedValue({ok:false});expect((await POST(request())).status).toBe(429);expect(fetcher).not.toHaveBeenCalled();
+});
+
+it("blocks planning at the owner limit before paying for a worker request", async () => {
+ countOwnedDeployments.mockResolvedValue(2);
+ const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+ const response = await POST(request());
+ expect(response.status).toBe(409);
+ expect((await response.json()).code).toBe("owner_app_limit");
+ expect(fetcher).not.toHaveBeenCalled();
 });

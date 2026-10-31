@@ -36,7 +36,7 @@ describe("planning route and actual SDK parser (mocked HTTP)", () => {
     expect(limit).toHaveBeenCalledWith("plan", expect.any(String));
   });
   it("includes previous answers and the current brief when asking the next question", async () => {
-    const value = { ...input(), currentBrief: "Bình chọn trà", messages: [{ role: "user", content: "Bình chọn đồ uống" }, { role: "assistant", content: "Chọn một hay nhiều?" }, { role: "user", content: "Nhiều, ẩn kết quả đến khi chốt" }] };
+    const value = { ...input(), lifetime: "24h", useDefaults: true, currentBrief: "Bình chọn trà", messages: [{ role: "user", content: "Bình chọn đồ uống" }, { role: "assistant", content: "Chọn một hay nhiều?" }, { role: "user", content: "Nhiều, ẩn kết quả đến khi chốt" }] };
     fetchMock.mockResolvedValue(response({ status: "clarify", message: "Các đồ uống gồm những gì?", suggestions: ["Trà và cà phê"], brief: "Chọn nhiều đồ uống, ẩn kết quả." }));
     expect((await POST(request(value))).status).toBe(200);
     expect(JSON.parse(JSON.parse(fetchMock.mock.calls[0][1].body).input)).toEqual(value);

@@ -69,3 +69,15 @@ export async function reserveWorker(id: string): Promise<string> {
   } catch (error) { await client.query("ROLLBACK"); throw error; }
   finally { client.release(); }
 }
+
+// Public dashboard projection: never return seed, input or host credentials.
+export async function ownedDeploymentSummaries(ownerIds: string[]) {
+  const result = await pool.query(`SELECT id,state,hostname,created_at,expires_at,
+    COALESCE(seed->'spec'->>'title',input->'spec'->>'title') AS title
+    FROM deployments WHERE owner_id=ANY($1::text[]) ORDER BY created_at DESC LIMIT 100`, [ownerIds]);
+  return result.rows;
+}
+export async function countOwnedDeployments(ownerId: string): Promise<number> {
+  const result = await pool.query<{ count: string }>("SELECT count(*) FROM deployments WHERE owner_id=$1 AND state NOT IN ('EXPIRED','DELETED','FAILED')", [ownerId]);
+  return Number(result.rows[0].count);
+}

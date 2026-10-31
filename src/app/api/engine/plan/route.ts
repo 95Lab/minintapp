@@ -1,3 +1,5 @@
+import { creationAvailability } from "@/lib/control-plane/creation-availability";
+import { creationBlocked } from "@/lib/api/creation-availability";
 import { PlanningRequestSchema } from "@/lib/api/planning-contract";
 import { parseBody } from "@/lib/api/request-schemas";
 import { AppError } from "@/lib/api/app-error-codes";
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
     locale = input.locale;
     const config = readRuntimeConfig();
     const managed = config.PLATFORM_ROLE === "control";
+    if (managed && creationBlocked(await creationAvailability(request))) throw new AppError("owner_app_limit");
     if (!managed && !config.OPENAI_API_KEY) throw new AppError("ai_not_configured");
     if (!(await checkRateLimit("plan", clientIpHash(request))).ok) throw new AppError("rate_limited");
     release = generationBudget.acquire(config.GENERATION_MAX_PER_HOUR, config.GENERATION_MAX_CONCURRENT);

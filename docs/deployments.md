@@ -1,5 +1,7 @@
 # Contract deployment và job
 
+> Tài liệu này mô tả prototype cũ, không phải flow triển khai đang dùng. Platform hiện triển khai toàn bộ engine qua image runtime chung, mỗi app có container và database PostgreSQL riêng. Xem [flow app độc lập](independent-app-flow.md) và [kiến trúc runtime](architecture-runtime.md).
+
 Metadata cho Control Plane, tách khỏi `AppRecord.status` (`active/closed/ended/blocked`). Đóng nhận câu trả lời không đồng nghĩa dừng container. Một app có thể có lịch sử nhiều deployment; mỗi deployment gắn một snapshot spec và một phiên bản template bất biến.
 
 ## Phạm vi đã triển khai

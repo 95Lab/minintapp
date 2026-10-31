@@ -129,3 +129,37 @@ test("long planning conversations continue within API limits without losing the 
   await expect(chat.getByText(original, { exact: true })).toBeVisible();
   await expect(chat.getByText("Điều chỉnh 14", { exact: true })).toBeVisible();
 });
+
+test("templates use the same planning flow and send selected lifetime with defaults", async ({ page }) => {
+  const requests: unknown[] = [];
+  let generated: unknown;
+  await page.route("**/api/engine/plan", route => {
+    requests.push(route.request().postDataJSON());
+    return route.fulfill({ json: requests.length === 1
+      ? { status: "clarify", message: "Bạn muốn bổ sung gì?", suggestions: [], brief: "Bình chọn đồ uống" }
+      : { status: "ready", message: "Chốt yêu cầu và tạo app", suggestions: [], brief: "Bình chọn trà và cà phê, dùng mặc định" } });
+  });
+  await page.route("**/api/engine/generate", route => {
+    generated = route.request().postDataJSON();
+    return route.fulfill({ status: 503, json: { message: "Thử lại sau" } });
+  });
+  await page.goto("/templates");
+  await page.getByRole("button", { name: "24 giờ", exact: true }).click();
+  await page.getByLabel("Bạn cần app gì?", { exact: true }).fill("Bình chọn trà và cà phê");
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  const chat = page.getByRole("dialog");
+  await expect(chat.getByText("Bạn muốn bổ sung gì?")).toBeVisible();
+  await chat.getByRole("button", { name: "Dùng mặc định và chốt yêu cầu" }).click();
+  await expect(chat.getByRole("button", { name: "Chốt yêu cầu và tạo app", exact: true })).toBeEnabled();
+  expect(requests.at(-1)).toMatchObject({ lifetime: "24h", useDefaults: true });
+  await chat.getByLabel("Thời gian sử dụng").selectOption("7d");
+  await chat.getByRole("button", { name: "Đóng cửa sổ chat" }).click();
+  await expect(page.getByRole("button", { name: "7 ngày", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "24 giờ", exact: true }).click();
+  await page.getByRole("button", { name: "Trao đổi ý tưởng" }).click();
+  await expect(chat.getByLabel("Thời gian sử dụng")).toHaveValue("24h");
+  await chat.getByLabel("Thời gian sử dụng").selectOption("7d");
+  await chat.getByRole("button", { name: "Chốt yêu cầu và tạo app", exact: true }).click();
+  await expect(chat.getByRole("alert")).toContainText("Thử lại sau");
+  expect(generated).toEqual({ prompt: "Bình chọn trà và cà phê, dùng mặc định", lifetime: "7d" });
+});
