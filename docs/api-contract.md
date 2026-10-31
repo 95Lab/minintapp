@@ -84,7 +84,7 @@ State bổ sung `sync`: `{mode:"memory"}` hoặc `{mode:"supabase",url,publicKey
 | `GET /api/engine/apps/:id/photos/:photoId?s=…` | Đọc ảnh bằng chữ ký |
 | `POST /api/engine/apps/:id/report` | Báo cáo một lần/người, đếm mạng riêng biệt |
 | `POST /api/engine/auth/magic-link` | Gửi email đăng nhập |
-| `POST /api/engine/auth/session` | Xác minh Supabase access token và đặt session cookie |
+| `POST /api/engine/auth/session` | Đổi `{code, flowId?}` với PKCE cookie HttpOnly, đặt session cookie; không nhận access token trực tiếp |
 | `GET /api/engine/account` | Đọc tài khoản và phòng sở hữu |
 | `POST /api/engine/account/claim` | Nhận quyền phòng bằng token/cookie host hợp lệ |
 
