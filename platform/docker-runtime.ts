@@ -14,7 +14,11 @@ const label = "io.minintapp.app";
 const name = (id: string) => `minintapp-${AppId.parse(id)}`;
 async function inspect(kind: "container" | "network" | "volume", id: string) {
   try { return JSON.parse(await run("docker", [kind, "inspect", id]))[0]; }
-  catch { return null; }
+  catch (error) {
+    const message = (error as { stderr?: string }).stderr || "";
+    if (/no such (container|network|volume|object)|(?:network|volume|container) .+ not found/i.test(message)) return null;
+    throw new Error("Docker inspection unavailable");
+  }
 }
 function range(subnet: string) {
   const [address, bits = "32"] = subnet.split("/");
@@ -42,9 +46,9 @@ async function freeSubnet() {
 }
 async function freePort(id: string) {
   const ids = (await run("docker", ["ps", "-aq"])).split(/\s+/).filter(Boolean);
-  const containers = ids.length ? JSON.parse(await run("docker", ["container", "inspect", ...ids])) : [];
-  const reserved = new Set<number>(containers.flatMap((container: { HostConfig: { PortBindings?: Record<string, { HostPort: string }[]> } }) =>
-    Object.values(container.HostConfig.PortBindings || {}).flatMap((ports) => (ports || []).map((port) => Number(port.HostPort)))));
+  const bindings = ids.length ? (await run("docker", ["container", "inspect", "--format", "{{json .HostConfig.PortBindings}}", ...ids])).split("\n").map((line) => JSON.parse(line)) : [];
+  const reserved = new Set<number>(bindings.flatMap((ports: Record<string, { HostPort: string }[]> | null) =>
+    Object.values(ports || {}).flatMap((values) => (values || []).map((port) => Number(port.HostPort)))));
   const sockets = await run("ss", ["-H", "-lnt"]);
   for (const line of sockets.split("\n")) {
     const endpoint = line.trim().split(/\s+/)[3];

@@ -1,6 +1,23 @@
 # Included beside existing platform vhost. Configure a valid wildcard origin certificate first.
 # Never replace existing nginx.conf or the platform's exact hostname vhost.
 server {
+    listen 80;
+    server_name "~^[a-f0-9]{24}\.minintapp\.io\.vn$";
+    return 308 https://$host$request_uri;
+}
+server {
+    listen 80;
+    server_name ingress.minintapp.io.vn;
+    return 404;
+}
+server {
+    listen 443 ssl;
+    server_name ingress.minintapp.io.vn;
+    ssl_certificate /etc/letsencrypt/live/minintapp-wildcard/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/minintapp-wildcard/privkey.pem;
+    return 404;
+}
+server {
     listen 443 ssl;
     server_name "~^[a-f0-9]{24}\.minintapp\.io\.vn$";
     ssl_certificate /etc/letsencrypt/live/minintapp-wildcard/fullchain.pem;
