@@ -1,5 +1,6 @@
 import "./worker-credentials";
 import { createServer } from "node:http";
+import { runtimeHealth as health } from "./runtime-health";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { Queue, Worker, UnrecoverableError } from "bullmq";
 import { putArtifact, removeArtifacts, ensureArtifactBucket } from "./artifacts";
@@ -35,11 +36,6 @@ await ensureArtifactBucket();
 await pool.query(`INSERT INTO workers(id,agent_url,capacity,gateway_url,available_images) VALUES($1,$2,$3,$4,$5)
   ON CONFLICT(id) DO UPDATE SET agent_url=excluded.agent_url,capacity=excluded.capacity,gateway_url=excluded.gateway_url,available_images=excluded.available_images,heartbeat_at=now()`, [workerId, agentURL.origin, capacity, process.env.WORKER_GATEWAY_URL || null, await cachedImages()]);
 
-async function health(url: string, id: string, headers?: Record<string, string>) {
-  const response = await fetch(url, { headers, signal: AbortSignal.timeout(3000) });
-  const body = await response.json();
-  if (!response.ok || body.service !== "minintapp" || body.appId !== id) throw new Error("Runtime health check failed");
-}
 async function cleanup(id: string, destroyData = false) {
   const record = await deployment(id);
   if (!record || record.worker_id !== workerId) throw new Error("Worker ownership mismatch");
@@ -52,6 +48,7 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
   let app = await deployment(job.data.id);
   if (!app || app.worker_id !== workerId) throw new Error("Worker ownership mismatch");
   if (app.expires_at.getTime() <= Date.now()) { await cleanup(app.id); await updateState(app.id, "EXPIRED"); return; }
+  let phase = "generation";
   try {
     if (!app.seed) {
       await updateState(app.id, "GENERATING");
@@ -64,24 +61,32 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
       await pool.query("INSERT INTO artifacts(app_id,version,spec_digest,image) VALUES($1,1,$2,$3) ON CONFLICT DO NOTHING", [app.id, digest, app.image]);
       app = (await deployment(app.id))!;
     }
+    phase = "artifact";
     await putArtifact(RuntimeSeedSchema.parse(app.seed), app.image);
     await updateState(app.id, "DEPLOYING");
+    phase = "provision";
     const port = await provision(app);
     await pool.query("UPDATE deployments SET port=$2 WHERE id=$1", [app.id, port]);
+    phase = "runtime-health";
     let ready = false;
     for (let attempt = 0; attempt < 40; attempt++) {
       try { await health(`http://127.0.0.1:${port}/api/health`, app.id); ready = true; break; } catch { await new Promise((resolve) => setTimeout(resolve, 1000)); }
     }
     if (!ready) throw new Error("Runtime startup timeout");
+    phase = "gateway-route";
     await publishRoute(app.id, app.hostname, port);
     if (process.env.INGRESS_HOSTNAME !== "ingress.minintapp.io.vn" || app.hostname !== `${app.id}.minintapp.io.vn`) throw new Error("DNS outside approved demo scope");
+    phase = "dns";
     const dnsId = await dns.ensure(app.hostname, app.id);
     await pool.query("UPDATE deployments SET dns_record_id=$2 WHERE id=$1", [app.id, dnsId]);
     await new Promise((resolve) => setTimeout(resolve, 2500));
+    phase = "gateway-health";
     await health(`${process.env.LOCAL_GATEWAY_URL || "http://127.0.0.1:18081"}/api/health`, app.id, { Host: app.hostname });
+    phase = "public-health";
     await health(`https://${app.hostname}/api/health`, app.id);
     await updateState(app.id, "RUNNING");
   } catch (error) {
+    console.error(JSON.stringify({ event: "deployment_phase_failed", id: app.id, phase }));
     const permanent = error instanceof AppError && ["ai_refused", "ai_invalid_output", "invalid_request", "ai_not_configured"].includes(error.code);
     if (permanent || job.attemptsMade + 1 >= (job.opts.attempts || 1)) {
       try { await cleanup(app.id); }
