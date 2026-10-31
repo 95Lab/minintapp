@@ -29,7 +29,11 @@ it("exchanges a code, clears pending state, creates a host-only session, and sig
  const value=cookies.match(/__Host-minint_session=[^; ,]+/)![0];
  const req=new Request("https://app.example.test/api/engine/auth/session",{headers:{cookie:value}});
  expect(await(await GET(req)).json()).toMatchObject({user:{email:"test@example.test"},accountsEnabled:true});
- expect((await DELETE(new Request(req,{method:"DELETE"}))).headers.get("set-cookie")).toContain("Max-Age=0");
+ const signedOut=await DELETE(new Request(req,{method:"DELETE"}));
+ expect(signedOut.headers.get("set-cookie")).toContain("Max-Age=0");
+ expect(signedOut.headers.get("set-cookie")).toContain("__Host-minint_pkce=");
+ expect(signedOut.headers.get("set-cookie")).toContain("__Host-minint_session=");
+ expect(signedOut.headers.get("cache-control")).toBe("no-store");
  expect(readPkce(request({},cookie))).toEqual({verifier:"x"});
 });
 it("reports delivery failures without logging provider details or claiming email was sent",async()=>{

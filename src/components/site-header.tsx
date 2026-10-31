@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { BrandLogo } from "./brand-logo";
 import { LanguageSwitcher, useLocale } from "@/lib/i18n/locale-provider";
-import { fetchSession, signOut } from "@/engine/auth/account-client";
+import { fetchSession } from "@/engine/auth/account-client";
 import type { SessionResponse } from "@/engine/api/api-contract-types";
+import { SignOutButton } from "./account/sign-out-button";
 import styles from "./site-header.module.css";
 
 export function SiteHeader({ home = false, children }: { home?: boolean; children?: ReactNode }) {
@@ -35,7 +36,7 @@ export function SiteHeader({ home = false, children }: { home?: boolean; childre
       <Link onClick={close} className={styles.create} href={home ? "#create" : destination("/#create")}>{text("Tạo ứng dụng","Create an app")} <span aria-hidden="true">↗</span></Link>
     </nav>
     <div className={styles.account}>
-      {session?.user ? <details ref={accountMenu} className={styles.accountMenu}><summary>{text("Tài khoản","Account")} <span aria-hidden="true">⌄</span></summary><div><p>{session.user.email}</p><Link href={destination("/my-apps")}>{text("App của tôi","My apps")}</Link><button onClick={async()=>{const result=await signOut();if(result.ok)window.location.assign("/");}}>{text("Đăng xuất","Sign out")}</button></div></details>
+      {session?.user ? <><details ref={accountMenu} className={styles.accountMenu}><summary>{text("Tài khoản","Account")} <span aria-hidden="true">⌄</span></summary><div><p>{session.user.email}</p><Link href={destination("/my-apps")}>{text("App của tôi","My apps")}</Link></div></details><SignOutButton className={styles.login} /></>
         : <Link className={styles.login} href={destination("/login")}>{text("Đăng nhập","Sign in")}</Link>}
     </div>
     <button ref={toggle} type="button" className={styles.toggle} aria-expanded={open} aria-controls={navigationId} aria-label={text(open?"Đóng menu":"Mở menu",open?"Close menu":"Open menu")} onClick={()=>setOpen(!open)}><span aria-hidden="true">{open ? "×" : "☰"}</span></button>

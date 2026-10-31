@@ -9,3 +9,6 @@
 @media(max-width:360px){.logo{font-size:16px}.mark{width:28px;height:28px}.account .login,.accountMenu summary{padding:10px 8px}}
 
 .header{flex-wrap:wrap}.context{flex-basis:100%;padding-top:12px;border-top:1px solid var(--line)}
+
+.account{display:flex;align-items:flex-start;gap:8px}.account>.accountMenu{flex-shrink:0}@media(max-width:800px){.account>.accountMenu{display:none}}
+@media(max-width:1100px){.account>.accountMenu{display:none}}

@@ -45,7 +45,8 @@ async function handlePOST(req: Request) {
 }
 
 async function handleDELETE(_req:Request) {
-  const res = NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+  res.cookies.set(pkceCookieName(_req), "", { httpOnly: true, secure: secureHostCookie(_req), sameSite: "lax", path: "/", maxAge: 0 });
   res.cookies.set(sessionCookieName(_req), "", { httpOnly: true, secure: secureHostCookie(_req), sameSite: "lax", path: "/", maxAge: 0 });
   return res;
 }

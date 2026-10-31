@@ -25,3 +25,5 @@ Có rate limit cho gửi link/đổi code. Lỗi gửi email trả lỗi chung, 
 Unit test kiểm tra PKCE cookie, expiry/tampering, session/logout, cấu hình auth-only và SDK challenge/verifier với HTTP giả. E2E kiểm tra form, callback và claim. Kiểm tra live dùng project thật, không đưa token vào output; tài khoản test tạm được xóa. Việc gửi email thật chỉ thực hiện tới địa chỉ được chủ hệ thống chỉ định.
 
 Tham khảo: [Supabase PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow), [passwordless email](https://supabase.com/docs/guides/auth/auth-email-passwordless).
+
+Nút **Đăng xuất** hiện trực tiếp trên header khi đã đăng nhập, gồm cả mobile. Nút có trạng thái đang xử lý, cho phép thử lại khi lỗi; server xóa cả session và cookie PKCE đang chờ. Đăng xuất không xóa dữ liệu ứng dụng.

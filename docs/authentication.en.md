@@ -25,3 +25,5 @@ Link requests and code exchanges are rate limited. Delivery errors return a gene
 Unit tests cover PKCE cookies, expiry/tampering, sessions/logout, auth-only configuration, and actual SDK challenge/verifier behavior with mocked transport. E2E covers the form, callback, and claiming. Live checks use the real project without printing tokens; temporary identities are deleted. Real email is sent only to the address designated by the owner.
 
 References: [Supabase PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow), [passwordless email](https://supabase.com/docs/guides/auth/auth-email-passwordless).
+
+**Sign out** is directly visible in the signed-in header, including mobile. It shows progress and allows retry on failure; the server clears both the session and pending PKCE cookie. Signing out does not delete app data.
