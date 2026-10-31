@@ -9,40 +9,44 @@
 
 ## Problem
 
-Consider a workshop where attendees need to vote on the next topic before the session can continue. Using chat messages means the host must count responses and announce the result manually, interrupting the activity.
+During a workshop, the host needs a live vote before continuing. A small business needs a registration tool for tomorrow's event. Both need a working, shareable tool quickly, but configuring forms, collecting responses, and presenting results takes time. A custom app adds coding and hosting work.
 
-A form can collect votes, but the host still needs to configure options, share access, and present results. If the next activity is a quiz or signup, another setup is needed. A custom app adds coding and hosting work for something used only briefly.
-
-For workshop hosts, student organizers, and small teams, this setup effort takes time away from the activity itself. They need a shared tool that is quick to create, easy to join on a phone, and simple to close when the task ends.
+When a useful tool could serve other groups, its creator also needs a way to distribute it. Each group needs its own data and the ability to adapt the app.
 
 ## Solution
 
-MinintApp is designed to let anyone describe a task in Vietnamese or English and get a shareable mini-app, without coding or server setup.
+MinintApp is designed as one platform to create, run, share, and optionally sell AI-generated **Flash Apps** through natural-language requests.
 
-Example: “Create a voting app for today's workshop, with five candidates and live results.”
+**Describe → Preview → Edit → Publish → Use and share**
 
-**Describe → Generate → Share → Use → Close**
+Users test and refine an app through conversation, then publish it with its own HTTPS subdomain and data. They can keep, improve, stop, or expire it.
 
-Participants join through a link or QR code. The host views shared results and closes the app when the activity ends. Future extensions include remixing an app and automatic expiry.
+Creators can separately list a released version on a marketplace. Others can create a private copy with empty data. App rights and hosting costs are disclosed separately; paid transactions and creator payouts are later phases.
 
 ## Build direction
 
-MinintApp fits [AI-Native Products & Operations](https://codexhackathon.sea.com/): AI turns a user's request into the app's inputs, interactions, and result views.
+MinintApp fits [AI-Native Products & Operations](https://codexhackathon.sea.com/): AI creates and modifies the application itself, while the platform manages its execution, data, and distribution.
 
 ## MVP and technology
 
-The target MVP is one complete voting flow: generate an app, share it, collect votes, show live results, and close voting.
+The target demo is a workshop voting app: preview and edit it, publish and share its URL/QR, then let another user create an independent copy from a free marketplace listing.
 
-- **Foundation:** Next.js, React, and TypeScript.
-- **Planned AI layer:** Convert prompts into a validated application specification, rendered with supported UI blocks.
-- **Planned data layer:** Supabase Postgres and Realtime, with server-side access and voting rules.
+The proposed architecture separates platform management from app execution:
+
+- **Control Plane:** Next.js dashboard, Node.js/TypeScript API, PostgreSQL metadata, and Redis/BullMQ jobs. A Codex-powered builder generates and validates code from a template.
+- **Runtime Plane:** One VM hosting multiple Docker/gVisor sandboxes for the demo. Each app has a dedicated SQLite data volume.
+- **Publishing:** Cloudflare provisions subdomains; Traefik routes requests to the correct sandbox. An app is marked running only after its public route passes verification.
+
+Builds run separately from published apps. Copies receive no creator production data or secrets. Multi-VM recovery and real payments are later phases.
 
 ## How we use Codex
 
-Codex assists with project setup and documentation. For the remaining build, we plan to use it for app specifications, APIs, UI, and tests through small, clearly defined tasks. Team members review changes and run relevant checks.
+Codex assists with implementation, tests, and documentation through small tasks with clear acceptance criteria. Team members review changes and run relevant checks. Using Codex inside the platform's AI Builder is a planned integration, separate from its use as our development assistant.
 
 ## Current status
 
-The repository contains the application scaffold, landing page, health endpoint, development scripts, test definitions, and CI configuration. Generation, voting, QR sharing, and realtime features remain to be implemented.
+The current build supports template-based voting, host/participant pages, QR sharing, polling updates, and close/reopen/end controls. Data is held in memory and is lost on restart. An OpenAI generation adapter exists but is not connected to the app-creation flow.
 
-This is a draft. Final feature results and the demo link will be added before converting the write-up to PDF.
+VPS deployment configuration is prepared; live deployment is not yet confirmed. The sandbox architecture, conversational builder, subdomain provisioning, and marketplace remain planned.
+
+*Draft: update delivered features, verified results, and the demo link before PDF export.*
