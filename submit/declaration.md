@@ -1,13 +1,13 @@
-# MinintApp — Declaration
+MinintApp — Features Built During the Hackathon
 
-**Team:** 95LAB — Hiếu Nd, Thức Nguyễn, Mai Phan  
-**Event:** Sea x OpenAI Codex Hackathon — Vietnam, 31 October 2026  
-**Repository:** <https://github.com/95Lab/minintapp>
+Team: Team 35 - 95LAB
+Website: https://minintapp.io.vn/
 
-- **Original work:** We are building MinintApp from scratch for this hackathon. No pre-built application or existing personal project's code is reused.
-- **Open-source tools:** Next.js, React, TypeScript, Zod, OpenAI SDK, QRCode, Vitest, and Playwright, plus supporting dependencies listed in the repository. Deployment configuration uses Docker and Caddy. These tools are not claimed as original work.
-- **Codex:** Assists implementation, tests, and documentation. The team reviews its output. Integration into the platform's AI Builder is planned.
-- **Work built for this submission:** Application setup, template-based voting, host/participant UI, QR sharing, polling, lifecycle controls, an OpenAI generation adapter, test definitions, and deployment configuration.
-- **Current limits:** Voting uses temporary memory storage. AI generation is not connected to app creation. Per-app sandboxes, subdomains, and marketplace flows are proposed features; live deployment is not yet confirmed.
-
-*Draft: update the delivered scope and confirm the hackathon build period before final submission.*
+MinintApp — "Small apps. Right when you need them." — helps users quickly create a small app for an immediate need, such as a poll, quiz, lucky draw, survey, or expense tracker; share a link so the whole group can participate; and end the app when it is no longer needed. The main features our team implemented are:
+- Create an app from a description with AI: Users describe what they need in Vietnamese or English (forms, surveys, quizzes, expenses, team grouping, mini games, and more), discuss the idea with AI, and confirm the requirements before creating the app.
+- Seven ready-to-use templates: Poll, quiz, participant lucky draw, choice wheel, multi-field survey, step-by-step survey, and expense tracker. Users create an app directly without calling AI.
+- Share a link, invite everyone: After creating an app, the host gets a link or QR code from the management page. Participants can join on a phone or computer without creating an account.
+- Join in and see the results: The app records answers, votes, and other input, then aggregates and updates results for the group according to each app's display settings.
+- Manage the activity: Hosts can close, reopen, or end an app from the management page. Quizzes and lucky draws have dedicated controls, such as revealing answers or selecting a winner.
+- Manage apps and their lifetimes: Users choose 1 hour, 24 hours, or 7 days when creating an app with AI. "My apps" shows counts of running apps, apps being deployed, and apps needing attention; supports searching by ID or domain and filtering by status; and provides extension, CSV export, and app-ending actions.
+- Vietnamese/English interface and mobile support: Users can switch languages directly in the interface. Data is stored persistently and synchronized across devices.
