@@ -1,9 +1,10 @@
 "use client";
-// Ready-made templates: one tap creates the app instantly (no AI call) and opens the host view,
+// Ready-made templates create without AI, then wait for deployment before opening the host view,
 // where it can be remixed in words.
 import { CreationAvailabilityNotice, useCreationAvailability } from "@/components/create/creation-availability";
 import { creationBlocked } from "@/lib/api/creation-availability";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import styles from "./template-gallery.module.css";
 import { useRouter } from "next/navigation";
 import type { Lifetime } from "@/engine/api/api-contract-types";
 import { createFromTemplate } from "@/engine/api/api-client";
@@ -36,26 +37,33 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
   const availability = useCreationAvailability();
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   async function open(templateId: string) {
-    if (busyId) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusyId(templateId);
     setError(null);
-    if (!await availability.refresh()) {
-      // The availability notice sits above the grid, so a click far down the list needs its own message.
-      setError(locale === "vi" ? "Chưa thể tạo ứng dụng lúc này. Xem hạn mức ở đầu danh sách." : "Can't create an app right now. See the limit above the list.");
-      setBusyId(null);
-      return;
-    }
-    const res = await createFromTemplate({ templateId, locale, lifetime });
-    if (res.ok) {
+    let navigating = false;
+    try {
+      if (!await availability.refresh()) {
+        setError(locale === "vi" ? "Chưa thể tạo app. Kiểm tra lại hạn mức ở đầu danh sách." : "Cannot create the app yet. Check your app limit above the list.");
+        return;
+      }
+      const res = await createFromTemplate({ templateId, locale, lifetime });
+      if (!res.ok) {
+        setError(errorText(res.code, locale, res.params));
+        return;
+      }
       setHostToken(res.id, res.hostToken);
       router.push(`/rooms/${res.id}/host`);
-      return;
+      navigating = true;
+    } catch {
+      setError(errorText("network", locale));
+    } finally {
+      if (!navigating) { setBusyId(null); inFlight.current = false; }
     }
-    setError(errorText(res.code, locale, res.params));
-    setBusyId(null);
   }
 
   return (
@@ -80,8 +88,16 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
         ))}
       </div>
       {visible.length===0&&<p className="catalog-empty">{locale==="vi"?"Không có mẫu phù hợp. Thử từ khóa khác hoặc chọn tất cả loại mẫu.":"No matching templates. Try another search or select all pricing types."}</p>}
-      {/* Sticky: the list is thousands of pixels tall and this renders after it. */}
-      {error && <div className="notice warn" role="alert" style={{ position: "sticky", bottom: 16, zIndex: 2, boxShadow: "0 8px 24px #0002" }}>{error} <a href="/dashboard">{locale === "vi" ? "Mở Ứng dụng của tôi" : "Open My apps"}</a></div>}
+      {busyId && <div className={styles.feedback} role="status" aria-live="polite">
+        <strong>{locale === "vi" ? "Đang tạo ứng dụng" : "Creating your app"}: {APP_TEMPLATES.find(tpl => tpl.id === busyId)?.title[locale]}</strong>
+        <p>{locale === "vi" ? "Đang chuẩn bị ứng dụng. Bước này có thể mất vài phút; trang sẽ tự mở khi sẵn sàng." : "Preparing your app. This may take a few minutes; it will open automatically when ready."}</p>
+      </div>}
+      {error && <div className={styles.feedback} role="alert">
+        <strong>{locale === "vi" ? "Chưa mở được ứng dụng" : "Could not open the app"}</strong>
+        <p>{error}</p>
+        <a href="/dashboard">{locale === "vi" ? "Mở Ứng dụng của tôi" : "Open My apps"}</a>
+        <button type="button" onClick={() => setError(null)}>{locale === "vi" ? "Đóng thông báo" : "Dismiss"}</button>
+      </div>}
     </section>
   );
 }

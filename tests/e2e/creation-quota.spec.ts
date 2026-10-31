@@ -57,11 +57,17 @@ test("quota changes during planning preserve the brief and offer a management li
   expect(creates).toBe(0);
 });
 
-test("a failed template click shows its reason on screen, not below the long list", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.route("**/api/creation-availability", route => route.fulfill({ json: { used: 0, limit: 50 } }));
-  await page.route("**/api/engine/apps/from-template", route => route.fulfill({ status: 503, json: { ok: false, code: "app_capacity_full" } }));
-  await page.goto("/templates");
-  await page.locator("button.template-card").first().click();
-  await expect(page.getByRole("alert").filter({ hasText: "hết chỗ" })).toBeInViewport();
-});
+for (const width of [320, 1280]) {
+  test(`template errors stay in view when selecting the last card at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.route("**/api/engine/apps/from-template", route => route.fulfill({ status: 503, json: { ok: false, code: "app_capacity_full" } }));
+    await page.goto("/templates");
+    await page.locator(".template-grid > button").last().click();
+    const alert = page.getByRole("alert").filter({ hasText: "Chưa mở được ứng dụng" });
+    await expect(alert).toContainText(errorText("app_capacity_full", "vi"));
+    await expect(alert).toBeInViewport();
+    await expect(page.locator(".template-grid > button").last()).toBeEnabled();
+    await alert.getByRole("button", { name: "Đóng thông báo" }).click();
+    await expect(alert).toHaveCount(0);
+  });
+}

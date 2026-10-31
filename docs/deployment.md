@@ -6,9 +6,11 @@ Khi bật Control Plane và sandbox riêng, xem [Kiến trúc runtime](architect
 
 ## Luồng triển khai
 
-Push vào `main` → typecheck/unit/build/E2E → build và smoke image trên GitHub → publish GHCR theo digest → SSH bằng user `minintapp-deploy` → pull image → health check nội bộ và HTTPS → lưu phiên bản hoặc rollback.
+Push vào `main` (hoặc chạy thủ công trên `main`) → job `deploy` build image trên GitHub → publish GHCR theo digest → SSH bằng user `minintapp-deploy` → pull image → health check nội bộ và HTTPS → lưu phiên bản hoặc rollback.
 
 Không cần self-hosted runner. Build không chạy trên VM. Mặc định `APP_STORAGE=memory`: deploy/restart/rollback làm mất app và vote. Để lưu bền, cấu hình `APP_STORAGE=supabase` và các key trong `deploy/.env.app`, áp dụng migration theo [Supabase](supabase.md); không cần thay đổi image build. Chưa có AI key thì tạo app bằng template; không giả lập AI thật.
+
+Workflow chỉ chạy job `deploy` khi `DEPLOY_ENABLED=true`; không chạy unit test, E2E, platform test hoặc smoke test trên CI. Health check và rollback khi triển khai vẫn được giữ.
 
 ## Cách ly trên server
 
