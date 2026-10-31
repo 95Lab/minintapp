@@ -43,3 +43,7 @@ Tham khảo [Structured Outputs — OpenAI Docs](https://developers.openai.com/a
 Các bài kiểm tra dùng provider mock, có chạy SDK parser thật với HTTP response giả lập và route tạo app; chưa gọi OpenAI thật hoặc xác nhận quota/model trên tài khoản. System prompt có hướng dẫn an toàn nhưng chưa thay thế moderation hay kiểm tra phishing. Đã có giới hạn generation theo giờ/concurrency của một process và kiểm tra plain text/URL/HTML, nhưng chưa có moderation, đánh giá đúng ý định hoặc rate limit theo IP/tài khoản. Xem `generation.md` để cấu hình và biết giới hạn.
 
 Supabase lưu snapshot bằng RPC compare-and-swap, chỉ service role đọc/ghi bảng; Realtime chỉ broadcast version rồi client tải state theo quyền. Xem [Supabase](supabase.md).
+
+## Deployment metadata
+
+Contract build/deploy độc lập với trạng thái nghiệp vụ của app ở `src/lib/deployments/`; repository ở `src/lib/db/deployments-repository-types.ts`, chọn memory/Supabase qua `deploymentsRepository()`. Type suy ra từ Zod, có version lock, idempotency và lịch sử lỗi. Migration `202610310003_deployments.sql` chỉ cấp service role. Đây mới là metadata; chưa provision sandbox/DNS hoặc tự nối vào generation. Xem [contract deployment và job](deployments.md).

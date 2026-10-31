@@ -41,7 +41,7 @@ export function applyDeploymentCommand(current: DeploymentRecord, raw: Deploymen
       requireState("QUEUED");
       if (r.job.attempt >= r.maxAttempts) throw new DeploymentConflict("attempts_exhausted");
       // Retries keep their reserved resources; never move an existing sandbox to another worker implicitly.
-      if (r.sandboxId && r.workerId !== command.workerId) throw new DeploymentConflict("invalid_transition");
+      if ((r.sandboxId || r.volumeId) && r.workerId !== command.workerId) throw new DeploymentConflict("invalid_transition");
       r.workerId = command.workerId; r.state = "GENERATING";
       r.job.status = "RUNNING"; r.job.attempt++; r.job.startedAt = now; r.job.finishedAt = null;
       break;

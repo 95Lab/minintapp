@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { AppError } from "@/lib/api/app-error-codes";
-import { DeploymentRecordSchema, type CreateDeployment, type DeploymentCommand } from "@/lib/deployments/deployment-schema";
+import { CreateDeploymentSchema, DeploymentRecordSchema, type CreateDeployment, type DeploymentCommand } from "@/lib/deployments/deployment-schema";
 import { applyDeploymentCommand, createDeployment, DeploymentConflict } from "@/lib/deployments/deployment-state";
 import type { DeploymentsRepository } from "./deployments-repository-types";
 import type { SupabaseRpc } from "./supabase-apps-repository";
@@ -19,7 +19,8 @@ function checked<T>(schema: z.ZodType<T>, raw: unknown): T {
 export class SupabaseDeploymentsRepository implements DeploymentsRepository {
   constructor(private readonly rpc: SupabaseRpc) {}
   async create(input: CreateDeployment) {
-    const result = checked(OutcomeSchema, await this.rpc("minint_deployment_create", { p_document: createDeployment(input, Date.now()) }, AbortSignal.timeout(8000)));
+    const intent = CreateDeploymentSchema.parse(input);
+    const result = checked(OutcomeSchema, await this.rpc("minint_deployment_create", { p_document: createDeployment(intent, Math.min(Date.now(), intent.expiresAt - 1)) }, AbortSignal.timeout(8000)));
     if (!('deployment' in result)) throw new DeploymentConflict(result.outcome);
     if (!["created", "existing"].includes(result.outcome)) throw new AppError("storage_unavailable");
     return { created: result.outcome === "created", deployment: result.deployment };

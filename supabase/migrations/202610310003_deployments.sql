@@ -11,6 +11,7 @@ create table public.minint_deployments (
   document jsonb not null,
   unique (app_id, idempotency_key),
   check (document->>'id' = id and document->>'appId' = app_id and document->>'hostname' = hostname and document->>'idempotencyKey' = idempotency_key),
+  check (floor(extract(epoch from expires_at) * 1000) = (document->>'expiresAt')::bigint),
   check ((document->>'version')::bigint = version and document->>'state' = state),
   check ((document->'job'->>'attempt')::integer between 0 and (document->>'maxAttempts')::integer),
   check ((document->>'maxAttempts')::integer between 1 and 10 and document->'job'->>'maxAttempts' = document->>'maxAttempts'),
@@ -19,7 +20,7 @@ create table public.minint_deployments (
   check (state not in ('GENERATING','BUILDING','DEPLOYING') or (document->'job'->>'status' = 'RUNNING' and document->>'workerId' is not null and document->'job'->>'startedAt' is not null and (document->'job'->>'attempt')::integer > 0)),
   check (state not in ('RUNNING','SUSPENDED') or (document->'job'->>'status' = 'SUCCEEDED' and document->>'sandboxId' is not null and document->>'volumeId' is not null and document->>'workerId' is not null and document->>'dnsRecordId' is not null)),
   check (state <> 'RUNNING' or document->>'gatewayVerifiedAt' is not null),
-  check (state not in ('DEPLOYING','RUNNING','SUSPENDED') or document->>'imageRef' ~ '^[a-z0-9]+([._-][a-z0-9]+)*(:[0-9]{1,5})?(/[a-z0-9]+([._-][a-z0-9]+)*)+@sha256:[a-f0-9]{64}$'),
+  check (state not in ('DEPLOYING','RUNNING','SUSPENDED') or coalesce(document->>'imageRef' ~ '^[a-z0-9]+([._-][a-z0-9]+)*(:[0-9]{1,5})?(/[a-z0-9]+([._-][a-z0-9]+)*)+@sha256:[a-f0-9]{64}$', false)),
   check (state <> 'FAILED' or (document->'job'->>'status' = 'FAILED' and document->>'lastError' is not null)),
   check (document->'job'->>'status' not in ('SUCCEEDED','FAILED','CANCELLED') or document->'job'->>'finishedAt' is not null),
   check ((state = 'DELETED') = (document->>'deletedAt' is not null))
@@ -99,12 +100,13 @@ begin
   if next_state = 'EXPIRED' and existing.expires_at > clock_timestamp() then raise exception 'Deployment not expired'; end if;
   if existing.expires_at <= clock_timestamp() and next_state not in ('EXPIRED','DELETED') then return jsonb_build_object('outcome','expired'); end if;
   if next_state = 'QUEUED' and (existing.document->'lastError'->>'retryable' is distinct from 'true' or (existing.document->'job'->>'attempt')::integer >= (existing.document->>'maxAttempts')::integer) then raise exception 'Retry not allowed'; end if;
+  if (existing.document->>'sandboxId' is not null or existing.document->>'volumeId' is not null) and existing.document->>'workerId' is distinct from p_document->>'workerId' then raise exception 'Reserved worker changed'; end if;
   if existing.document->>'sandboxId' is not null and (
     existing.document->>'sandboxId' is distinct from p_document->>'sandboxId' or existing.document->>'workerId' is distinct from p_document->>'workerId' or existing.document->>'imageRef' is distinct from p_document->>'imageRef'
   ) then raise exception 'Reserved sandbox changed'; end if;
   if (existing.document->>'volumeId' is not null and existing.document->>'volumeId' is distinct from p_document->>'volumeId') or
     (existing.document->>'dnsRecordId' is not null and existing.document->>'dnsRecordId' is distinct from p_document->>'dnsRecordId') then raise exception 'Reserved resource changed'; end if;
-  if (p_document->'job'->>'attempt')::integer is distinct from (existing.document->'job'->>'attempt')::integer + case when next_state = 'GENERATING' then 1 else 0 end then raise exception 'Invalid attempt counter'; end if;
+  if (p_document->'job'->>'attempt')::integer is distinct from (existing.document->'job'->>'attempt')::integer + (case when next_state = 'GENERATING' then 1 else 0 end) then raise exception 'Invalid attempt counter'; end if;
   p_document := p_document || jsonb_build_object('updatedAt',now_ms);
   update public.minint_deployments set version = p_expected_version+1,state = next_state,document = p_document where id = p_id;
   return jsonb_build_object('outcome','ok','deployment',p_document);

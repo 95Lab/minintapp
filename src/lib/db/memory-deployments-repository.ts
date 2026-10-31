@@ -1,19 +1,22 @@
 import "server-only";
 import type { DeploymentsRepository } from "./deployments-repository-types";
 import { createDeployment, applyDeploymentCommand, sameDeploymentIntent, DeploymentConflict } from "@/lib/deployments/deployment-state";
-import type { CreateDeployment, DeploymentCommand, DeploymentRecord } from "@/lib/deployments/deployment-schema";
+import { CreateDeploymentSchema, type CreateDeployment, type DeploymentCommand, type DeploymentRecord } from "@/lib/deployments/deployment-schema";
 
 export class MemoryDeploymentsRepository implements DeploymentsRepository {
   private readonly records = new Map<string, DeploymentRecord>();
   constructor(private readonly now = Date.now) {}
   async create(input: CreateDeployment) {
-    const candidate = createDeployment(input, this.now());
+    const intent = CreateDeploymentSchema.parse(input);
+    const now = this.now();
+    const candidate = createDeployment(intent, Math.min(now, intent.expiresAt - 1));
     for (const record of this.records.values()) {
       if (record.appId === candidate.appId && record.idempotencyKey === candidate.idempotencyKey) {
         if (!sameDeploymentIntent(record, candidate)) throw new DeploymentConflict("idempotency_conflict");
         return { created: false, deployment: structuredClone(record) };
       }
     }
+    if (intent.expiresAt <= now) throw new DeploymentConflict("expired");
     if ([...this.records.values()].some(r => r.hostname === candidate.hostname && r.state !== "DELETED")) throw new DeploymentConflict("hostname_conflict");
     this.records.set(candidate.id, candidate);
     return { created: true, deployment: structuredClone(candidate) };

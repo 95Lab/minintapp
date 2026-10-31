@@ -52,6 +52,10 @@ export const DeploymentRecordSchema = CreateDeploymentSchema.extend({
 }).superRefine((r, ctx) => {
   const issue = (message: string) => ctx.addIssue({ code: "custom", message });
   if (r.updatedAt < r.createdAt || r.expiresAt <= r.createdAt) issue("Invalid deployment timestamps");
+  for (const at of [r.job.startedAt, r.job.finishedAt, r.gatewayVerifiedAt, r.deletedAt]) {
+    if (at !== null && (at < r.createdAt || at > r.updatedAt)) issue("Invalid event timestamp");
+  }
+  if (r.job.startedAt !== null && r.job.finishedAt !== null && r.job.finishedAt < r.job.startedAt) issue("Job finished before start");
   if (r.job.attempt > r.maxAttempts || r.job.maxAttempts !== r.maxAttempts) issue("Invalid attempt budget");
   if (r.state === "QUEUED" && r.job.status !== "QUEUED") issue("Queued deployment requires queued job");
   if (["GENERATING", "BUILDING", "DEPLOYING"].includes(r.state) && r.job.status !== "RUNNING") issue("Active stage requires running job");
