@@ -1,6 +1,6 @@
 # Checklist chức năng
 
-Các chức năng runtime đã được port vào `src/engine/` và `src/engine-ui/`. Trang chủ giữ giao diện hiện tại. Không nhập lịch sử Git hoặc cấu hình bí mật từ dự án khác.
+Các nhóm chức năng runtime chính đã được port vào `src/engine/` và `src/engine-ui/`. Trang chủ giữ giao diện hiện tại. Không nhập lịch sử Git hoặc cấu hình bí mật từ dự án khác.
 
 | Nhóm | Phạm vi đã có |
 |---|---|
@@ -21,3 +21,7 @@ Các chức năng runtime đã được port vào `src/engine/` và `src/engine-
 Kiểm thử offline gồm domain/unit, route và Playwright. Kiểm thử project thật riêng bằng `npm run supabase:test`: ghi đồng thời, Realtime, quyền RPC, nhận quyền phòng, bucket riêng tư và xóa ảnh khi kết thúc. Không coi mock OpenAI hay mock đăng nhập là xác nhận dịch vụ thật.
 
 Các lựa chọn triển khai: chỉ OpenAI, không fallback provider/mock; giữ adapter Supabase snapshot hiện có; giữ API và link `/a/` tương thích. Luồng đầy đủ dùng `/rooms/` và `/api/engine/`. Xem `full-runtime.md` về vận hành và các kiểm tra cần dịch vụ ngoài.
+
+## Khoảng trống sau audit
+
+Đối chiếu file/code phát hiện còn thiếu bộ eval AI, load/seed/warmup, một phần kiểm thử, HTTP headers và tối ưu fanout/cache. Proxy deploy hiện giới hạn body 16KB trong khi ảnh cho phép 600KB. Xem [source-port-audit.md](source-port-audit.md) để biết bằng chứng, mức ưu tiên và các khác biệt chủ động. Không xem checklist chức năng là xác nhận copy toàn bộ source 1:1.
