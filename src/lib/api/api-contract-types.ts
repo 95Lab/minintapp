@@ -15,7 +15,7 @@ export type TemplateCreateRequest = z.output<typeof TemplateCreateRequestSchema>
 export type SubmitResponseRequest = z.output<typeof SubmitResponseRequestSchema>;
 export type BlockActionRequest = z.output<typeof BlockActionRequestSchema>;
 export type LifecycleRequest = z.output<typeof LifecycleRequestSchema>;
-// Contract for future persistence-backed routes; these routes are not implemented by the shared layer.
+// UI progress states. POST /api/generate returns a single JSON GenerateResponse.
 export type GenerateEvent = { stage: "thinking" | "validating" }
   | { stage: "done"; id: string; hostToken: string; generation?: GenerationMeta }
   | { stage: "error" | "refused" | "unsupported"; code: ErrorCode; message: string };
@@ -31,3 +31,5 @@ export interface AppStateResponse {
   results: import("@/lib/responses/compute-results").BlockResults[];
   myAnswers: Record<string, import("@/lib/blocks/block-registry").ResponsePayload>;
 }
+
+export type GenerateResponse = { ok: true; id: string; hostToken: string; generation: GenerationMeta } | ApiErrorResponse;

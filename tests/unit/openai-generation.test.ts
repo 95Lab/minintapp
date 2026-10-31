@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OpenAI from "openai";
-import { quizSpec } from "../support/app-spec-fixtures";
+import { quizSpec, composeSpec } from "../support/app-spec-fixtures";
 const { parse } = vi.hoisted(() => ({ parse: vi.fn() }));
 vi.mock("@/lib/generation/providers/openai-client", () => ({ createOpenAIClient: () => ({ responses: { parse } }) }));
 import { generateAppSpec } from "@/lib/generation/generate-app-spec";
@@ -20,6 +20,16 @@ describe("OpenAI generation boundary", () => {
     expect(body).toMatchObject({ model: "gpt-5-mini", input: "Tạo quiz", store: false, text: { format: { type: "json_schema", strict: true } } });
     expect(options.signal).toBeInstanceOf(AbortSignal);
   });
+  it("repairs unsupported output once, sharing the same deadline signal", async () => {
+    const invalid = composeSpec(); const block = invalid.blocks[0]; if (block.type !== "compose") throw Error();
+    block.inputs[0].multi = true;
+    parse.mockResolvedValueOnce({ status: "completed", output: [], output_parsed: invalid }).mockResolvedValueOnce({ status: "completed", output: [], output_parsed: composeSpec() });
+    const result = await generateAppSpec({ prompt: "Bình chọn đồ uống" });
+    expect(result.generation).toMatchObject({ attempts: 2, repaired: true });
+    expect(parse).toHaveBeenCalledTimes(2);
+    expect(parse.mock.calls[0][1].signal).toBe(parse.mock.calls[1][1].signal);
+    expect(parse.mock.calls[1][0].input).toContain("Validation feedback");
+  });
   it("rejects a request before calling OpenAI", async () => {
     await expect(generateAppSpec({ prompt: "" })).rejects.toMatchObject({ code: "invalid_request" });
     expect(parse).not.toHaveBeenCalled();
@@ -35,6 +45,7 @@ describe("OpenAI generation boundary", () => {
   it("reports refusal without falling back to mock output", async () => {
     parse.mockResolvedValue({ status: "completed", output_parsed: null, output: [{ type: "message", content: [{ type: "refusal", refusal: "no" }] }] });
     await expect(generateAppSpec({ prompt: "quiz" })).rejects.toMatchObject({ code: "ai_refused" });
+    expect(parse).toHaveBeenCalledTimes(1);
   });
   it.each([new DOMException("timeout", "TimeoutError"), new OpenAI.APIConnectionTimeoutError(), new OpenAI.APIUserAbortError()])("maps timeout errors", async (error) => {
     parse.mockRejectedValue(error);

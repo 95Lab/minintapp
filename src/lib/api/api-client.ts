@@ -1,9 +1,9 @@
-import type { AppStateResponse, TemplateCreateResponse, SubmitResponseRequest } from "./api-contract-types";
+import type { AppStateResponse, TemplateCreateResponse, SubmitResponseRequest, GenerateRequest, GenerateResponse } from "./api-contract-types";
 export class ApiClientError extends Error {
   constructor(public readonly status: number, message: string) { super(message); }
 }
-export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000), credentials: "same-origin", cache: "no-store" });
+export async function requestJson<T>(path: string, init?: RequestInit, timeoutMs = 10_000): Promise<T> {
+  const response = await fetch(path, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs), credentials: "same-origin", cache: "no-store" });
   const body = await response.json();
   if (!response.ok) throw new ApiClientError(response.status, typeof body.message === "string" ? body.message : "Không thể xử lý yêu cầu.");
   return body as T;
@@ -20,3 +20,5 @@ export const sendVote = (id: string, body: SubmitResponseRequest) => requestJson
 export const changeLifecycle = (id: string, action: "close" | "reopen" | "end") => requestJson<{ ok: true }>(`/api/apps/${encodeURIComponent(id)}/lifecycle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
 
 export const sendBlockAction = (id: string, blockId: string, action: string, args?: Record<string, string | number | boolean>) => requestJson<{ ok: true }>(`/api/apps/${encodeURIComponent(id)}/block-action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ blockId, action, ...(args ? { args } : {}) }) });
+
+export const createGeneratedApp = (input: GenerateRequest) => requestJson<GenerateResponse>("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }, 310_000);
