@@ -2,6 +2,16 @@
 import type { UiLocale } from "./ui-strings-vi-en";
 
 const vi = {
+  overview: "Tổng quan ứng dụng",
+  totalApps: "Tổng app hiện có", liveApps: "Đang chạy", closedApps: "Đã đóng", expiringApps: "Hết hạn trong 7 ngày",
+  createApp: "Tạo app mới", refresh: "Làm mới", search: "Tìm theo tên hoặc mã app", statusFilter: "Trạng thái", expiryFilter: "Hạn sử dụng", sort: "Sắp xếp",
+  all: "Tất cả", expiring: "Trong 7 ngày tới", newest: "Mới tạo nhất", expirySoon: "Hết hạn sớm nhất", titleSort: "Tên A–Z",
+  selectVisible: "Chọn tất cả kết quả", clearSelection: "Bỏ chọn", noResults: "Không có app phù hợp bộ lọc.", resetFilters: "Xóa bộ lọc", retry: "Thử lại",
+  atLimit: "Đã đạt thời hạn tối đa", working: "Đang xử lý…",
+  results: (n:number,total:number)=>`${n} / ${total} app`, selected: (n:number)=>`Đã chọn ${n} app`,
+  selectApp: (title:string)=>`Chọn app: ${title}`,
+  batchEndConfirm: (n:number)=>`Kết thúc ${n} app đã chọn và xóa toàn bộ câu trả lời của chúng? Thao tác này không thể hoàn tác.`,
+  batchResult: (ok:number,failed:number)=>`Thành công: ${ok}. Thất bại: ${failed}.`,
   signIn: "Đăng nhập",
   signOut: "Đăng xuất",
   myApps: "App của tôi",
@@ -31,6 +41,16 @@ const vi = {
 };
 
 const en: typeof vi = {
+  overview: "Application overview",
+  totalApps: "Current apps", liveApps: "Live", closedApps: "Closed", expiringApps: "Expiring within 7 days",
+  createApp: "Create an app", refresh: "Refresh", search: "Search by name or app ID", statusFilter: "Status", expiryFilter: "Expiry", sort: "Sort",
+  all: "All", expiring: "Within 7 days", newest: "Newest first", expirySoon: "Expiring soonest", titleSort: "Name A–Z",
+  selectVisible: "Select all results", clearSelection: "Clear selection", noResults: "No apps match your filters.", resetFilters: "Reset filters", retry: "Try again",
+  atLimit: "Maximum lifetime reached", working: "Working…",
+  results: (n:number,total:number)=>`${n} / ${total} apps`, selected: (n:number)=>`${n} apps selected`,
+  selectApp: (title:string)=>`Select app: ${title}`,
+  batchEndConfirm: (n:number)=>`End ${n} selected apps and delete all their answers? This cannot be undone.`,
+  batchResult: (ok:number,failed:number)=>`Succeeded: ${ok}. Failed: ${failed}.`,
   signIn: "Sign in",
   signOut: "Sign out",
   myApps: "My apps",
