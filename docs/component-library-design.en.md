@@ -10,3 +10,5 @@
 | Mobile and language | From 320 px, one column, touch targets at least 44 px; Vietnamese and English sample content and labels. |
 
 No business APIs are connected to demo actions. Unconnected sample features remain disabled.
+
+Live Demo now lives at `/how-it-works#live-demo`. The menu uses How it works; `/preview` redirects to preserve existing links. Home system status has no details link, and the footer has no storage description.

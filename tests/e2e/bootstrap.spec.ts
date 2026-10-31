@@ -3,8 +3,7 @@ test("homepage and liveness work without integration credentials", async ({ page
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Ý tưởng nhỏ. Kết nối cả nhóm.", exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("homepage-desktop.png"), fullPage: true });
-  await page.getByRole("link", { name: "Xem chi tiết" }).click();
-  await expect(page).toHaveURL(/\/api\/health$/);
+  await expect(page.getByRole("link", { name: "Xem chi tiết" })).toHaveCount(0);
   const health = await request.get("/api/health");
   expect(health.status()).toBe(200);
   expect(health.headers()["cache-control"]).toBe("no-store");

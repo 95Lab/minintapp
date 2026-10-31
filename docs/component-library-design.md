@@ -10,3 +10,5 @@
 | Mobile và ngôn ngữ | Từ 320 px, một cột, vùng chạm 44 px trở lên; nội dung minh họa và nhãn Việt–Anh. |
 
 Không nối thêm API nghiệp vụ cho các thao tác demo. Tính năng mẫu chưa kết nối tiếp tục bị vô hiệu hóa.
+
+Live Demo được gộp vào `/how-it-works#live-demo`. Menu chỉ còn Cách hoạt động; `/preview` chuyển hướng để giữ các link cũ. Trạng thái trang chủ không còn liên kết chi tiết, footer không có mô tả lưu trữ.

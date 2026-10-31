@@ -35,3 +35,11 @@ test("how-it-works supports English, keyboard buttons and reduced motion", async
   await expect(guide.getByRole("heading", { name: "One link. Everyone can join." })).toBeVisible();
   await expect(guide.getByRole("link", { name: "Or explore ready-made templates", exact: true })).toHaveAttribute("href", "/templates");
 });
+
+test("how it works includes Live Demo and redirects old preview links",async({page})=>{
+ await page.goto("/preview");await expect(page).toHaveURL(/\/how-it-works#live-demo$/);
+ await expect(page.getByRole("heading",{name:"Live Demo",exact:true})).toBeVisible();
+ await expect(page.getByRole("banner").locator('a[href="/preview"]')).toHaveCount(0);
+ await page.locator("#how-it-works").getByRole("link",{name:"Tạo ứng dụng của bạn",exact:true}).click();
+ await expect(page).toHaveURL(/\/#create$/);
+});
