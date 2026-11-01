@@ -13,7 +13,7 @@ for (const width of [320,390,1280]) {
   if(width<800){
    await header.getByRole("button",{name:"Mở menu",exact:true}).click();
    await expect(header.getByRole("link",{name:"Ứng dụng của tôi",exact:true})).toHaveCount(0);
-   await header.getByRole("button",{name:"EN",exact:true}).click();
+   await header.locator(".locale-switcher select").selectOption("en");
    await expect(header.getByRole("link",{name:"Sign in",exact:true})).toBeVisible();
    await header.getByRole("button",{name:"Close menu",exact:true}).press("Escape");
    await expect(header.getByRole("button",{name:"Open menu",exact:true})).toBeFocused();

@@ -34,7 +34,7 @@ export function SiteHeader({ home = false, children }: { home?: boolean; childre
       <Link onClick={close} aria-current={pathname==="/templates"?"page":undefined} href={destination("/templates")}>{text("Khám phá tất cả mẫu","Explore all templates")}</Link>
       {session?.user && <Link onClick={close} aria-current={["/dashboard","/my-apps"].includes(pathname)?"page":undefined} href={destination("/dashboard")}>{text("Ứng dụng của tôi","My apps")}</Link>}
       <Link onClick={close} aria-current={pathname==="/how-it-works"?"page":undefined} href={destination("/how-it-works")}>{text("Cách hoạt động","How it works")}</Link>
-      <div className={styles.language}><span className={styles.languageLabel}>{language==="ja"?"言語":language==="vi"?"Ngôn ngữ":"Language"}</span><LanguageSwitcher /></div>
+      <div className={styles.language}><LanguageSwitcher /></div>
       <Link onClick={close} className={styles.create} href={home ? "#create" : destination("/#create")}>{text("Tạo ứng dụng","Create an app")} <span aria-hidden="true">↗</span></Link>
     </nav>
     <div className={styles.account}>

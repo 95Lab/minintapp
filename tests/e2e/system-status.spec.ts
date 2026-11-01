@@ -6,7 +6,7 @@ test("home shows real health status and component library in mobile menu in both
  await expect(page.getByRole("status").filter({hasText:"Hệ thống hoạt động bình thường"})).toBeVisible();
  const header=page.getByRole("banner");await header.getByRole("button",{name:"Mở menu",exact:true}).click();
  await expect(header.locator('a[href="/preview"]')).toHaveCount(0);
- await header.getByRole("button",{name:"EN",exact:true}).click();
+ await header.locator(".locale-switcher select").selectOption("en");
  await expect(header.getByRole("link",{name:"How it works",exact:true})).toHaveAttribute("href","/how-it-works");
  await expect(page.getByRole("status").filter({hasText:"System operating normally"})).toBeVisible();
  await expect(page.getByRole("link",{name:"View details"})).toHaveCount(0);

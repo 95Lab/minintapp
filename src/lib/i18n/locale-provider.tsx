@@ -23,7 +23,5 @@ export function useLocale() {
 }
 export function LanguageSwitcher() {
   const { language, setLocale } = useLocale();
-  return <div className="segmented locale-switcher" role="group" aria-label={language === "ja" ? "言語" : language === "vi" ? "Ngôn ngữ" : "Language"}>
-    {(["vi", "en", "ja"] as const).map((value) => <button key={value} type="button" lang={value} aria-pressed={language === value} onClick={() => setLocale(value)}>{value==="ja"?"日本語":value.toUpperCase()}</button>)}
-  </div>;
+  return <div className="locale-switcher"><select aria-label={language==="ja"?"言語":language==="vi"?"Ngôn ngữ":"Language"} value={language} onChange={event=>setLocale(event.target.value as InterfaceLanguage)}><option value="vi" lang="vi">Tiếng Việt</option><option value="en" lang="en">English</option><option value="ja" lang="ja">日本語</option></select></div>;
 }

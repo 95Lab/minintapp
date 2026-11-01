@@ -6,7 +6,7 @@ for(const width of [320,390,1280])test(`Japanese header is readable with clear l
  const header=page.getByRole("banner");await expect(header.getByRole("link",{name:"ログイン",exact:true})).toBeInViewport();
  if(width<980)await header.getByRole("button",{name:"メニューを開く",exact:true}).click();
  await expect(header.getByRole("link",{name:"テンプレートを探す",exact:true})).toHaveAttribute("aria-current","page");
- for(const name of ["VI","EN","日本語"]){const button=header.getByRole("button",{name,exact:true});await expect(button).toBeVisible();expect((await button.boundingBox())?.height).toBeGreaterThanOrEqual(44);}
+ const language=header.locator(".locale-switcher select");await expect(language).toBeVisible();await expect(language).toHaveValue("ja");await expect(language.locator("option")).toHaveCount(3);expect((await language.boundingBox())?.height).toBeGreaterThanOrEqual(44);
  const create=header.getByRole("link",{name:"アプリを作成",exact:true});await expect(create).toBeVisible();
  expect(await create.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe("rgb(185, 78, 48)");
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
