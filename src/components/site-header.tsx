@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import {usePathname} from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { BrandLogo } from "./brand-logo";
 import { LanguageSwitcher, useLocale } from "@/lib/i18n/locale-provider";
@@ -9,7 +10,8 @@ import { SignOutButton } from "./account/sign-out-button";
 import styles from "./site-header.module.css";
 
 export function SiteHeader({ home = false, children }: { home?: boolean; children?: ReactNode }) {
-  const { locale, platformOrigin } = useLocale();
+  const { platformOrigin, language } = useLocale();
+  const pathname=usePathname();
   const destination=(path:string)=>platformOrigin+path;
   const {localize:text}=useLocale();
   const [open,setOpen]=useState(false);
@@ -29,17 +31,17 @@ export function SiteHeader({ home = false, children }: { home?: boolean; childre
   return <header className={styles.header} data-open={open} onKeyDown={event=>{if(event.key==="Escape"){close();if(accountMenu.current?.open){accountMenu.current.open=false;accountMenu.current.querySelector("summary")?.focus();}else toggle.current?.focus();}}}>
     <BrandLogo href={destination("/")} label={text("MinintApp, trang chủ","MinintApp, home")} />
     <nav id={navigationId} className={styles.navigation} aria-label={text("Điều hướng chính","Main navigation")}>
-      <Link onClick={close} href={destination("/templates")}>{text("Khám phá tất cả mẫu","Explore all templates")}</Link>
-      {session?.user && <Link onClick={close} href={destination("/dashboard")}>{text("Ứng dụng của tôi","My apps")}</Link>}
-      <Link onClick={close} href={destination("/how-it-works")}>{text("Cách hoạt động","How it works")}</Link>
-      <LanguageSwitcher />
+      <Link onClick={close} aria-current={pathname==="/templates"?"page":undefined} href={destination("/templates")}>{text("Khám phá tất cả mẫu","Explore all templates")}</Link>
+      {session?.user && <Link onClick={close} aria-current={["/dashboard","/my-apps"].includes(pathname)?"page":undefined} href={destination("/dashboard")}>{text("Ứng dụng của tôi","My apps")}</Link>}
+      <Link onClick={close} aria-current={pathname==="/how-it-works"?"page":undefined} href={destination("/how-it-works")}>{text("Cách hoạt động","How it works")}</Link>
+      <div className={styles.language}><span className={styles.languageLabel}>{language==="ja"?"言語":language==="vi"?"Ngôn ngữ":"Language"}</span><LanguageSwitcher /></div>
       <Link onClick={close} className={styles.create} href={home ? "#create" : destination("/#create")}>{text("Tạo ứng dụng","Create an app")} <span aria-hidden="true">↗</span></Link>
     </nav>
     <div className={styles.account}>
       {session?.user ? <><details ref={accountMenu} className={styles.accountMenu}><summary>{text("Tài khoản","Account")} <span aria-hidden="true">⌄</span></summary><div><p>{session.user.email}</p><Link href={destination("/my-apps")}>{text("App của tôi","My apps")}</Link></div></details><SignOutButton className={styles.login} /></>
         : <Link className={styles.login} href={destination("/login")}>{text("Đăng nhập","Sign in")}</Link>}
     </div>
-    <button ref={toggle} type="button" className={styles.toggle} aria-expanded={open} aria-controls={navigationId} aria-label={text(open?"Đóng menu":"Mở menu",open?"Close menu":"Open menu")} onClick={()=>setOpen(!open)}><span aria-hidden="true">{open ? "×" : "☰"}</span></button>
+    <button ref={toggle} type="button" className={styles.toggle} aria-expanded={open} aria-controls={navigationId} aria-label={text(open?"Đóng menu":"Mở menu",open?"Close menu":"Open menu")} onClick={()=>setOpen(!open)}><span className={styles.menuIcon} aria-hidden="true"><i/><i/></span></button>
     {children && <div className={styles.context}>{children}</div>}
   </header>;
 }
