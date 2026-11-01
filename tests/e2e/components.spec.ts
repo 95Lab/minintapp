@@ -1,48 +1,24 @@
-import { expect, test } from "@playwright/test";
-
-test("preview submits local answers, supports keyboard tabs and creates QR", async ({ page }) => {
-  await page.goto("/preview");
-  await expect(page.getByRole("heading", { name: "Live Demo", exact:true })).toBeVisible();
-  await page.getByRole("radio", { name: "Trà", exact: true }).check();
-  await page.getByRole("button", { name: "Gửi câu trả lời", exact: true }).click();
-  await expect(page.getByText("Đã gửi câu trả lời.", { exact: true })).toBeVisible();
-  const pollTab = page.getByRole("tab", { name: "Chọn đồ uống" });
-  await pollTab.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: "Quiz", exact: true })).toBeFocused();
-  await expect(page.getByRole("heading", { name: "Một cộng một bằng?" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Hai", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: /✓/ })).toHaveCount(0);
-  await pollTab.click();
-  await expect(page.getByRole("radio", { name: "Trà", exact: true })).toBeChecked();
-  await expect(page.getByRole("img", { name: "Mã QR mở ứng dụng" })).toBeVisible();
-  await page.getByLabel("Chế độ xem").selectOption("host");
-  await expect(page.getByRole("button", { name: "Mở câu hỏi" })).toBeDisabled();
+import {expect,test} from "@playwright/test";
+test("live demo supports local voting, quiz tabs and reset",async({page})=>{
+ await page.goto("/preview");await expect(page).toHaveURL(/\/how-it-works#live-demo$/);
+ await page.getByRole("radio",{name:"Trà",exact:true}).check();await page.getByRole("button",{name:"Gửi câu trả lời",exact:true}).click();
+ await expect(page.getByRole("status").filter({hasText:"Đã ghi nhận lựa chọn của bạn."})).toBeVisible();
+ const poll=page.getByRole("tab",{name:"Bình chọn",exact:true});await poll.focus();await page.keyboard.press("ArrowRight");
+ await expect(page.getByRole("tab",{name:"Quiz",exact:true})).toBeFocused();await page.getByRole("button",{name:"Hai",exact:false}).click();
+ await expect(page.getByRole("status").filter({hasText:"Chính xác!"})).toBeVisible();
+ await poll.click();await expect(page.getByRole("radio",{name:"Trà",exact:true})).toBeChecked();await page.getByRole("button",{name:"Thử lại từ đầu",exact:false}).click();await expect(page.getByRole("radio",{name:"Trà",exact:true})).not.toBeChecked();
+ await expect(page.getByRole("img",{name:"Mã QR mở ứng dụng"})).toBeVisible();
 });
-
-test("unconnected features stay disabled and mobile preview fits the viewport", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/preview");
-  await page.getByLabel("Bạn cần mini-app gì?").fill("Một cuộc bình chọn");
-  await expect(page.getByRole("button", { name: "Trao đổi ý tưởng", exact: true })).toBeDisabled();
-  await page.getByText("Tài khoản, remix và lifecycle", { exact: true }).click();
-  await expect(page.getByRole("button", { name: "Gửi liên kết đăng nhập" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Remix", exact: true })).toBeDisabled();
-  await page.getByText("Các điểm mở rộng chưa khả dụng", { exact: true }).click();
-  await expect(page.getByText("Thanh toán chưa khả dụng.", { exact: false })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await page.screenshot({ path: "test-results/components-mobile.png", fullPage: true });
-});
-
-test("preview shares home branding and translates its demo at 320px",async({page})=>{
- await page.setViewportSize({width:320,height:844});await page.goto("/preview");
- await expect(page.getByRole("banner").getByRole("link",{name:"MinintApp, trang chủ"})).toBeVisible();
- await expect(page.getByText("BẢN MINH HỌA",{exact:true})).toBeVisible();
- const header=page.getByRole("banner");await header.getByRole("button",{name:"Mở menu",exact:true}).click();await header.locator(".locale-switcher select").selectOption("en");
- await expect(page.getByRole("heading",{name:"Live Demo",exact:true})).toBeVisible();
- await expect(page.getByRole("radio",{name:"Tea",exact:true})).toBeVisible();
- await page.getByText("Account, remix and lifecycle",{exact:true}).click();
- await expect(page.getByRole("button",{name:"Send sign-in link"})).toBeDisabled();
- await expect(page.getByRole("heading",{name:"Remix app",exact:true})).toBeVisible();
+test("guide contains no disconnected feature placeholders and fits mobile",async({page})=>{
+ await page.setViewportSize({width:320,height:844});await page.goto("/how-it-works");
+ await expect(page.getByText("Chức năng tạo ứng dụng chưa kết nối API.")).toHaveCount(0);
+ await expect(page.getByText("Các điểm mở rộng chưa khả dụng")).toHaveCount(0);
+ await expect(page.getByRole("link",{name:/example.com/})).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:"test-results/guide-mobile.png",fullPage:true});
+});
+test("guide demo supports Japanese and English",async({page,context})=>{
+ await context.addCookies([{name:"minint-locale",value:"ja",url:"http://127.0.0.1:3100"}]);await page.goto("/how-it-works");
+ await expect(page.getByRole("heading",{level:1})).toContainText("アイデアから");await page.getByRole("radio",{name:"お茶",exact:true}).check();await page.getByRole("button",{name:"回答を送信",exact:false}).click();await expect(page.getByRole("status").filter({hasText:"選択を記録しました。"})).toBeVisible();
+ await page.locator(".locale-switcher select").selectOption("en");await expect(page.getByRole("heading",{level:1})).toContainText("From an idea");await expect(page.getByRole("radio",{name:"Tea",exact:true})).toBeChecked();
 });

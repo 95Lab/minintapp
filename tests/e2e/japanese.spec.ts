@@ -12,6 +12,6 @@ test("Japanese interface persists across home, templates, login and the guide",a
  await page.goto("/login");await expect(page.getByRole("button",{name:"ログインリンクを送信"})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await expect(page.locator(".locale-switcher select")).toHaveValue("ja");
- await page.goto("/how-it-works");await expect(page.getByRole("heading",{name:/小さなアイデアから/})).toBeVisible();
+ await page.goto("/how-it-works");await expect(page.getByRole("heading",{name:/アイデアから、すぐ使えるアプリへ/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

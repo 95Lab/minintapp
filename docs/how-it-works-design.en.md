@@ -10,3 +10,5 @@
 | Accessibility | Visible keyboard focus; selected steps use background, border and numbers; reduced-motion support. |
 
 Shared across Vietnamese and English, without changing app creation or management behavior.
+
+`/how-it-works` is now a purpose-built guide: one H1, three concise static steps, browser-local poll/quiz demo and a QR linking to the demo itself. Unconnected creation, authentication, remix forms and extension placeholders are removed from this page. Demo results reflect the local selection and can be reset; responses never reach the server. Page content supports Vietnamese, English and Japanese.

@@ -1,9 +1,12 @@
 "use client";
+import {translate} from "@/lib/i18n/messages";
+import type {InterfaceLanguage} from "@/lib/i18n/locale";
 import { useRuntimeTranslation } from "@/lib/i18n/runtime-locale";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-export function SharePanelQr({ url }: { url: string }) {
-  const tr = useRuntimeTranslation();
+export function SharePanelQr({ url, language }: { url: string; language?: InterfaceLanguage }) {
+  const runtimeTr = useRuntimeTranslation();
+  const tr:typeof runtimeTr=(message,values)=>language?translate(language,message,values):runtimeTr(message,values);
   const [qr, setQr] = useState<{ url: string; image: string } | null>(null); const [message, setMessage] = useState("");
   let safeUrl = "";
   try { const parsed = new URL(url); if (["http:", "https:"].includes(parsed.protocol) && !parsed.username && !parsed.password) safeUrl = parsed.href; } catch { /* Show an invalid link notice. */ }

@@ -38,18 +38,18 @@ test("how-it-works supports English, keyboard buttons and reduced motion", async
 
 test("how it works includes Live Demo and redirects old preview links",async({page})=>{
  await page.goto("/preview");await expect(page).toHaveURL(/\/how-it-works#live-demo$/);
- await expect(page.getByRole("heading",{name:"Live Demo",exact:true})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Thử một app ngay tại đây",exact:true})).toBeVisible();
  await expect(page.getByRole("banner").locator('a[href="/preview"]')).toHaveCount(0);
- await page.locator("#how-it-works").getByRole("link",{name:"Tạo ứng dụng của bạn",exact:true}).click();
+ await page.getByRole("link",{name:"Tạo ứng dụng của bạn",exact:true}).first().click();
  await expect(page).toHaveURL(/\/#create$/);
 });
 
 for(const path of ["/","/how-it-works"])test(`guide actions have readable colors and mobile layout on ${path}`,async({page},testInfo)=>{
  await page.setViewportSize({width:320,height:844});await page.goto(path);
- const guide=page.locator("#how-it-works");const create=guide.getByRole("link",{name:"Tạo ứng dụng của bạn",exact:true});
+ const guide=path==="/"?page.locator("#how-it-works"):page.locator("main");const create=guide.getByRole("link",{name:"Tạo ứng dụng của bạn",exact:true}).first();
  const colors=await create.evaluate(el=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color}));
  expect(colors.background).toBe("rgb(185, 78, 48)");expect(colors.color).toBe("rgb(255, 255, 255)");
- const demo=guide.getByRole("link",{name:"Live Demo",exact:true});await expect(demo).toHaveAttribute("href","/how-it-works#live-demo");
+ const demo=guide.getByRole("link",{name:"Live Demo",exact:true});await expect(demo).toHaveAttribute("href",path==="/"?"/how-it-works#live-demo":"#live-demo");
  expect((await demo.boundingBox())?.height).toBeGreaterThanOrEqual(44);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await guide.screenshot({path:testInfo.outputPath("guide-mobile.png")});

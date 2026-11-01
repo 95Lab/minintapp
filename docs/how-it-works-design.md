@@ -10,3 +10,5 @@
 | Khả năng truy cập | Focus bàn phím rõ; bước đang chọn có nền, viền và số thứ tự; hỗ trợ giảm chuyển động. |
 
 Dùng chung cho nội dung Việt–Anh, không thay đổi logic tạo hoặc quản lý app.
+
+Trang `/how-it-works` được thiết kế lại độc lập: một H1, ba bước tĩnh ngắn gọn, demo bình chọn/quiz chạy trong trình duyệt và QR dẫn về chính trang demo. Bỏ toàn bộ form tạo, đăng nhập, remix chưa kết nối và các placeholder mở rộng khỏi trang này. Demo có kết quả thật theo lựa chọn cục bộ và nút reset; không gửi câu trả lời lên server. Hỗ trợ đầy đủ Việt/Anh/Nhật cho nội dung trang.
