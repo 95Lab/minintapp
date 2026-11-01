@@ -1,3 +1,5 @@
+import {SubdomainSchema} from "@/lib/api/subdomain-schema";
+import {dnsNameAvailable} from "./subdomains";
 import "server-only";
 import { OWNER_APP_LIMIT } from "@/lib/api/creation-availability";
 import { readSession } from "@/engine/auth/host-session";
@@ -18,6 +20,9 @@ export async function submitDeployment(input: Deployment["input"], ownerId: stri
   const image = ImageDigest.parse(process.env.RUNTIME_IMAGE);
   const domain = process.env.APPS_DOMAIN;
   if (!domain || !/^[a-z0-9.-]+$/.test(domain)) throw new Error("Missing apps domain");
+  const custom=input.subdomain===undefined?undefined:SubdomainSchema.safeParse(input.subdomain);
+  if(custom&&!custom.success)throw new AppError("subdomain_invalid");
+  const hostname=`${custom?.success?custom.data:id}.${domain}`;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -39,8 +44,12 @@ export async function submitDeployment(input: Deployment["input"], ownerId: stri
     if (Number(count.rows[0].count) >= Number(process.env.MAX_ACTIVE_APPS || 100)) throw new AppError("app_capacity_full");
     const owned = await client.query<{ count: string }>("SELECT count(*) FROM deployments WHERE owner_id=$1 AND state NOT IN ('EXPIRED','DELETED','FAILED')", [ownerId]);
     if (Number(owned.rows[0].count) >= OWNER_APP_LIMIT) throw new AppError("owner_app_limit");
+    if(custom?.success){
+      const used=await client.query("SELECT 1 FROM deployments WHERE hostname=$1 LIMIT 1",[hostname]);
+      if(used.rowCount||!await dnsNameAvailable(hostname,client))throw new AppError("subdomain_taken");
+    }
     await client.query(`INSERT INTO deployments(id,owner_id,state,input,host_token_hash,hostname,image,expires_at,request_key)
-      VALUES($1,$2,'QUEUED',$3,$4,$5,$6,$7,$8)`, [id, ownerId, input, hashToken(hostToken), `${id}.${domain}`, image, new Date(Date.now() + lifetimeMs), options?.requestKey ?? null]);
+      VALUES($1,$2,'QUEUED',$3,$4,$5,$6,$7,$8)`, [id, ownerId, input, hashToken(hostToken), hostname, image, new Date(Date.now() + lifetimeMs), options?.requestKey ?? null]);
     await client.query("COMMIT");
   } catch (error) { await client.query("ROLLBACK"); throw error; }
   finally { client.release(); }

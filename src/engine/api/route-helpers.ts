@@ -14,7 +14,7 @@ import { responsesForVersion } from "@/engine/responses/responses-cache";
 import { findAppCached } from "@/engine/db/app-record-cache";
 import {hostTokenFrom} from "@/lib/host/host-session";
 import { readSession } from "@/engine/auth/host-session";
-import { runtimePublicUrl } from "@/lib/runtime-plane/public-url";
+import { runtimePublicUrl,appPublicUrl } from "@/lib/runtime-plane/public-url";
 
 export const HOST_TOKEN_HEADER = "x-host-token";
 export const HOST_SESSION_HEADER = "x-host-session";
@@ -64,7 +64,7 @@ export async function resolveUsableApp(id: string, opts: { cached?: boolean } = 
 }
 
 /** `prefetched`: async data for bricks that need it (see prefetchBlocks); omit for none. */
-export function buildAppState(app: AppRecord, responses: ResponseRecord[], req: Request, prefetched: Record<string, unknown> = {}): AppStateResponse {
+export function buildAppState(app: AppRecord, responses: ResponseRecord[], req: Request, prefetched: Record<string, unknown> = {}, urls?:{shareUrl?:string;movedToUrl?:string}): AppStateResponse {
   const isHost = isHostRequest(req, app);
   const token = req.headers.get(PARTICIPANT_TOKEN_HEADER);
   const participantHash = token ? participantHashFor(app.id, token) : null;
@@ -75,6 +75,7 @@ export function buildAppState(app: AppRecord, responses: ResponseRecord[], req: 
   return {
     ...(runtimePublicUrl(app.id) ? { shareUrl: runtimePublicUrl(app.id) } : {}),
     ...(app.movedTo && runtimePublicUrl(app.movedTo) ? { movedToUrl: runtimePublicUrl(app.movedTo) } : {}),
+    ...urls,
     id: app.id,
     status: app.status,
     movedTo: app.movedTo,
@@ -113,5 +114,7 @@ export async function loadAppState(appId: string, req: Request): Promise<AppStat
   const {appsRepository:base}=await import("@/lib/db/apps-repository");
   const snapshot=await base.snapshot(appId);if(!snapshot)return null;
   const app=snapshot.app as unknown as AppRecord;
-  return buildAppState(app,snapshot.responses as unknown as ResponseRecord[],req,await prefetchBlocks(app.spec));
+  return buildAppState(app,snapshot.responses as unknown as ResponseRecord[],req,await prefetchBlocks(app.spec),await publicUrlsFor(app));
 }
+
+export async function publicUrlsFor(app:Pick<AppRecord,"id"|"movedTo">){return {shareUrl:await appPublicUrl(app.id),...(app.movedTo?{movedToUrl:await appPublicUrl(app.movedTo)}:{})};}

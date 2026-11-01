@@ -14,7 +14,7 @@ export const RuntimeSeedSchema = z.object({
 export type RuntimeSeed = z.infer<typeof RuntimeSeedSchema>;
 export type Deployment = {
   id: string; owner_id: string; state: z.infer<typeof DeploymentState>; seed: RuntimeSeed | null;
-  input: { spec?: RuntimeSeed["spec"]; prompt: string; lifetime: "1h" | "24h" | "7d"; lifetimeMs?: number; engine?: boolean; ownerId?: string; parentId?: string;
+  input: { subdomain?:string; spec?: RuntimeSeed["spec"]; prompt: string; lifetime: "1h" | "24h" | "7d"; lifetimeMs?: number; engine?: boolean; ownerId?: string; parentId?: string;
     remix?: { spec: RuntimeSeed["spec"]; instruction: string; summary: string } };
   host_token_hash: string; hostname: string; image: string; worker_id: string | null;
   port: number | null; dns_record_id: string | null; created_at: Date; expires_at: Date;

@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     if (process.env.PLATFORM_ROLE === "runtime") throw new AppError("forbidden");
     const input = await parseBody(request, GenerateRequestSchema);
     if (!input) throw new AppError("invalid_request");
+    if(input.subdomain&&process.env.PLATFORM_ROLE!=="control")throw new AppError("runtime_unavailable");
     if (process.env.PLATFORM_ROLE === "control") return await managedAppResponse(request, input);
     const config = readRuntimeConfig();
     if (!config.OPENAI_API_KEY) throw new AppError("ai_not_configured");

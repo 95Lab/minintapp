@@ -1,3 +1,4 @@
+import {permittedAppHostname,SubdomainSchema} from "../src/lib/api/subdomain-schema";
 import { handleWorkerPlanning } from "./planning";
 import { ensureInitialRelease, release, completeRelease, failRelease, beginReleaseSwitch } from "./release-store";
 import { runRelease } from "./release-runner";
@@ -108,7 +109,7 @@ const worker = new Worker(`minintapp-${workerId}`, async (job) => withAppLock(jo
         if (!ready) throw new Error("Runtime startup timeout");
         phase = "gateway-route";
         await publishRoute(app.id, app.hostname, port);
-        if (process.env.INGRESS_HOSTNAME !== "ingress.minintapp.io.vn" || app.hostname !== `${app.id}.minintapp.io.vn`) throw new Error("DNS outside approved demo scope");
+        if (process.env.INGRESS_HOSTNAME !== "ingress.minintapp.io.vn" || !permittedAppHostname(app.hostname,app.id,"minintapp.io.vn")) throw new Error("DNS outside approved demo scope");
         phase = "dns";
         const dnsId = await dns.ensure(app.hostname, app.id);
         await pool.query("UPDATE deployments SET dns_record_id=$2 WHERE id=$1", [app.id, dnsId]);
@@ -196,6 +197,12 @@ const server = createServer(async (request, response) => {
     }
     if (request.method === "POST" && request.url === "/plan") {
       await handleWorkerPlanning(request, response); return;
+    }
+    if(request.method==="GET"&&request.url?.startsWith("/dns-availability?")){
+      const hostname=new URL(request.url,"http://agent").searchParams.get("hostname")||"";
+      const suffix=".minintapp.io.vn";
+      if(!hostname.endsWith(suffix)||!SubdomainSchema.safeParse(hostname.slice(0,-suffix.length)).success){response.writeHead(400).end();return;}
+      response.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"}).end(JSON.stringify({available:await dns.available(hostname)}));return;
     }
     const logs = /^\/logs\/([a-f0-9]{24})$/.exec(request.url || "");
     if (request.method === "GET" && logs) {

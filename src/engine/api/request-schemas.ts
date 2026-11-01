@@ -1,3 +1,4 @@
+import {SubdomainSchema} from "@/lib/api/subdomain-schema";
 // Runtime validation for every request body. Routes parse with these instead of casting,
 // so malformed input becomes a 400 (never a 500) and only known keys are ever stored.
 import { z } from "zod";
@@ -9,6 +10,7 @@ const ShortId = z.string().min(1).max(40);
 export const GenerateRequestSchema = z
   .object({
     prompt: z.string().trim().min(1).max(500),
+    subdomain:SubdomainSchema.optional(),
     lifetime: z.enum(["1h", "24h", "7d"]).default("1h"),
   })
   .strict();
@@ -20,6 +22,7 @@ export { ResponsePayloadSchema };
 
 export const TemplateCreateRequestSchema = z
   .object({
+    subdomain:SubdomainSchema.optional(),
     templateId: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/),
     locale: z.enum(["vi", "en"]).default("vi"),
     lifetime: z.enum(["1h", "24h", "7d"]).default("1h"),

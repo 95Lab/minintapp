@@ -1,12 +1,13 @@
+import {SubdomainSchema} from "@/lib/api/subdomain-schema";
 import { z } from "zod";
 import { Id } from "@/lib/blocks/block-schema-primitives";
 import { ResponsePayloadSchema } from "@/lib/blocks/block-registry";
 export const LifetimeSchema = z.enum(["1h", "24h", "7d"]);
 const Token = z.string().min(16).max(64).regex(/^[A-Za-z0-9_-]+$/);
-export const GenerateRequestSchema = z.strictObject({ prompt: z.string().trim().min(1).max(500), lifetime: LifetimeSchema.default("1h") });
+export const GenerateRequestSchema = z.strictObject({ prompt: z.string().trim().min(1).max(500), subdomain:SubdomainSchema.optional(), lifetime: LifetimeSchema.default("1h") });
 export const RemixRequestSchema = z.strictObject({ instruction: z.string().trim().min(1).max(300) });
 export const TemplateCreateRequestSchema = z.strictObject({
-  templateId: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/), locale: z.enum(["vi", "en"]).default("vi"), lifetime: LifetimeSchema.default("1h"),
+  subdomain:SubdomainSchema.optional(), templateId: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/), locale: z.enum(["vi", "en"]).default("vi"), lifetime: LifetimeSchema.default("1h"),
 });
 export const SubmitResponseRequestSchema = z.strictObject({
   blockId: Id, itemId: z.string().max(40), participantToken: Token, displayName: z.string().max(40).nullable(), payload: ResponsePayloadSchema,

@@ -11,11 +11,12 @@ export class CloudflareDNS {
     if (!response.ok || !body.success) throw new Error("Cloudflare DNS operation failed");
     return body.result;
   }
+  async available(hostname:string):Promise<boolean>{const records=await this.api(`?name=${encodeURIComponent(hostname)}&per_page=100`);return records.length===0;}
   async ensure(hostname: string, appId: string): Promise<string> {
     const marker = `minintapp:${appId}`;
     const records = await this.api(`?name=${encodeURIComponent(hostname)}&per_page=100`);
     const own = records.find((record: { comment?: string }) => record.comment === marker);
-    if (records.length && !own) throw new Error("DNS hostname already owned");
+    if (records.length && (!own || records.some((record: {comment?:string})=>record.comment!==marker))) throw new Error("DNS hostname already owned");
     const record = { type: "CNAME", name: hostname, content: this.target, proxied: true, ttl: 1, comment: marker };
     const result = await this.api(own ? `/${own.id}` : "", { method: own ? "PUT" : "POST", body: JSON.stringify(record) });
     return result.id;

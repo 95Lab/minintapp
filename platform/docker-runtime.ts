@@ -104,7 +104,7 @@ export async function provision(app: Deployment): Promise<number> {
   await firewall(bridge);
   if (await run("docker", ["image", "inspect", "--format", '{{index .Config.Labels "io.minintapp.runtime.storage"}}', image]) !== "postgresql") throw new Error("Runtime image does not support PostgreSQL");
   const env = ["PLATFORM_ROLE=runtime", `RUNTIME_APP_ID=${id}`, `RUNTIME_SEED=${Buffer.from(JSON.stringify(seed)).toString("base64")}`,
-    `DATABASE_URL=${appDatabaseURL(id, true)}`, `RUNTIME_TOKEN=${runtimeToken(id)}`, `IP_HASH_SALT=${runtimeToken(id)}`, `APP_ORIGIN=https://${app.hostname}`];
+    `DATABASE_URL=${appDatabaseURL(id, true)}`, `RUNTIME_TOKEN=${runtimeToken(id)}`, `IP_HASH_SALT=${runtimeToken(id)}`, `RUNTIME_HOSTNAME=${app.hostname}`, `APP_ORIGIN=https://${app.hostname}`];
   await run("docker", ["create", "--name", resource, "--label", `${label}=${id}`, "--runtime=runsc", "--network", resource, "--dns", "127.0.0.1",
     "--publish", `127.0.0.1:${await freePort(id)}:3000`, "--memory", "512m", "--memory-swap", "512m", "--cpus", "0.5", "--pids-limit", "128", "--read-only", "--cap-drop", "ALL",
     "--security-opt", "no-new-privileges:true", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",

@@ -1,0 +1,4 @@
+import {z} from "zod";
+export const RESERVED_SUBDOMAINS=new Set(["www","api","app","apps","admin","dashboard","login","auth","mail","smtp","imap","pop","pop3","webmail","autodiscover","autoconfig","mx","ns1","ns2","dns","ingress","gateway","worker","workers","cdn","static","assets","media","status","health","support","help","ftp","sftp","ssh","dev","staging","test","localhost","minintapp"]);
+export const SubdomainSchema=z.string().trim().toLowerCase().min(3).max(40).regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/).refine(value=>!RESERVED_SUBDOMAINS.has(value)&&!/^[a-f0-9]{24}$/.test(value));
+export function permittedAppHostname(hostname:string,id:string,domain:string){if(!/^[a-f0-9]{24}$/.test(id)||!domain||!hostname.endsWith(`.${domain}`))return false;const label=hostname.slice(0,-domain.length-1);return label===id||SubdomainSchema.safeParse(label).success;}

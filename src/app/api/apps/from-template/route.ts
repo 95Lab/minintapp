@@ -16,8 +16,9 @@ export async function POST(request: Request) {
     if(!(await checkRateLimit("create",clientIpHash(request))).ok)throw new AppError("rate_limited");
     const input = await parseBody(request, TemplateCreateRequestSchema);
     if (!input) throw new AppError("invalid_request");
+    if(input.subdomain&&process.env.PLATFORM_ROLE!=="control")throw new AppError("runtime_unavailable");
     const spec = templateSpec(input.templateId, input.locale);
-    if (process.env.PLATFORM_ROLE === "control") return await managedAppResponse(request, { spec, prompt: spec.title, lifetime: input.lifetime });
+    if (process.env.PLATFORM_ROLE === "control") return await managedAppResponse(request, { ...(input.subdomain?{subdomain:input.subdomain}:{}), spec, prompt: spec.title, lifetime: input.lifetime });
     const { app, hostToken } = await appsRepository.createApp({ spec, prompt: spec.title, lifetimeMs: LIFETIME_MS[input.lifetime] });
     return createdAppResponse(request, app, hostToken);
   } catch (error) { return errorResponse(error); }

@@ -37,3 +37,11 @@ it("serializes provisioning and cleanup for the same app while letting other app
   expect(events).toEqual(["first", "other"]); release(); await Promise.all([first, second]);
   expect(events).toEqual(["first", "other", "second"]);
 });
+
+it("refuses custom DNS names with any unowned record and availability stays read-only",async()=>{
+ const request=vi.fn(async()=>Response.json({success:true,result:[{id:"owned",comment:"minintapp:app1"},{id:"other",comment:"external"}]}));
+ const dns=new CloudflareDNS("zone","secret","ingress.example.com",request as typeof fetch,true);
+ expect(await dns.available("my-workshop.example.com")).toBe(false);
+ await expect(dns.ensure("my-workshop.example.com","app1")).rejects.toThrow("already owned");
+ expect(request.mock.calls).toHaveLength(2);
+});

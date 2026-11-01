@@ -5,6 +5,8 @@
 import type { Locale } from "@/engine/app-spec/app-spec-schema";
 
 const MESSAGES = {
+runtime_unavailable:{vi:"Tính năng địa chỉ riêng chỉ khả dụng trên nền tảng đang hoạt động.",en:"Custom addresses require an available platform runtime."},
+subdomain_invalid:{vi:"Tên subdomain không hợp lệ hoặc được dành riêng.",en:"Invalid or reserved subdomain name."},subdomain_taken:{vi:"Tên subdomain đã được sử dụng. Hãy chọn tên khác.",en:"This subdomain is already in use. Choose another name."},
   // request / access
   bad_request: { vi: "Yêu cầu không hợp lệ.", en: "Invalid request." },
   not_found: { vi: "Không tìm thấy.", en: "Not found." },

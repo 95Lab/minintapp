@@ -1,7 +1,8 @@
 "use client";
 import {useLocale} from "@/lib/i18n/locale-provider";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import {SubdomainField} from "./subdomain-field";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiClientError, requestJson } from "@/lib/api/api-client";
 import { planningContext, planningQuestionsLeft, PlanningReplySchema, PlanningRequestSchema, type PlanningMessage, type PlanningReply } from "@/lib/api/planning-contract";
 import type { GenerateRequest, Lifetime } from "@/lib/api/api-contract-types";
@@ -28,6 +29,9 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
   const [pending, setPending] = useState("");
   const [plan, setPlan] = useState<PlanningReply | null>(null);
   const [brief, setBrief] = useState<string | null>(null);
+  const [subdomain,setSubdomain]=useState<string|undefined>();
+  const [domainValid,setDomainValid]=useState(true);
+  const updateDomain=useCallback((name:string|undefined,valid:boolean)=>{setSubdomain(name);setDomainValid(valid);},[]);
   const [publishDemo,setPublishDemo]=useState("private");
   const [lifetime, setLifetime] = useState<Lifetime>(initialLifetime);
   useEffect(() => { setLifetime(initialLifetime); }, [initialLifetime]);
@@ -122,12 +126,13 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
         {brief ? <p className={styles.brief}>{brief}</p> : <p className={styles.hint}>{text("Bản yêu cầu sẽ được cập nhật tại đây sau khi trao đổi.", "Your app brief will appear here as we work out the details.")}</p>}
         <label className={styles.lifetime}>{text("Thời gian sử dụng", "App lifetime")}<select value={lifetime} onChange={e => { const value = e.target.value as Lifetime; setLifetime(value); onLifetimeChange?.(value); }} disabled={busy}><option value="1h">{text("1 giờ", "1 hour")}</option><option value="24h">{text("24 giờ", "24 hours")}</option><option value="7d">{text("7 ngày", "7 days")}</option></select></label>
         {draft.trim() && plan?.status === "ready" && <p className={styles.hint}>{text("Gửi nội dung đang nhập để cập nhật bản yêu cầu trước khi chốt.", "Send your pending message to update the brief before confirming.")}</p>}
+        <SubdomainField onChange={updateDomain} disabled={busy}/>
         <div className={styles.publication}><label>{text("Đưa app lên Khám phá tất cả mẫu?", "List your app in Explore all templates?")}<select value={publishDemo} onChange={e=>setPublishDemo(e.target.value)} disabled={busy}><option value="private">{text("Không, giữ riêng tư", "No, keep private")}</option><option value="free">{text("Công khai dạng Free (miễn phí)", "List as Free")}</option><option value="paid">{text("Công khai dạng Paid (có phí)", "List as Paid")}</option></select></label><p>{text("Giả lập demo: lựa chọn này chưa công khai app, chưa lưu lên marketplace và chưa thu phí. Khi phát hành thật, chỉ chia sẻ mẫu, không chia sẻ câu trả lời hoặc dữ liệu riêng.", "Demo only: this choice does not publish your app, save a marketplace listing or charge anyone. A real listing would share the template, not responses or private data.")}</p></div>
-        <button type="button" className={styles.confirm} disabled={busy || plan?.status !== "ready" || !brief || !!draft.trim()} onClick={async () => {
+        <button type="button" className={styles.confirm} disabled={busy || !domainValid || plan?.status !== "ready" || !brief || !!draft.trim()} onClick={async () => {
           if (inFlight.current || !brief || plan?.status !== "ready" || draft.trim()) return;
           inFlight.current = true;
           setGenerating(true); setError(""); setQuotaError(false);
-          try { await onGenerate({ prompt: brief, lifetime }); }
+          try { await onGenerate({ prompt: brief, lifetime,...(subdomain?{subdomain}:{}) }); }
           catch (error) { setQuotaError(error instanceof ApiClientError && error.code === "owner_app_limit"); setError(error instanceof ApiClientError ? error.message : text("Không thể tạo ứng dụng. Vui lòng thử lại.", "Could not create the app. Please try again.")); }
           finally { setGenerating(false); inFlight.current = false; }
         }}>{generating ? text("Đang tạo ứng dụng…", "Creating app…") : text("Chốt yêu cầu và tạo app", "Confirm brief and create app")}</button>

@@ -29,7 +29,7 @@ const KIND_LABEL: Record<VocabularyType, { vi: string; en: string }> = {
   live: { vi: "Dữ liệu trực tiếp", en: "Live data" },
 };
 
-export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifetime: Lifetime }) {
+export function TemplateGallery({ locale, lifetime, subdomain, domainValid=true }: { locale: UiLocale; lifetime: Lifetime; subdomain?:string;domainValid?:boolean }) {
   const {localize,language}=useLocale();
   const s = language==="ja"?localizeRecord(t("en")):t(locale);
   const [query,setQuery]=useState("");
@@ -54,7 +54,7 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
         setError(localize("Chưa thể tạo app. Kiểm tra lại hạn mức ở đầu danh sách.","Cannot create the app yet. Check your app limit above the list."));
         return;
       }
-      const res = await createFromTemplate({ templateId, locale, lifetime });
+      const res = await createFromTemplate({ templateId, locale, lifetime,...(subdomain?{subdomain}:{}) });
       if (!res.ok) {
         setError(errorText(res.code, locale, res.params));
         return;
@@ -81,7 +81,7 @@ export function TemplateGallery({ locale, lifetime }: { locale: UiLocale; lifeti
       <CreationAvailabilityNotice {...availability} locale={locale} />
       <div className="template-grid">
         {visible.map(({tpl,paid,views,clones}) => (
-          <button key={tpl.id} type="button" className="card template-card" data-app-theme={tpl.spec[locale].theme} onClick={() => open(tpl.id)} disabled={!!busyId || !!availability.availability && creationBlocked(availability.availability)}>
+          <button key={tpl.id} type="button" className="card template-card" data-app-theme={tpl.spec[locale].theme} onClick={() => open(tpl.id)} disabled={!domainValid || !!busyId || !!availability.availability && creationBlocked(availability.availability)}>
             <span className="template-kind">{localize(KIND_LABEL[tpl.kind as VocabularyType]?.vi??tpl.kind,KIND_LABEL[tpl.kind as VocabularyType]?.en??tpl.kind)}</span>
             <span className="catalog-price" data-paid={paid}>{paid?"Paid · "+(localize("Có phí","Paid template")):"Free · "+(localize("Miễn phí","Free template"))}</span>
             <strong>{localize(tpl.title.vi,tpl.title.en)}</strong>

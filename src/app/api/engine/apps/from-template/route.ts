@@ -25,7 +25,8 @@ async function handlePOST(req: Request) {
   }
 
   const spec = AppSpecSchema.parse(template.spec[body.locale]);
-  if (process.env.PLATFORM_ROLE === "control") return await managedAppResponse(req, { spec, prompt: template.title[body.locale], lifetime: body.lifetime, engine: true, ownerId: readSession(req)?.userId });
+  if(body.subdomain&&process.env.PLATFORM_ROLE!=="control")return jsonError(503,"runtime_unavailable");
+  if (process.env.PLATFORM_ROLE === "control") return await managedAppResponse(req, { ...(body.subdomain?{subdomain:body.subdomain}:{}), spec, prompt: template.title[body.locale], lifetime: body.lifetime, engine: true, ownerId: readSession(req)?.userId });
   const { app, hostToken } = await appsRepository().createApp({ spec, prompt: template.title[body.locale], lifetimeMs: LIFETIME_MS[body.lifetime], ownerId: readSession(req)?.userId });
   const res: TemplateCreateResponse = { ok: true, id: app.id, hostToken };
   return createdResponse(req,res);

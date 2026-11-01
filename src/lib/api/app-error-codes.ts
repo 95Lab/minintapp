@@ -1,4 +1,5 @@
 export const ERROR_STATUS = {
+  subdomain_invalid:400,subdomain_taken:409,
   owner_app_limit: 409, app_capacity_full: 503, creation_hourly_limit: 429,
   deployment_failed: 502, deployment_pending: 503, runtime_unavailable: 503,
   question_closed: 409, wheel_empty: 409, wheel_no_entrants: 409,

@@ -22,6 +22,7 @@ async function handlePOST(req: Request) {
   if (process.env.PLATFORM_ROLE === "runtime") return Response.json({ ok: false, code: "forbidden" }, { status: 403 });
   const body = await parseBody(req, GenerateRequestSchema);
   if (!body) return jsonError(400, "prompt_invalid");
+  if(body.subdomain&&process.env.PLATFORM_ROLE!=="control")return jsonError(503,"runtime_unavailable");
   if (process.env.PLATFORM_ROLE === "control") {
     const input = { ...body, engine: true, ownerId: readSession(req)?.userId };
     return req.headers.get("accept") === "application/json" ? managedAppResponse(req, input) : managedEngineGeneration(req, input);
