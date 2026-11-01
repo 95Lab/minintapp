@@ -1,4 +1,5 @@
-import type { Locale } from "./locale";
+import {toJapanese} from "./japanese";
+import type { InterfaceLanguage } from "./locale";
 
 const english = {
   "Từ nhu cầu đến cơ hội": "From a need to an opportunity",
@@ -270,7 +271,7 @@ const englishSingular: Partial<Record<Message, string>> = {
   "{count} câu trả lời": "{count} response",
   "{count} lựa chọn còn lại": "{count} option remaining",
 };
-export function translate(locale: Locale, message: Message, values: Record<string, string | number> = {}): string {
-  const template = locale === "en" ? (values.count === 1 ? englishSingular[message] ?? english[message] : english[message]) : message;
-  return template.replace(/\{(\w+)\}/g, (placeholder, key: string) => Object.hasOwn(values, key) ? String(values[key]) : placeholder);
+export function translate(locale: InterfaceLanguage, message: Message, values: Record<string, string | number> = {}): string {
+  const template = locale !== "vi" ? (values.count === 1 ? englishSingular[message] ?? english[message] : english[message]) : message;
+  return (locale==="ja"?toJapanese(template):template).replace(/\{(\w+)\}/g, (placeholder, key: string) => Object.hasOwn(values, key) ? String(values[key]) : placeholder);
 }

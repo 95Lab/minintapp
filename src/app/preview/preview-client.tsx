@@ -26,7 +26,7 @@ export function ComponentPreview({ spec, runtime, embedded=false }: { spec: Publ
   const [view, setView] = useState("participant");
   const Content=embedded?"div":"main";
   const {locale}=useLocale();
-  const text=(vi:string,en:string)=>locale==="vi"?vi:en;
+  const {localize:text}=useLocale();
   const demoSpec: PublicAppSpec={...spec,locale,title:text("Ứng dụng mẫu","Sample app"),blocks:spec.blocks.map(block=>block.type==="compose"?{...block,title:text("Chọn đồ uống","Choose a drink"),inputs:block.inputs.map(input=>({...input,label:text("Đồ uống","Drink"),options:input.options?.map(option=>({...option,label:option.id==="tea"?text("Trà","Tea"):text("Cà phê","Coffee")}))??null}))}:block.type==="quiz"?{...block,questions:block.questions.map(question=>({...question,prompt:text("Một cộng một bằng?","What is one plus one?"),options:question.options.map(option=>({...option,label:option.id==="a"?text("Hai","Two"):text("Ba","Three")}))}))}:block)};
   return <RuntimeLocaleProvider locale={locale}><div className={`mini-runtime ${styles.shell}`}>{!embedded&&<BrandTopBar />}<Content className={`component-preview ${styles.main}`}>
     <div className={styles.heading}><p className={styles.eyebrow}>LIVE DEMO</p><h1>Live Demo</h1><p>{text("Khám phá những khối nhỏ tạo nên ứng dụng của bạn. Thử giao diện và tương tác ngay tại đây.","Explore the building blocks of your apps. Try their interface and interactions here.")}</p></div>

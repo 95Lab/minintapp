@@ -7,16 +7,17 @@ import Link from "next/link";
 import { fetchSession } from "@/engine/auth/account-client";
 import { SignOutButton } from "@/components/account/sign-out-button";
 import type { SessionResponse } from "@/engine/api/api-contract-types";
+import {localizeRecord} from "@/lib/i18n/japanese";
 import { ACCOUNT_STRINGS } from "@/engine/i18n/account-strings-vi-en";
 
 export function AccountNav() {
   const [session, setSession] = useState<SessionResponse | null>(null);
-  const { locale } = useLocale();
+  const { locale, language } = useLocale();
   useEffect(() => {
     void fetchSession().then(setSession);
   }, []);
   if (!session?.accountsEnabled) return null;
-  const s = ACCOUNT_STRINGS[locale];
+  const s = language==="ja"?localizeRecord(ACCOUNT_STRINGS.en):ACCOUNT_STRINGS[locale];
   if (!session.user) return <Link className="btn btn-ghost" href="/login">{s.signIn}</Link>;
   return (
     <>

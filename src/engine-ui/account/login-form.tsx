@@ -1,10 +1,11 @@
 "use client";
-import { useLocale } from "@/lib/i18n/locale-provider";
+import { useLocale, LanguageSwitcher } from "@/lib/i18n/locale-provider";
 // Email magic-link authentication; visual changes do not change the auth API contract.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { requestMagicLink } from "@/engine/auth/account-client";
 import { errorText } from "@/engine/api/app-error-codes";
+import {localizeRecord} from "@/lib/i18n/japanese";
 import { ACCOUNT_STRINGS } from "@/engine/i18n/account-strings-vi-en";
 import { BrandLogo } from "@/components/brand-logo";
 import styles from "./login-form.module.css";
@@ -39,14 +40,14 @@ const copy = {
 };
 
 export function LoginForm() {
-  const { locale, setLocale } = useLocale();
+  const { locale, language, setLocale } = useLocale();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (sent) sentHeading.current?.focus(); }, [sent]);
-  const s = ACCOUNT_STRINGS[locale], c = copy[locale];
+  const s = language==="ja"?localizeRecord(ACCOUNT_STRINGS.en):ACCOUNT_STRINGS[locale], c = language==="ja"?{...localizeRecord(copy.en),headline:<>今日のアイデアを、<br/>明日にも。</>}:copy[locale];
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,14 +59,11 @@ export function LoginForm() {
     setBusy(false);
   }
 
-  return <div className={styles.shell} lang={locale}>
+  return <div className={styles.shell} lang={language}>
     <a className={styles.skip} href="#login-content">{c.skip}</a>
     <header className={styles.header}>
       <BrandLogo className={styles.logo} />
-      <div className={styles.headerActions}><button className={styles.language} type="button" aria-label={locale === "vi" ? "Switch to English" : "Chuyển sang tiếng Việt"} onClick={() => {
-        const next = locale === "vi" ? "en" : "vi"; setLocale(next); setError(null);
-        try { localStorage.setItem("minint:ui-locale", next); } catch { /* A blocked storage does not prevent changing this page. */ }
-      }}>{locale === "vi" ? "EN" : "VI"}</button><Link className={styles.back} href="/"><span aria-hidden="true">←</span>{c.back}</Link></div>
+      <div className={styles.headerActions}><LanguageSwitcher /><Link className={styles.back} href="/"><span aria-hidden="true">←</span>{c.back}</Link></div>
     </header>
     <main id="login-content" className={styles.main}>
       <aside className={styles.story} aria-label={c.tagline}>

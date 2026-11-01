@@ -1,5 +1,5 @@
 import { translate } from "@/lib/i18n/messages";
-import { getLocale } from "@/lib/i18n/server";
+import { getLanguage } from "@/lib/i18n/server";
 import { BrandLogo } from "@/components/brand-logo";
 import { SystemStatus } from "@/components/system-status";
 import { SiteHeader } from "@/components/site-header";
@@ -10,7 +10,7 @@ import { HomeMotion } from "@/components/create/home-motion";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const locale = await getLocale();
+  const locale = await getLanguage();
   const tr = (message: Parameters<typeof translate>[1]) => translate(locale, message);
 const templates = [
   { id: "poll-drinks", title: tr("Cả nhóm cùng chọn"), description: tr("Chốt đồ uống, chọn địa điểm hay lấy ý kiến cho buổi hẹn tiếp theo."), label: tr("Tạo bình chọn mẫu"), kind: "poll", tag: tr("Bình chọn"), number: "01" },
@@ -47,7 +47,7 @@ const faqs = [
         <div className="template-grid">{templates.map((t) => <article key={t.id} className={`template-card template-${t.kind}`}><div className="template-visual" aria-hidden="true"><span className="visual-number caption-4">/{t.number}</span>{t.kind === "poll" ? <div className="poll-art"><span className="art-label caption-3">{tr("Hôm nay uống gì?")}</span><span className="poll-row">{tr("Cà phê ")}<b>↗</b></span><span className="poll-row selected">{tr("Trà sữa ")}<b>✓</b></span><span className="poll-row">Matcha <b>↗</b></span></div> : t.kind === "quiz" ? <div className="quiz-art"><span className="quiz-spark">✳</span><span className="art-label caption-3">{tr("Sẵn sàng thử sức?")}</span><div><span>A</span><span className="quiz-answer">B ✓</span><span>C</span></div></div> : <div className="wheel-art"><div className="wheel-disc"><span>✳</span></div><span className="wheel-pointer">▼</span><span className="wheel-chip caption-3">{tr("Ai sẽ được chọn?")}</span></div>}</div><div className="template-content"><span className="template-tag caption-3">{t.tag}</span><h3 className="heading-5">{t.title}</h3><p className="body-6">{t.description}</p><CreatePollButton templateId={t.id} label={t.label} /></div></article>)}</div>
         <div className="extra-grid">{extras.map((t) => <article className="extra-template" key={t.id}><span className="extra-mark heading-5" aria-hidden="true">{t.mark}</span><div><h3 className="title-3">{t.title}</h3><p className="body-6">{t.description}</p><CreatePollButton templateId={t.id} label={t.label} /></div></article>)}</div>
       </section>
-      <HowItWorks locale={locale} />
+      <HowItWorks locale={locale==="ja"?"en":locale} />
       <section className="tagline-section" aria-label={tr("Thông điệp")}><p className="heading-2">{tr("Việc nhỏ có công cụ riêng.").split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}<br />{tr("Khoảnh khắc có nhau.").split(" ").map((word, i) => <span className="reveal-word" key={i}>{word} </span>)}</p><a href="#create" className="text-link button-md">{tr("Tạo ứng dụng của bạn")}<span aria-hidden="true">↗</span></a></section>
       <section className="faq-section" aria-labelledby="faq-title" data-reveal><div><p className="eyebrow caption-3">{tr("TRƯỚC KHI BẮT ĐẦU")}</p><h2 id="faq-title" className="heading-3">{tr("Bạn có thể đang thắc mắc.")}</h2></div><div className="faq-grid">{faqs.map(([q, a]) => <article key={q}><h3 className="title-3">{q}</h3><p className="body-6">{a}</p></article>)}</div></section>
     </main>

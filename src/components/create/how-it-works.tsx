@@ -1,4 +1,6 @@
 "use client";
+import {useLocale} from "@/lib/i18n/locale-provider";
+import {localizeRecord} from "@/lib/i18n/japanese";
 import { useState } from "react";
 import type { Locale } from "@/lib/i18n/locale";
 import styles from "./how-it-works.module.css";
@@ -26,7 +28,9 @@ const content = {
 
 export function HowItWorks({ locale }: { locale: Locale }) {
   const [active, setActive] = useState(0);
-  const c = content[locale];
+  const {language}=useLocale();
+  const base=content[locale];
+  const c = language==="ja"?{...localizeRecord(base),steps:base.steps.map(localizeRecord)}:base;
   return <section id="how-it-works" className={styles.section} aria-labelledby="how-title">
     <div className={styles.heading}><p className={styles.eyebrow}>{c.eyebrow}</p><h2 id="how-title">{c.title.split("\n").map(line => <span key={line}>{line}</span>)}</h2><p className={styles.lead}>{c.lead}</p></div>
     <div className={styles.walkthrough}>

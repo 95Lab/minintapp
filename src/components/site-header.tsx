@@ -11,7 +11,7 @@ import styles from "./site-header.module.css";
 export function SiteHeader({ home = false, children }: { home?: boolean; children?: ReactNode }) {
   const { locale, platformOrigin } = useLocale();
   const destination=(path:string)=>platformOrigin+path;
-  const text = (vi:string,en:string)=>locale === "vi" ? vi : en;
+  const {localize:text}=useLocale();
   const [open,setOpen]=useState(false);
   const [session,setSession]=useState<SessionResponse|null>(null);
   const navigationId=useId();

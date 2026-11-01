@@ -8,8 +8,8 @@ import type { GenerateEvent } from "@/lib/api/api-contract-types";
 import { PromptComposer } from "./prompt-composer";
 import { GenerationProgress } from "./generation-progress";
 export function GenerateAppForm() {
-  const { locale } = useLocale();
-  const tr = (message: Parameters<typeof translate>[1]) => translate(locale, message);
+  const { locale, language, localize } = useLocale();
+  const tr = (message: Parameters<typeof translate>[1]) => translate(language, message);
   const router = useRouter();
   const [event, setEvent] = useState<GenerateEvent | null>(null);
   return <section className="mini-app" aria-label={tr("Tạo ứng dụng bằng OpenAI")}><h2 className="heading-5">{tr("Hôm nay bạn cần gì?")}</h2><p className="body-6">{tr("Mô tả form, khảo sát, quiz, chi tiêu, chia nhóm hoặc mini game bạn cần.")}</p><PromptComposer onGenerate={async (input) => {

@@ -5,7 +5,7 @@ import { DeploymentManagementSchema, type DeploymentManagement, type DeploymentA
 import { useLocale } from "@/lib/i18n/locale-provider";
 export function DeploymentManagementPanel({ id }: { id: string }) {
   const { locale } = useLocale();
-  const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const {localize:text}=useLocale();
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState<DeploymentManagement | null>(null);
   const [image, setImage] = useState("");

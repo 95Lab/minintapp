@@ -13,7 +13,7 @@ import styles from "./page.module.css";
 
 export default function Dashboard() {
   const { locale } = useLocale();
-  const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const {localize:text}=useLocale();
   const [authenticated, setAuthenticated] = useState(false);
   const [authError, setAuthError] = useState(false);
   useEffect(() => {

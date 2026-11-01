@@ -43,7 +43,7 @@ test("bulk extension uses host-session and reports partial failures",async({page
 for(const width of [320,1280])test(`my apps shares home branding and keeps controls usable at ${width}px`,async({page},testInfo)=>{
  await page.setViewportSize({width,height:900});await setup(page);
  await expect(page.getByRole("banner").getByRole("link",{name:/minintapp/i})).toBeVisible();
- await expect(page.getByRole("heading",{name:"App của tôi",exact:true})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Ứng dụng của tôi",exact:true})).toBeVisible();
  await expect(page.getByRole("link",{name:"Tạo app mới",exact:true})).toBeInViewport();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  for(const control of await page.locator("main button,main select,main input[type=search],main a").all()){

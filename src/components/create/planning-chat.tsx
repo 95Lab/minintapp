@@ -1,4 +1,5 @@
 "use client";
+import {useLocale} from "@/lib/i18n/locale-provider";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ApiClientError, requestJson } from "@/lib/api/api-client";
@@ -15,7 +16,7 @@ export function PlanningChat({ open, initialPrompt, locale, onClose, onGenerate,
   onLifetimeChange?: (lifetime: Lifetime) => void;
   onGenerate: (request: GenerateRequest) => Promise<void>;
 }) {
-  const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const {localize:text}=useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
   const summary = useRef<HTMLElement>(null);

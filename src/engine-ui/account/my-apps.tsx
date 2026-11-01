@@ -7,12 +7,13 @@ import { fetchAccountApps, fetchSession } from "@/engine/auth/account-client";
 import { postHost } from "@/engine/api/api-client";
 import { errorText } from "@/engine/api/app-error-codes";
 import type { AccountAppsResponse, LifecycleRequest } from "@/engine/api/api-contract-types";
+import {localizeRecord} from "@/lib/i18n/japanese";
 import { ACCOUNT_STRINGS } from "@/engine/i18n/account-strings-vi-en";
 import styles from "./dashboard.module.css";
 
 type Action = Extract<LifecycleRequest,{action:"extend"|"end"}>;
 export function MyApps() {
- const {locale}=useLocale(),s=ACCOUNT_STRINGS[locale];
+ const {locale,language, localize}=useLocale(),s=language==="ja"?localizeRecord(ACCOUNT_STRINGS.en):ACCOUNT_STRINGS[locale];
  const [data,setData]=useState<AccountAppsResponse|null>(null),[message,setMessage]=useState<string|null>(null);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [query,setQuery]=useState(""),[status,setStatus]=useState("all"),[expiry,setExpiry]=useState("all"),[sort,setSort]=useState("newest");
@@ -58,15 +59,15 @@ export function MyApps() {
   }finally{lock.current=false;setBusy(false);}
  }
  const changeFilter=(setter:(v:string)=>void,value:string)=>{setter(value);setSelected(new Set());};
- const date=(value:string)=>new Date(value).toLocaleString(locale==="vi"?"vi-VN":"en-GB");
+ const date=(value:string)=>new Date(value).toLocaleString(localize("vi-VN","en-GB"));
  return <WorkspaceShell><main className={styles.dashboard} aria-busy={busy||loading}>
-  <div className={styles.header}><div><p className={styles.eyebrow}>{locale==="vi"?"KHÔNG GIAN LÀM VIỆC":"WORKSPACE"}</p><h1>{s.myAppsTitle}</h1>{data&&<p className="muted">{s.signedInAs(data.email)}</p>}<p className="muted">{s.maxLifetimeNote}</p></div><div className="toolbar"><Link className="btn btn-primary" href="/templates">{s.createApp}</Link><button className="btn" disabled={busy||loading} onClick={()=>{setMessage(null);void load();}}>{s.refresh}</button></div></div>
+  <div className={styles.header}><div><p className={styles.eyebrow}>{localize("KHÔNG GIAN LÀM VIỆC","WORKSPACE")}</p><h1>{s.myAppsTitle}</h1>{data&&<p className="muted">{s.signedInAs(data.email)}</p>}<p className="muted">{s.maxLifetimeNote}</p></div><div className="toolbar"><Link className="btn btn-primary" href="/templates">{s.createApp}</Link><button className="btn" disabled={busy||loading} onClick={()=>{setMessage(null);void load();}}>{s.refresh}</button></div></div>
   {message&&<div className={styles.notice} role="status">{message}</div>}
   {!data?loading?<p role="status">{s.loading}</p>:<button className="btn" onClick={()=>void load()}>{s.retry}</button>:<>
    <section className={styles.stats} aria-label={s.overview}>
     {[[s.totalApps,apps.length],[s.liveApps,apps.filter(a=>a.status==="active").length],[s.closedApps,apps.filter(a=>a.status==="closed").length],[s.expiringApps,apps.filter(isExpiring).length]].map(([label,count])=><div className={styles.stat} key={label}><span>{label}</span><strong>{count}</strong></div>)}
    </section>
-   <fieldset disabled={busy} className={styles.filterPanel}><legend className={styles.srOnly}>{locale==="vi"?"Lọc ứng dụng":"Filter apps"}</legend><div className={styles.filters}>
+   <fieldset disabled={busy} className={styles.filterPanel}><legend className={styles.srOnly}>{localize("Lọc ứng dụng","Filter apps")}</legend><div className={styles.filters}>
     <label>{s.search}<input type="search" value={query} onChange={e=>changeFilter(setQuery,e.target.value)}/></label>
     <label>{s.statusFilter}<select value={status} onChange={e=>changeFilter(setStatus,e.target.value)}><option value="all">{s.all}</option><option value="active">{s.statusActive}</option><option value="closed">{s.statusClosed}</option></select></label>
     <label>{s.expiryFilter}<select value={expiry} onChange={e=>changeFilter(setExpiry,e.target.value)}><option value="all">{s.all}</option><option value="soon">{s.expiring}</option></select></label>
